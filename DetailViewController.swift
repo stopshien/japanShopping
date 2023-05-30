@@ -63,8 +63,8 @@ class DetailViewController: UIViewController {
         // 在儲存到 List 頁面前需要先計算回饋的金額以及回饋上限剩下多少，並且記錄到 cards 的矩陣資料中。
         // 回饋剩餘金額獨立建立一個變數，並且在 CardSetViewController 設定 limit 時賦予設定初始數值。
         // 需要判斷使用現金還是信用卡，因為現金無法執行 cards 屬性的使用，會崩潰。
-    
-        if list.payType == "信用卡"{
+        // 使用文字 list.payType == "信用卡" 無法正常做判定，理由未知，先用使否出現信用卡選項做判定。
+        if cardsChooseOutlet.isHidden == false{
             // 不能沒選信用卡就按確認存到List，不然沒辦法跑下面這行，會崩潰。
             if numberOfCards > -1{
                 cards[numberOfCards].feedbackRemaining = cards[numberOfCards].limit - cards[numberOfCards].feedbackMoney
