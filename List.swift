@@ -13,6 +13,7 @@ struct List:Codable{
 //    let taxPrice : Double
     var payType: String 
     var taxState : String
+    var photoURL : String?
     
     static let documentDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
     

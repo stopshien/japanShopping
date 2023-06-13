@@ -16,6 +16,9 @@ class ListTableViewCell: UITableViewCell {
     
     @IBOutlet weak var TypeOfPay: UILabel!
     
+    @IBOutlet weak var shopPhoto: UIImageView!
+    
+    
     
     override func awakeFromNib() {
         super.awakeFromNib()

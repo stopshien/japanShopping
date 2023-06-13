@@ -13,7 +13,9 @@ class DetailViewController: UIViewController {
     var lists = [List]()
     var cards = [Card]()
     var numberOfCards = -1 // 紀錄選擇哪張信用卡對應到矩陣的順序。
+    var selectPhoto = false // 判定是否有選擇照片
 
+    
     @IBOutlet weak var priceLabel: UILabel!
     
     @IBOutlet weak var productTextField: UITextField!
@@ -26,8 +28,14 @@ class DetailViewController: UIViewController {
     
     @IBOutlet weak var editCardsButtonOutlet: UIButton!
     
+    @IBOutlet weak var imageSelectButtonOutlet: UIButton!
+    
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        imageSelectButtonOutlet.imageView?.contentMode = .scaleAspectFill
+        imageSelectButtonOutlet.layer.borderColor = CGColor(red: 1, green: 1, blue: 1, alpha: 1)
+        imageSelectButtonOutlet.layer.borderWidth = 4
         
         payTypePicker.delegate = self
         payTypePicker.dataSource = self
@@ -42,6 +50,10 @@ class DetailViewController: UIViewController {
             lists = readList
         }
         UISet()
+        
+        
+        
+
     }
     
     // 從其他頁面倒退回到 DetailViewController 這個頁面的時候會做的事情。
@@ -87,6 +99,14 @@ class DetailViewController: UIViewController {
             controller.cards = cards
         }
     }
+    
+    @IBAction func imagePickerButton(_ sender: Any) {
+        let imagePickerController = UIImagePickerController()
+        imagePickerController.sourceType = .photoLibrary
+        imagePickerController.delegate = self
+        present(imagePickerController, animated: true, completion: nil)
+    }
+    
     
     
     //將購買的商品儲存到清單中
@@ -167,6 +187,18 @@ extension DetailViewController: UIPickerViewDelegate,UIPickerViewDataSource{
             feedbackLabel.isHidden = false
             editCardsButtonOutlet.isHidden = false
         }
+    }
+    
+}
+
+extension DetailViewController: UIImagePickerControllerDelegate,UINavigationControllerDelegate{
+    
+    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+        selectPhoto = true
+        let image = info[.originalImage] as? UIImage
+        imageSelectButtonOutlet.setImage(image, for: .normal)
+
+        dismiss(animated: true, completion: nil)
     }
     
 }

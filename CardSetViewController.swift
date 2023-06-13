@@ -20,6 +20,9 @@ class CardSetViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        //點空白處收鍵盤
+        let tapGesture = UITapGestureRecognizer(target: view, action: #selector(UIView.endEditing(_:)))
+        view.addGestureRecognizer(tapGesture)
     }
     
     @IBAction func addNewCardButton(_ sender: Any) {

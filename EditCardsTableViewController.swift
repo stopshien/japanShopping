@@ -14,7 +14,7 @@ class EditCardsTableViewController: UITableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        
+
     }
 
     @IBAction func editFinishButton(_ sender: Any) {
