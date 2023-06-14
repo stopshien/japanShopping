@@ -22,16 +22,23 @@ class ComputeViewController: UIViewController {
     
     @IBOutlet weak var resultLabel: UILabel!
     
+    @IBOutlet weak var exchangeRateLabel: UILabel!
+    
+    @IBOutlet weak var updateDate: UILabel!
+    
     var list = List(productName: "", price : 0, payType: "", taxState: "")
     
     var twdNoTax : Double = 0
     var twdTax : Double = 0
+    
+    var JYPToTWD = 0.0
         
     override func viewDidLoad() {
         super.viewDidLoad()
         //點空白處收鍵盤
         let tapGesture = UITapGestureRecognizer(target: view, action: #selector(UIView.endEditing(_:)))
         view.addGestureRecognizer(tapGesture)
+        fectch()
     }
     
     @IBAction func computeButton(_ sender: Any) {
@@ -39,11 +46,11 @@ class ComputeViewController: UIViewController {
 
         if let yenTextField = yenTextField.text{
             if taxChoose.selectedSegmentIndex == 0{
-                twdNoTax = ((Double(yenTextField) ?? 0)*0.225).rounded()
+                twdNoTax = ((Double(yenTextField) ?? 0)*JYPToTWD).rounded()
                 twdTax = (twdNoTax*1.08).rounded()
                 resultLabel.text = "台幣 \n未稅：\(twdNoTax)\n含稅：\(twdTax)"
             }else if taxChoose.selectedSegmentIndex == 1{
-                twdTax = ((Double(yenTextField) ?? 0)*0.225).rounded()
+                twdTax = ((Double(yenTextField) ?? 0)*JYPToTWD).rounded()
                 twdNoTax = (twdTax/1.08).rounded()
                 resultLabel.text = "台幣 \n未稅：\(twdNoTax)\n含稅：\(twdTax)"
 
@@ -72,4 +79,64 @@ class ComputeViewController: UIViewController {
             }
         }
     }
+    
+    func fectch(){
+    
+        let myApiKey = "953c2dbe0b2c321ef179490a"
+        let baseURL = "https://v6.exchangerate-api.com/v6/\(myApiKey)/latest/USD"
+        if let url = URL(string: baseURL){
+            let request = URLRequest(url: url)
+//            request.setValue("Bearer keyTaDO1pC3Wi8kV3", forHTTPHeaderField: "Authorization")
+//            print(request)
+            URLSession.shared.dataTask(with: request) { data, response, error in
+                if let data = data{
+                    do {
+                        let result = try JSONDecoder().decode(ExchangeRate.self, from: data)
+                        let Rate = result.conversion_rates.TWD / result.conversion_rates.JPY
+                        print(Rate)
+                        //ＧＰＴ提供的變相取進位數的方法，簡單暴力，好用！
+                        self.JYPToTWD = (Rate * 10000).rounded() / 10000
+                        
+                        //以下將更新日期下載並轉圜為台灣地區時區
+//                        let dateFormatter = DateFormatter()
+//                        dateFormatter.timeZone = TimeZone(identifier: "Asia/Taipei")
+//                        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+//
+//                        let downloadedDate = dateFormatter.date(from: result.time_last_update_utc)
+//                        let convertedDate = dateFormatter.string(from: downloadedDate!)
+                        let dateString = result.time_last_update_utc
+
+                        let dateFormatter = DateFormatter()
+                        dateFormatter.dateFormat = "E, d MMM yyyy HH:mm:ss Z"
+                        dateFormatter.locale = Locale(identifier: "en_US_POSIX")  // 設置日期格式的語言環境
+                        let date = dateFormatter.date(from: dateString)
+
+                        // 轉換為台灣時區
+                        let taiwanTimeZone = TimeZone(identifier: "Asia/Taipei")
+                        dateFormatter.timeZone = taiwanTimeZone
+
+                        // 格式化日期為文字
+                        dateFormatter.dateFormat = "E, d MMM yyyy HH:mm:ss"
+                        let taiwanDateStr = dateFormatter.string(from: date!)
+
+                        
+                        DispatchQueue.main.async {
+                            self.exchangeRateLabel.text = "匯率：\(self.JYPToTWD)"
+                            self.updateDate.text = "匯率更新於：\(taiwanDateStr)"
+
+                        }
+//                        print(content)
+                    } catch  {
+                        print(error)
+
+                    }
+                }
+                
+            }.resume()
+        }
+    }
+    
 }
+
+
+

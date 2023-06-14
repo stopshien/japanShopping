@@ -19,6 +19,7 @@
 		CFF54DAB2A1A52BD00CEB598 /* DetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFF54DAA2A1A52BD00CEB598 /* DetailViewController.swift */; };
 		CFF54DAD2A1A8F2000CEB598 /* CardSetViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFF54DAC2A1A8F2000CEB598 /* CardSetViewController.swift */; };
 		CFF54DAF2A24C7B600CEB598 /* EditCardsTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFF54DAE2A24C7B600CEB598 /* EditCardsTableViewController.swift */; };
+		CFF54DB12A39FD2C00CEB598 /* ExchangeRate.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFF54DB02A39FD2C00CEB598 /* ExchangeRate.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -36,6 +37,7 @@
 		CFF54DAA2A1A52BD00CEB598 /* DetailViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailViewController.swift; sourceTree = "<group>"; };
 		CFF54DAC2A1A8F2000CEB598 /* CardSetViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardSetViewController.swift; sourceTree = "<group>"; };
 		CFF54DAE2A24C7B600CEB598 /* EditCardsTableViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditCardsTableViewController.swift; sourceTree = "<group>"; };
+		CFF54DB02A39FD2C00CEB598 /* ExchangeRate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExchangeRate.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -59,6 +61,7 @@
 				CFF54DA62A1A2FBF00CEB598 /* ListTableViewCell.swift */,
 				CFF54DA42A1A2F9E00CEB598 /* ListViewController.swift */,
 				CFF54DA22A1A17E100CEB598 /* ComputeViewController.swift */,
+				CFF54DB02A39FD2C00CEB598 /* ExchangeRate.swift */,
 				CFF54D8D2A1A179800CEB598 /* japanShopping */,
 				CFF54D8C2A1A179800CEB598 /* Products */,
 			);
@@ -162,6 +165,7 @@
 				CFF54DA52A1A2F9E00CEB598 /* ListViewController.swift in Sources */,
 				CFF54DAD2A1A8F2000CEB598 /* CardSetViewController.swift in Sources */,
 				CFF54D912A1A179800CEB598 /* SceneDelegate.swift in Sources */,
+				CFF54DB12A39FD2C00CEB598 /* ExchangeRate.swift in Sources */,
 				CFF54DA72A1A2FBF00CEB598 /* ListTableViewCell.swift in Sources */,
 				CFF54DA92A1A306800CEB598 /* List.swift in Sources */,
 				CFF54DAB2A1A52BD00CEB598 /* DetailViewController.swift in Sources */,
