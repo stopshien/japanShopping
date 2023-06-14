@@ -33,7 +33,7 @@ class DetailViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        imageSelectButtonOutlet.imageView?.contentMode = .scaleAspectFill
+        imageSelectButtonOutlet.imageView?.contentMode = .scaleAspectFit
         imageSelectButtonOutlet.layer.borderColor = CGColor(red: 1, green: 1, blue: 1, alpha: 1)
         imageSelectButtonOutlet.layer.borderWidth = 4
         
@@ -113,6 +113,7 @@ class DetailViewController: UIViewController {
     func saveToList(){
         if productTextField.text != ""{
             list.productName = productTextField.text ?? ""
+            photoSaveSet()
             if let controller = storyboard?.instantiateViewController(withIdentifier: "ListViewController") as? ListViewController{
                 lists.append(list)
                 controller.lists = lists
@@ -121,6 +122,31 @@ class DetailViewController: UIViewController {
                 navigationController?.pushViewController(controller, animated: true)
             }
         }
+    }
+    
+    // 設定圖片的轉碼及路徑，最後存進 List 的物件中。
+    func photoSaveSet(){
+        var imageName: String?
+       
+        if selectPhoto {
+
+            if imageName == nil {
+                imageName = UUID().uuidString
+            }
+        /*
+         使用 image.jpegData(compressionQuality:) 方法將圖片轉換為 JPEG 格式的二進位資料，並將其指派給 imageData 變數。
+         */
+            let imageData = imageSelectButtonOutlet.image(for: .normal)?.jpegData(compressionQuality: 0.9)
+            /*
+             使用 FileManager.default.urls(for:in:) 方法獲取 Document Directory 的路徑，並將其指派給 documentsDirectory 變數。
+             在 List 那邊有建立 documentDirectory，並使用 appendingPathComponent(_:) 方法將檔案名稱附加到 Document Directory 的路徑中，生成最終的檔案路徑 fileURL。
+             使用 imageData.write(to:) 方法將圖片資料寫入指定的檔案路徑中。
+             */
+            let imageUrl = List.documentDirectory.appendingPathComponent(imageName!).appendingPathExtension("jpg")
+            try? imageData?.write(to: imageUrl)
+        }
+        // 將圖片路徑加入 list 。
+        list.photoURL = imageName
     }
     
     // 設定ＵＩ顯示

@@ -30,6 +30,8 @@ class ListViewController: UIViewController {
             totalSpendCount()
         }
         
+        print(lists)
+        
     }
     
     
@@ -44,6 +46,7 @@ class ListViewController: UIViewController {
         }
         totalSpend.text = "你已經花了\(totalSpendMoney)$"
     }
+    
 }
 
 extension ListViewController:UITableViewDelegate,UITableViewDataSource{
@@ -58,6 +61,16 @@ extension ListViewController:UITableViewDelegate,UITableViewDataSource{
             cell.productName.text = rowNum.productName
             cell.priceLabel.text = "\(rowNum.price)$(\(rowNum.taxState))"
             cell.TypeOfPay.text = rowNum.payType
+        
+        // 設定相片的讀取顯示
+        
+        if let imageName = lists[indexPath.row].photoURL {
+                let imageUrl =  List.documentDirectory.appendingPathComponent(imageName).appendingPathExtension("jpg")
+                let image = UIImage(contentsOfFile: imageUrl.path)
+                cell.shopPhoto.image = image
+            }
+        
+
         
         return cell
     }
@@ -77,5 +90,6 @@ extension ListViewController:UITableViewDelegate,UITableViewDataSource{
         
     }
 
+    
     
 }

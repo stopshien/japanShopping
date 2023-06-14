@@ -41,11 +41,11 @@ class ComputeViewController: UIViewController {
             if taxChoose.selectedSegmentIndex == 0{
                 twdNoTax = ((Double(yenTextField) ?? 0)*0.225).rounded()
                 twdTax = (twdNoTax*1.08).rounded()
-                resultLabel.text = "台幣：\n未稅：\(twdNoTax)\n含稅：\(twdTax)"
+                resultLabel.text = "台幣 \n未稅：\(twdNoTax)\n含稅：\(twdTax)"
             }else if taxChoose.selectedSegmentIndex == 1{
                 twdTax = ((Double(yenTextField) ?? 0)*0.225).rounded()
                 twdNoTax = (twdTax/1.08).rounded()
-                resultLabel.text = "台幣：\n未稅：\(twdNoTax)\n含稅：\(twdTax)"
+                resultLabel.text = "台幣 \n未稅：\(twdNoTax)\n含稅：\(twdTax)"
 
             }
         }
