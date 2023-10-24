@@ -54,18 +54,38 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		6A3BC6CD2AE7A1BE004CD891 /* Controller */ = {
+			isa = PBXGroup;
+			children = (
+				CFF54DAA2A1A52BD00CEB598 /* DetailViewController.swift */,
+				CFF54DAE2A24C7B600CEB598 /* EditCardsTableViewController.swift */,
+				CFF54DAC2A1A8F2000CEB598 /* CardSetViewController.swift */,
+				CFF54DA42A1A2F9E00CEB598 /* ListViewController.swift */,
+				CFF54DA22A1A17E100CEB598 /* ComputeViewController.swift */,
+			);
+			path = Controller;
+			sourceTree = "<group>";
+		};
+		6A3BC6CE2AE7A239004CD891 /* Model */ = {
+			isa = PBXGroup;
+			children = (
+				CFF54DA82A1A306800CEB598 /* List.swift */,
+				CFF54DB02A39FD2C00CEB598 /* ExchangeRate.swift */,
+			);
+			path = Model;
+			sourceTree = "<group>";
+		};
+		6A3BC6CF2AE7A24D004CD891 /* View */ = {
+			isa = PBXGroup;
+			children = (
+				CFF54DA62A1A2FBF00CEB598 /* ListTableViewCell.swift */,
+			);
+			path = View;
+			sourceTree = "<group>";
+		};
 		CFF54D822A1A179800CEB598 = {
 			isa = PBXGroup;
 			children = (
-				6A3BC6CB2AE79D36004CD891 /* ApiManager.swift */,
-				CFF54DAE2A24C7B600CEB598 /* EditCardsTableViewController.swift */,
-				CFF54DAC2A1A8F2000CEB598 /* CardSetViewController.swift */,
-				CFF54DAA2A1A52BD00CEB598 /* DetailViewController.swift */,
-				CFF54DA82A1A306800CEB598 /* List.swift */,
-				CFF54DA62A1A2FBF00CEB598 /* ListTableViewCell.swift */,
-				CFF54DA42A1A2F9E00CEB598 /* ListViewController.swift */,
-				CFF54DA22A1A17E100CEB598 /* ComputeViewController.swift */,
-				CFF54DB02A39FD2C00CEB598 /* ExchangeRate.swift */,
 				CFF54D8D2A1A179800CEB598 /* japanShopping */,
 				CFF54D8C2A1A179800CEB598 /* Products */,
 			);
@@ -82,6 +102,10 @@
 		CFF54D8D2A1A179800CEB598 /* japanShopping */ = {
 			isa = PBXGroup;
 			children = (
+				6A3BC6CB2AE79D36004CD891 /* ApiManager.swift */,
+				6A3BC6CE2AE7A239004CD891 /* Model */,
+				6A3BC6CF2AE7A24D004CD891 /* View */,
+				6A3BC6CD2AE7A1BE004CD891 /* Controller */,
 				CFF54D8E2A1A179800CEB598 /* AppDelegate.swift */,
 				CFF54D902A1A179800CEB598 /* SceneDelegate.swift */,
 				CFF54D942A1A179800CEB598 /* Main.storyboard */,
