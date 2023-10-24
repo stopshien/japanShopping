@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		6A3BC6CC2AE79D36004CD891 /* ApiManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A3BC6CB2AE79D36004CD891 /* ApiManager.swift */; };
 		CFF54D8F2A1A179800CEB598 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFF54D8E2A1A179800CEB598 /* AppDelegate.swift */; };
 		CFF54D912A1A179800CEB598 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFF54D902A1A179800CEB598 /* SceneDelegate.swift */; };
 		CFF54D962A1A179800CEB598 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = CFF54D942A1A179800CEB598 /* Main.storyboard */; };
@@ -23,6 +24,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		6A3BC6CA2AE79C8B004CD891 /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
+		6A3BC6CB2AE79D36004CD891 /* ApiManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiManager.swift; sourceTree = "<group>"; };
 		CFF54D8B2A1A179800CEB598 /* japanShopping.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = japanShopping.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CFF54D8E2A1A179800CEB598 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		CFF54D902A1A179800CEB598 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -54,6 +57,7 @@
 		CFF54D822A1A179800CEB598 = {
 			isa = PBXGroup;
 			children = (
+				6A3BC6CB2AE79D36004CD891 /* ApiManager.swift */,
 				CFF54DAE2A24C7B600CEB598 /* EditCardsTableViewController.swift */,
 				CFF54DAC2A1A8F2000CEB598 /* CardSetViewController.swift */,
 				CFF54DAA2A1A52BD00CEB598 /* DetailViewController.swift */,
@@ -84,6 +88,7 @@
 				CFF54D972A1A179A00CEB598 /* Assets.xcassets */,
 				CFF54D992A1A179A00CEB598 /* LaunchScreen.storyboard */,
 				CFF54D9C2A1A179A00CEB598 /* Info.plist */,
+				6A3BC6CA2AE79C8B004CD891 /* Secrets.xcconfig */,
 			);
 			path = japanShopping;
 			sourceTree = "<group>";
@@ -165,6 +170,7 @@
 				CFF54DA52A1A2F9E00CEB598 /* ListViewController.swift in Sources */,
 				CFF54DAD2A1A8F2000CEB598 /* CardSetViewController.swift in Sources */,
 				CFF54D912A1A179800CEB598 /* SceneDelegate.swift in Sources */,
+				6A3BC6CC2AE79D36004CD891 /* ApiManager.swift in Sources */,
 				CFF54DB12A39FD2C00CEB598 /* ExchangeRate.swift in Sources */,
 				CFF54DA72A1A2FBF00CEB598 /* ListTableViewCell.swift in Sources */,
 				CFF54DA92A1A306800CEB598 /* List.swift in Sources */,
@@ -196,6 +202,7 @@
 /* Begin XCBuildConfiguration section */
 		CFF54D9D2A1A179A00CEB598 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 6A3BC6CA2AE79C8B004CD891 /* Secrets.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -256,6 +263,7 @@
 		};
 		CFF54D9E2A1A179A00CEB598 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 6A3BC6CA2AE79C8B004CD891 /* Secrets.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;

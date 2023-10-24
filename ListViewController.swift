@@ -25,13 +25,10 @@ class ListViewController: UIViewController {
         if let readLists = List.readList(){
             lists = readLists
         }
-        
         if lists.isEmpty == false{
             totalSpendCount()
         }
-        
         print(lists)
-        
     }
     
     
@@ -69,11 +66,9 @@ extension ListViewController:UITableViewDelegate,UITableViewDataSource{
                 let image = UIImage(contentsOfFile: imageUrl.path)
                 cell.shopPhoto.image = image
             }
-        
-
-        
         return cell
     }
+    
     
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
         lists.remove(at: indexPath.row)
@@ -85,9 +80,7 @@ extension ListViewController:UITableViewDelegate,UITableViewDataSource{
         }else{
             totalSpend.text = "你已經花了0$"
         }
-        
         // 刪除功能沒有謢直接儲存，怕刪錯，所以只有按下 done 按鈕才會儲存。
-        
     }
 
     
