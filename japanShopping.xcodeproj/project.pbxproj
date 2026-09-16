@@ -20,6 +20,8 @@
 		CFF54DAD2A1A8F2000CEB598 /* CardSetViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFF54DAC2A1A8F2000CEB598 /* CardSetViewController.swift */; };
 		CFF54DAF2A24C7B600CEB598 /* EditCardsTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFF54DAE2A24C7B600CEB598 /* EditCardsTableViewController.swift */; };
 		CFF54DB12A39FD2C00CEB598 /* ExchangeRate.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFF54DB02A39FD2C00CEB598 /* ExchangeRate.swift */; };
+		AB0000042A00000100AB0001 /* PersistenceFormatTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB0000022A00000100AB0001 /* PersistenceFormatTests.swift */; };
+		AB0000052A00000100AB0001 /* ExchangeRateDecodingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB0000032A00000100AB0001 /* ExchangeRateDecodingTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -38,10 +40,20 @@
 		CFF54DAC2A1A8F2000CEB598 /* CardSetViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardSetViewController.swift; sourceTree = "<group>"; };
 		CFF54DAE2A24C7B600CEB598 /* EditCardsTableViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditCardsTableViewController.swift; sourceTree = "<group>"; };
 		CFF54DB02A39FD2C00CEB598 /* ExchangeRate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExchangeRate.swift; sourceTree = "<group>"; };
+		AB0000012A00000100AB0001 /* japanShoppingTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = japanShoppingTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		AB0000022A00000100AB0001 /* PersistenceFormatTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceFormatTests.swift; sourceTree = "<group>"; };
+		AB0000032A00000100AB0001 /* ExchangeRateDecodingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExchangeRateDecodingTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		CFF54D882A1A179800CEB598 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AB0000092A00000100AB0001 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -63,6 +75,7 @@
 				CFF54DA22A1A17E100CEB598 /* ComputeViewController.swift */,
 				CFF54DB02A39FD2C00CEB598 /* ExchangeRate.swift */,
 				CFF54D8D2A1A179800CEB598 /* japanShopping */,
+				AB0000062A00000100AB0001 /* japanShoppingTests */,
 				CFF54D8C2A1A179800CEB598 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -71,6 +84,7 @@
 			isa = PBXGroup;
 			children = (
 				CFF54D8B2A1A179800CEB598 /* japanShopping.app */,
+				AB0000012A00000100AB0001 /* japanShoppingTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -86,6 +100,15 @@
 				CFF54D9C2A1A179A00CEB598 /* Info.plist */,
 			);
 			path = japanShopping;
+			sourceTree = "<group>";
+		};
+		AB0000062A00000100AB0001 /* japanShoppingTests */ = {
+			isa = PBXGroup;
+			children = (
+				AB0000022A00000100AB0001 /* PersistenceFormatTests.swift */,
+				AB0000032A00000100AB0001 /* ExchangeRateDecodingTests.swift */,
+			);
+			path = japanShoppingTests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -108,7 +131,35 @@
 			productReference = CFF54D8B2A1A179800CEB598 /* japanShopping.app */;
 			productType = "com.apple.product-type.application";
 		};
+		AB0000072A00000100AB0001 /* japanShoppingTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AB00000F2A00000100AB0001 /* Build configuration list for PBXNativeTarget "japanShoppingTests" */;
+			buildPhases = (
+				AB0000082A00000100AB0001 /* Sources */,
+				AB0000092A00000100AB0001 /* Frameworks */,
+				AB00000A2A00000100AB0001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				AB00000C2A00000100AB0001 /* PBXTargetDependency */,
+			);
+			name = japanShoppingTests;
+			productName = japanShoppingTests;
+			productReference = AB0000012A00000100AB0001 /* japanShoppingTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
+
+/* Begin PBXContainerItemProxy section */
+		AB00000B2A00000100AB0001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CFF54D832A1A179800CEB598 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CFF54D8A2A1A179800CEB598;
+			remoteInfo = japanShopping;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXProject section */
 		CFF54D832A1A179800CEB598 /* Project object */ = {
@@ -120,6 +171,10 @@
 				TargetAttributes = {
 					CFF54D8A2A1A179800CEB598 = {
 						CreatedOnToolsVersion = 14.2;
+					};
+					AB0000072A00000100AB0001 = {
+						CreatedOnToolsVersion = 14.2;
+						TestTargetID = CFF54D8A2A1A179800CEB598;
 					};
 				};
 			};
@@ -137,6 +192,7 @@
 			projectRoot = "";
 			targets = (
 				CFF54D8A2A1A179800CEB598 /* japanShopping */,
+				AB0000072A00000100AB0001 /* japanShoppingTests */,
 			);
 		};
 /* End PBXProject section */
@@ -149,6 +205,13 @@
 				CFF54D9B2A1A179A00CEB598 /* LaunchScreen.storyboard in Resources */,
 				CFF54D982A1A179A00CEB598 /* Assets.xcassets in Resources */,
 				CFF54D962A1A179800CEB598 /* Main.storyboard in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AB00000A2A00000100AB0001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -172,7 +235,24 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		AB0000082A00000100AB0001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AB0000042A00000100AB0001 /* PersistenceFormatTests.swift in Sources */,
+				AB0000052A00000100AB0001 /* ExchangeRateDecodingTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		AB00000C2A00000100AB0001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = CFF54D8A2A1A179800CEB598 /* japanShopping */;
+			targetProxy = AB00000B2A00000100AB0001 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
 		CFF54D942A1A179800CEB598 /* Main.storyboard */ = {
@@ -364,6 +444,46 @@
 			};
 			name = Release;
 		};
+		AB00000D2A00000100AB0001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = T2T367NW35;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.3;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.stopshien.japanShoppingTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/japanShopping.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/japanShopping";
+			};
+			name = Debug;
+		};
+		AB00000E2A00000100AB0001 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = T2T367NW35;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.3;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.stopshien.japanShoppingTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/japanShopping.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/japanShopping";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -381,6 +501,15 @@
 			buildConfigurations = (
 				CFF54DA02A1A179A00CEB598 /* Debug */,
 				CFF54DA12A1A179A00CEB598 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AB00000F2A00000100AB0001 /* Build configuration list for PBXNativeTarget "japanShoppingTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AB00000D2A00000100AB0001 /* Debug */,
+				AB00000E2A00000100AB0001 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

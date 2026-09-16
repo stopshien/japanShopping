@@ -19,8 +19,9 @@
 ## Testing
 - ViewModels and services must be unit-testable: no UIKit import, all dependencies injected as protocols.
 - Add tests for ViewModel logic and service parsing when migrating or adding a screen.
-- Test doubles live in the test target, never in production files.
-- A test target does not exist yet. Creating it is part of the first migration step; until it exists, say plainly that a change is untested.
+- Test doubles live in the `japanShoppingTests` target, never in production files.
+- Run the suite with `xcodebuild test -project japanShopping.xcodeproj -scheme japanShopping -destination 'platform=iOS Simulator,name=iPhone 16'`.
+- `PersistenceFormatTests` guards the saved-file format. If a change to `List` or `Card` breaks it, that change breaks existing users' data — fix the model or state the migration plan, do not edit the test to match.
 
 ## Verification
 - Build with `xcodebuild -project japanShopping.xcodeproj -scheme japanShopping -destination 'platform=iOS Simulator,name=iPhone 16' build`, or run it in the simulator.

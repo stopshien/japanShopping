@@ -24,7 +24,7 @@ Migrate in dependency order, leaves first, so each step removes a property-assig
 3. Purchase detail (depends on cards and the list)
 4. Exchange rate / price entry (entry point, pushes into detail)
 
-Create the unit test target before the first screen, as part of step 1.
+The unit test target already exists. Add each new ViewModel's tests to `japanShoppingTests`.
 
 ## Hard Rules
 

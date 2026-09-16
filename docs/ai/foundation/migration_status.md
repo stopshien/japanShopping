@@ -29,10 +29,14 @@ Legacy, not yet migrated:
 - `CardSetViewController` — builds a `Card` directly from text fields
 - `EditCardsTableViewController` — mutates a copy of `cards` handed to it by its parent
 
+Migrated infrastructure:
+- `japanShoppingTests` unit test target exists, hosted by the app, with a shared scheme at `japanShopping.xcodeproj/xcshareddata/xcschemes/japanShopping.xcscheme`
+- `PersistenceFormatTests` locks the on-disk property-list format of `List` and `Card`
+- `ExchangeRateDecodingTests` locks the exchange-rate API response shape and the JPY→TWD derivation
+
 Legacy infrastructure:
 - `Main.storyboard` holds every scene
 - `List` and `Card` carry their own static save/read methods
-- No test target exists
 - The exchange-rate API key is hard-coded in source
 
 ## Known Behavior To Preserve
