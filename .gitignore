@@ -1,0 +1,27 @@
+# macOS
+.DS_Store
+
+# Xcode — 個人狀態，不進版控
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+*.xccheckout
+
+# Xcode — 建置產物
+build/
+DerivedData/
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# 憑證與密鑰
+*.p12
+*.mobileprovision
+*.cer
+.env
