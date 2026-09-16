@@ -13,6 +13,10 @@ class DetailViewController: UIViewController {
     var lists = [List]()
     var cards = [Card]()
     var numberOfCards = -1 // 紀錄選擇哪張信用卡對應到矩陣的順序。
+
+    // 信用卡畫面已遷移至 MVVM，這裡透過 repository 取得資料，
+    // 待 DetailViewController 自己遷移後會改為注入。
+    private let cardRepository: CardRepository = FileCardRepository()
     var selectPhoto = false // 判定是否有選擇照片
 
     
@@ -41,34 +45,25 @@ class DetailViewController: UIViewController {
         payTypePicker.dataSource = self
         
         // 一進到畫面先讀取cards 資料
-        if let readCards = Card.readCards(){
-            cards = readCards
-        }
+        reloadCards()
         
         // 讀取 List 檔案
         if let readList = List.readList(){
             lists = readList
         }
         UISet()
-        
-        
-        
-
     }
-    
-    // 從其他頁面倒退回到 DetailViewController 這個頁面的時候會做的事情。
-    @IBAction func unwindToCardVSetViewController(_ unwindSegue: UIStoryboardSegue) {
-        
-        // 若是從 CardSetViewController 倒退回來的話會執行下列動作
-        if let sourceViewController = unwindSegue.source as? CardSetViewController,
-           let card = sourceViewController.card{
-            cards.append(card)
 
+    // 信用卡畫面（新增／編輯）返回後重新載入，取代原本的 unwind segue。
+    private func reloadCards() {
+        do {
+            cards = try cardRepository.load()
+        } catch {
+            cards = []
         }
-        // 不管從哪裡回來都會執行這些動作
+        // 卡片數量或內容變了，選單與選取索引都必須重建。
+        numberOfCards = -1
         cardChooseButtonSet()
-        Card.saveCards(cards: cards)
-        print(cards)
     }
     
     @IBAction func saveToListButton(_ sender: Any) {
@@ -80,8 +75,7 @@ class DetailViewController: UIViewController {
             // 不能沒選信用卡就按確認存到List，不然沒辦法跑下面這行，會崩潰。
             if numberOfCards > -1{
                 cards[numberOfCards].feedbackRemaining = cards[numberOfCards].limit - cards[numberOfCards].feedbackMoney
-                Card.saveCards(cards: cards)
-                print(cards)
+                try? cardRepository.save(cards)
             }
         }
         saveToList()
@@ -94,10 +88,12 @@ class DetailViewController: UIViewController {
     
     
     @IBAction func editCardsButton(_ sender: Any) {
-        if let controller = storyboard?.instantiateViewController(withIdentifier: "\(EditCardsTableViewController.self)") as? EditCardsTableViewController {
-            navigationController?.pushViewController(controller, animated: true)
-            controller.cards = cards
+        let viewModel = CardListViewModel(repository: cardRepository)
+        let controller = CardListViewController(viewModel: viewModel)
+        controller.onFinish = { [weak self] in
+            self?.reloadCards()
         }
+        navigationController?.pushViewController(controller, animated: true)
     }
     
     @IBAction func imagePickerButton(_ sender: Any) {
@@ -161,10 +157,14 @@ class DetailViewController: UIViewController {
     //信用卡選擇下拉式選單功能設定
     func cardChooseButtonSet(){
         
-        var cardsArray = [UIAction(title: "新增信用卡", handler: { _ in
-            if let controller = self.storyboard?.instantiateViewController(withIdentifier: "CardSetViewController") as? CardSetViewController{
-                self.navigationController?.pushViewController(controller, animated: true)
+        var cardsArray = [UIAction(title: "新增信用卡", handler: { [weak self] _ in
+            guard let self else { return }
+            let viewModel = CardSetViewModel(repository: self.cardRepository)
+            let controller = CardSetViewController(viewModel: viewModel)
+            controller.onFinish = { [weak self] in
+                self?.reloadCards()
             }
+            self.navigationController?.pushViewController(controller, animated: true)
         })]
         if cards.count > 0{
             for i in 0...cards.count-1{

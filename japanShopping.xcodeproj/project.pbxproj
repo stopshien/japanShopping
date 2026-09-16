@@ -18,10 +18,20 @@
 		CFF54DA92A1A306800CEB598 /* List.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFF54DA82A1A306800CEB598 /* List.swift */; };
 		CFF54DAB2A1A52BD00CEB598 /* DetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFF54DAA2A1A52BD00CEB598 /* DetailViewController.swift */; };
 		CFF54DAD2A1A8F2000CEB598 /* CardSetViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFF54DAC2A1A8F2000CEB598 /* CardSetViewController.swift */; };
-		CFF54DAF2A24C7B600CEB598 /* EditCardsTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFF54DAE2A24C7B600CEB598 /* EditCardsTableViewController.swift */; };
 		CFF54DB12A39FD2C00CEB598 /* ExchangeRate.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFF54DB02A39FD2C00CEB598 /* ExchangeRate.swift */; };
 		AB0000042A00000100AB0001 /* PersistenceFormatTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB0000022A00000100AB0001 /* PersistenceFormatTests.swift */; };
 		AB0000052A00000100AB0001 /* ExchangeRateDecodingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB0000032A00000100AB0001 /* ExchangeRateDecodingTests.swift */; };
+		AC0000022A00000100AC0001 /* DocumentsDirectory.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0000012A00000100AC0001 /* DocumentsDirectory.swift */; };
+		AC0000042A00000100AC0001 /* Card.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0000032A00000100AC0001 /* Card.swift */; };
+		AC0000062A00000100AC0001 /* CardRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0000052A00000100AC0001 /* CardRepository.swift */; };
+		AC0000082A00000100AC0001 /* CardSetViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0000072A00000100AC0001 /* CardSetViewModel.swift */; };
+		AC00000A2A00000100AC0001 /* CardListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0000092A00000100AC0001 /* CardListViewModel.swift */; };
+		AC00000C2A00000100AC0001 /* CardListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC00000B2A00000100AC0001 /* CardListViewController.swift */; };
+		AC00000E2A00000100AC0001 /* UIViewController+KeyboardDismiss.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC00000D2A00000100AC0001 /* UIViewController+KeyboardDismiss.swift */; };
+		AD0000022A00000100AD0001 /* CardRepositoryStub.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD0000012A00000100AD0001 /* CardRepositoryStub.swift */; };
+		AD0000042A00000100AD0001 /* CardSetViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD0000032A00000100AD0001 /* CardSetViewModelTests.swift */; };
+		AD0000062A00000100AD0001 /* CardListViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD0000052A00000100AD0001 /* CardListViewModelTests.swift */; };
+		AD0000082A00000100AD0001 /* FileCardRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD0000072A00000100AD0001 /* FileCardRepositoryTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -38,11 +48,21 @@
 		CFF54DA82A1A306800CEB598 /* List.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = List.swift; sourceTree = "<group>"; };
 		CFF54DAA2A1A52BD00CEB598 /* DetailViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailViewController.swift; sourceTree = "<group>"; };
 		CFF54DAC2A1A8F2000CEB598 /* CardSetViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardSetViewController.swift; sourceTree = "<group>"; };
-		CFF54DAE2A24C7B600CEB598 /* EditCardsTableViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditCardsTableViewController.swift; sourceTree = "<group>"; };
 		CFF54DB02A39FD2C00CEB598 /* ExchangeRate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExchangeRate.swift; sourceTree = "<group>"; };
 		AB0000012A00000100AB0001 /* japanShoppingTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = japanShoppingTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AB0000022A00000100AB0001 /* PersistenceFormatTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceFormatTests.swift; sourceTree = "<group>"; };
 		AB0000032A00000100AB0001 /* ExchangeRateDecodingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExchangeRateDecodingTests.swift; sourceTree = "<group>"; };
+		AC0000012A00000100AC0001 /* DocumentsDirectory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DocumentsDirectory.swift"; sourceTree = "<group>"; };
+		AC0000032A00000100AC0001 /* Card.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Card.swift"; sourceTree = "<group>"; };
+		AC0000052A00000100AC0001 /* CardRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CardRepository.swift"; sourceTree = "<group>"; };
+		AC0000072A00000100AC0001 /* CardSetViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CardSetViewModel.swift"; sourceTree = "<group>"; };
+		AC0000092A00000100AC0001 /* CardListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CardListViewModel.swift"; sourceTree = "<group>"; };
+		AC00000B2A00000100AC0001 /* CardListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CardListViewController.swift"; sourceTree = "<group>"; };
+		AC00000D2A00000100AC0001 /* UIViewController+KeyboardDismiss.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIViewController+KeyboardDismiss.swift"; sourceTree = "<group>"; };
+		AD0000012A00000100AD0001 /* CardRepositoryStub.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardRepositoryStub.swift; sourceTree = "<group>"; };
+		AD0000032A00000100AD0001 /* CardSetViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardSetViewModelTests.swift; sourceTree = "<group>"; };
+		AD0000052A00000100AD0001 /* CardListViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardListViewModelTests.swift; sourceTree = "<group>"; };
+		AD0000072A00000100AD0001 /* FileCardRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileCardRepositoryTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -66,7 +86,6 @@
 		CFF54D822A1A179800CEB598 = {
 			isa = PBXGroup;
 			children = (
-				CFF54DAE2A24C7B600CEB598 /* EditCardsTableViewController.swift */,
 				CFF54DAC2A1A8F2000CEB598 /* CardSetViewController.swift */,
 				CFF54DAA2A1A52BD00CEB598 /* DetailViewController.swift */,
 				CFF54DA82A1A306800CEB598 /* List.swift */,
@@ -74,6 +93,13 @@
 				CFF54DA42A1A2F9E00CEB598 /* ListViewController.swift */,
 				CFF54DA22A1A17E100CEB598 /* ComputeViewController.swift */,
 				CFF54DB02A39FD2C00CEB598 /* ExchangeRate.swift */,
+				AC0000012A00000100AC0001 /* DocumentsDirectory.swift */,
+				AC0000032A00000100AC0001 /* Card.swift */,
+				AC0000052A00000100AC0001 /* CardRepository.swift */,
+				AC0000072A00000100AC0001 /* CardSetViewModel.swift */,
+				AC0000092A00000100AC0001 /* CardListViewModel.swift */,
+				AC00000B2A00000100AC0001 /* CardListViewController.swift */,
+				AC00000D2A00000100AC0001 /* UIViewController+KeyboardDismiss.swift */,
 				CFF54D8D2A1A179800CEB598 /* japanShopping */,
 				AB0000062A00000100AB0001 /* japanShoppingTests */,
 				CFF54D8C2A1A179800CEB598 /* Products */,
@@ -107,6 +133,10 @@
 			children = (
 				AB0000022A00000100AB0001 /* PersistenceFormatTests.swift */,
 				AB0000032A00000100AB0001 /* ExchangeRateDecodingTests.swift */,
+				AD0000012A00000100AD0001 /* CardRepositoryStub.swift */,
+				AD0000032A00000100AD0001 /* CardSetViewModelTests.swift */,
+				AD0000052A00000100AD0001 /* CardListViewModelTests.swift */,
+				AD0000072A00000100AD0001 /* FileCardRepositoryTests.swift */,
 			);
 			path = japanShoppingTests;
 			sourceTree = "<group>";
@@ -223,7 +253,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				CFF54D8F2A1A179800CEB598 /* AppDelegate.swift in Sources */,
-				CFF54DAF2A24C7B600CEB598 /* EditCardsTableViewController.swift in Sources */,
+				AC0000022A00000100AC0001 /* DocumentsDirectory.swift in Sources */,
+				AC0000042A00000100AC0001 /* Card.swift in Sources */,
+				AC0000062A00000100AC0001 /* CardRepository.swift in Sources */,
+				AC0000082A00000100AC0001 /* CardSetViewModel.swift in Sources */,
+				AC00000A2A00000100AC0001 /* CardListViewModel.swift in Sources */,
+				AC00000C2A00000100AC0001 /* CardListViewController.swift in Sources */,
+				AC00000E2A00000100AC0001 /* UIViewController+KeyboardDismiss.swift in Sources */,
 				CFF54DA32A1A17E100CEB598 /* ComputeViewController.swift in Sources */,
 				CFF54DA52A1A2F9E00CEB598 /* ListViewController.swift in Sources */,
 				CFF54DAD2A1A8F2000CEB598 /* CardSetViewController.swift in Sources */,
@@ -241,6 +277,10 @@
 			files = (
 				AB0000042A00000100AB0001 /* PersistenceFormatTests.swift in Sources */,
 				AB0000052A00000100AB0001 /* ExchangeRateDecodingTests.swift in Sources */,
+				AD0000022A00000100AD0001 /* CardRepositoryStub.swift in Sources */,
+				AD0000042A00000100AD0001 /* CardSetViewModelTests.swift in Sources */,
+				AD0000062A00000100AD0001 /* CardListViewModelTests.swift in Sources */,
+				AD0000082A00000100AD0001 /* FileCardRepositoryTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

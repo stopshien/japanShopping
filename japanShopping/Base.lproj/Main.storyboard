@@ -128,73 +128,6 @@
             <point key="canvasLocation" x="1556.521739130435" y="75.669642857142847"/>
         </scene>
         <!--Edit Cards Table View Controller-->
-        <scene sceneID="Uv9-93-WNJ">
-            <objects>
-                <tableViewController storyboardIdentifier="EditCardsTableViewController" id="ikG-gp-NTu" customClass="EditCardsTableViewController" customModule="japanShopping" customModuleProvider="target" sceneMemberID="viewController">
-                    <tableView key="view" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="-1" estimatedSectionFooterHeight="-1" id="9Lg-Bt-7QK">
-                        <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
-                        <color key="sectionIndexBackgroundColor" red="0.75673833049999994" green="0.78921551700000003" blue="0.56458074999999996" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
-                        <view key="tableFooterView" contentMode="scaleToFill" id="aaJ-6R-dFs">
-                            <rect key="frame" x="0.0" y="197" width="414" height="44"/>
-                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                            <subviews>
-                                <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="V2O-Pc-xBV">
-                                    <rect key="frame" x="161" y="0.0" width="94" height="35"/>
-                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                    <state key="normal" title="Button"/>
-                                    <buttonConfiguration key="configuration" style="plain" title="編輯完成">
-                                        <backgroundConfiguration key="background" strokeWidth="3">
-                                            <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                            <color key="strokeColor" white="0.66666666669999997" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                        </backgroundConfiguration>
-                                    </buttonConfiguration>
-                                    <connections>
-                                        <action selector="editFinishButton:" destination="ikG-gp-NTu" eventType="touchUpInside" id="RVX-GA-oZn"/>
-                                        <segue destination="QEy-6L-tS0" kind="unwind" unwindAction="unwindToCardVSetViewController:" id="rRE-eY-xrq"/>
-                                    </connections>
-                                </button>
-                            </subviews>
-                            <color key="backgroundColor" systemColor="systemBackgroundColor"/>
-                        </view>
-                        <prototypes>
-                            <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="default" indentationWidth="10" reuseIdentifier="editCardsCell" textLabel="SUL-4W-W9Q" detailTextLabel="hcq-BZ-sSP" rowHeight="119" style="IBUITableViewCellStyleSubtitle" id="FbG-l9-ITB">
-                                <rect key="frame" x="0.0" y="50" width="414" height="119"/>
-                                <autoresizingMask key="autoresizingMask"/>
-                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" preservesSuperviewLayoutMargins="YES" insetsLayoutMarginsFromSafeArea="NO" tableViewCell="FbG-l9-ITB" id="dZh-Xa-gIS">
-                                    <rect key="frame" x="0.0" y="0.0" width="414" height="119"/>
-                                    <autoresizingMask key="autoresizingMask"/>
-                                    <subviews>
-                                        <label opaque="NO" multipleTouchEnabled="YES" contentMode="left" insetsLayoutMarginsFromSafeArea="NO" text="Title" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="SUL-4W-W9Q">
-                                            <rect key="frame" x="20" y="43" width="27" height="14.5"/>
-                                            <autoresizingMask key="autoresizingMask"/>
-                                            <fontDescription key="fontDescription" type="boldSystem" pointSize="0.0"/>
-                                            <color key="textColor" red="0.75673833049999994" green="0.78921551700000003" blue="0.56458074999999996" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
-                                            <nil key="highlightedColor"/>
-                                        </label>
-                                        <label opaque="NO" multipleTouchEnabled="YES" contentMode="left" insetsLayoutMarginsFromSafeArea="NO" text="Subtitle" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="hcq-BZ-sSP">
-                                            <rect key="frame" x="20" y="59.5" width="48" height="14.5"/>
-                                            <autoresizingMask key="autoresizingMask"/>
-                                            <fontDescription key="fontDescription" type="boldSystem" pointSize="0.0"/>
-                                            <color key="textColor" red="0.75673833049999994" green="0.78921551700000003" blue="0.56458074999999996" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
-                                            <nil key="highlightedColor"/>
-                                        </label>
-                                    </subviews>
-                                </tableViewCellContentView>
-                            </tableViewCell>
-                        </prototypes>
-                        <connections>
-                            <outlet property="dataSource" destination="ikG-gp-NTu" id="eWp-6D-rLu"/>
-                            <outlet property="delegate" destination="ikG-gp-NTu" id="c5C-m5-IMY"/>
-                        </connections>
-                    </tableView>
-                </tableViewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="rCh-2R-Zn5" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
-                <exit id="QEy-6L-tS0" userLabel="Exit" sceneMemberID="exit"/>
-            </objects>
-            <point key="canvasLocation" x="1537.68115942029" y="-590.625"/>
-        </scene>
         <!--Detail View Controller-->
         <scene sceneID="p1g-m4-O68">
             <objects>
@@ -334,61 +267,6 @@
             <point key="canvasLocation" x="2447.826086956522" y="75.669642857142847"/>
         </scene>
         <!--Card Set View Controller-->
-        <scene sceneID="xAZ-DZ-IwL">
-            <objects>
-                <viewController storyboardIdentifier="CardSetViewController" id="FGZ-aZ-XUS" customClass="CardSetViewController" customModule="japanShopping" customModuleProvider="target" sceneMemberID="viewController">
-                    <view key="view" contentMode="scaleToFill" id="FHc-cx-GzX">
-                        <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <subviews>
-                            <textField opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="248" fixedFrame="YES" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="信用卡名稱" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="L8N-FW-3ah">
-                                <rect key="frame" x="72" y="245" width="261" height="34"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                <fontDescription key="fontDescription" type="system" pointSize="14"/>
-                                <textInputTraits key="textInputTraits"/>
-                            </textField>
-                            <textField opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="248" fixedFrame="YES" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="海外回饋％數" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="V9R-IL-NHc">
-                                <rect key="frame" x="72" y="333" width="261" height="34"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                <fontDescription key="fontDescription" type="system" pointSize="14"/>
-                                <textInputTraits key="textInputTraits"/>
-                            </textField>
-                            <textField opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="248" fixedFrame="YES" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="回饋上限" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="07c-0m-OQj">
-                                <rect key="frame" x="72" y="431" width="261" height="34"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                <fontDescription key="fontDescription" type="system" pointSize="14"/>
-                                <textInputTraits key="textInputTraits"/>
-                            </textField>
-                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Nm3-Mc-i6f">
-                                <rect key="frame" x="126" y="610" width="153" height="35"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                <state key="normal" title="Button"/>
-                                <buttonConfiguration key="configuration" style="plain" title="新增信用卡">
-                                    <backgroundConfiguration key="background" strokeWidth="3">
-                                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                        <color key="strokeColor" white="0.66666666669999997" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                    </backgroundConfiguration>
-                                </buttonConfiguration>
-                                <connections>
-                                    <action selector="addNewCardButton:" destination="FGZ-aZ-XUS" eventType="touchUpInside" id="4Cl-4i-JxI"/>
-                                    <segue destination="t8W-u4-mD0" kind="unwind" unwindAction="unwindToCardVSetViewController:" id="dPM-34-ZPi"/>
-                                </connections>
-                            </button>
-                        </subviews>
-                        <viewLayoutGuide key="safeArea" id="cy5-hC-NzH"/>
-                        <color key="backgroundColor" red="0.75673833049999994" green="0.78921551700000003" blue="0.56458074999999996" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
-                    </view>
-                    <connections>
-                        <outlet property="cardNameTextField" destination="L8N-FW-3ah" id="EEa-vq-hNl"/>
-                        <outlet property="limitTextField" destination="07c-0m-OQj" id="8SN-1o-or8"/>
-                        <outlet property="moneyBackTextField" destination="V9R-IL-NHc" id="rhy-ja-YaK"/>
-                    </connections>
-                </viewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="cN0-G1-o8Z" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
-                <exit id="t8W-u4-mD0" userLabel="Exit" sceneMemberID="exit"/>
-            </objects>
-            <point key="canvasLocation" x="1537.68115942029" y="752.67857142857144"/>
-        </scene>
         <!--List View Controller-->
         <scene sceneID="gVP-t9-kDM">
             <objects>

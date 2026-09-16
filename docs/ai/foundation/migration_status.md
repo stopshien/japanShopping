@@ -20,24 +20,32 @@ This file exists so agents can tell the difference between "code that violates t
 
 ## Current State
 
-Migrated screens: none yet.
+Migrated screens:
+- `CardSetViewController` + `CardSetViewModel` — programmatic UI, validates input, writes through `CardRepository`
+- `CardListViewController` + `CardListViewModel` — replaces `EditCardsTableViewController`
 
 Legacy, not yet migrated:
 - `ComputeViewController` — rate fetch, tax arithmetic, and navigation all inline
 - `DetailViewController` — holds `lists`, `cards`, `numberOfCards`; owns feedback calculation and image writing
 - `ListViewController` — owns total-spend calculation and save timing
-- `CardSetViewController` — builds a `Card` directly from text fields
-- `EditCardsTableViewController` — mutates a copy of `cards` handed to it by its parent
 
 Migrated infrastructure:
 - `japanShoppingTests` unit test target exists, hosted by the app, with a shared scheme at `japanShopping.xcodeproj/xcshareddata/xcschemes/japanShopping.xcscheme`
 - `PersistenceFormatTests` locks the on-disk property-list format of `List` and `Card`
 - `ExchangeRateDecodingTests` locks the exchange-rate API response shape and the JPY→TWD derivation
 
+- `Card` is a plain `Codable` type in `Card.swift`; persistence lives in `CardRepository`
+- `DocumentsDirectory` is the single place that resolves the Documents directory
+- `UIViewController.addTapToDismissKeyboard()` is the shared keyboard-dismiss helper
+
 Legacy infrastructure:
-- `Main.storyboard` holds every scene
-- `List` and `Card` carry their own static save/read methods
+- `Main.storyboard` still holds the Compute, Detail, and List scenes
+- `List` still carries its own static save/read methods
 - The exchange-rate API key is hard-coded in source
+
+### Bridging while the migration is in progress
+
+`DetailViewController` is still legacy but already drives the two migrated screens. It holds a `FileCardRepository`, constructs the child ViewModels, and refreshes itself through the child's `onFinish` closure. This replaced the `unwindToCardVSetViewController(_:)` unwind segue, which is gone. When `DetailViewController` is migrated, the repository becomes an injected dependency and `onFinish` becomes a route output.
 
 ## Known Behavior To Preserve
 
@@ -47,6 +55,15 @@ Carry these forward deliberately during migration; do not drop them by accident.
 - The card feedback calculation subtracts 1.5 from the card percentage before applying it.
 - Tax conversion uses a 1.08 multiplier, applied in both directions depending on the selected segment.
 - `DetailViewController` currently decides pay type by checking whether the card button is hidden, because comparing `payType` against the string `"信用卡"` did not work. Find the real cause during migration rather than reproducing the workaround.
+- A new card's `feedbackRemaining` starts equal to its `limit`, and `feedbackMoney` starts at 0. Locked by `CardSetViewModelTests`.
+- Deleting a card in the card list is only persisted when the user taps 編輯完成. Leaving with the back button discards the deletions. Locked by `CardListViewModelTests`.
+
+## Intentional Behavior Changes
+
+Each entry is a place where migrated behavior deliberately differs from the legacy screen.
+
+- **Card setup rejects non-numeric input instead of crashing.** The legacy `CardSetViewController` used `Double(moneyBack)!` and `Double(limit)!`, so entering anything non-numeric crashed the app. `CardSetViewModel` now reports a validation message instead. Reproducing a crash was not a defensible reading of "behavior must be identical".
+- **Returning from a card screen resets the selected card.** `reloadCards()` sets `numberOfCards = -1`. The legacy unwind kept the old index, which could point past the end of the array after a deletion and trap in `saveToListButton`.
 
 ## Update Discipline
 - Move a screen from the legacy list to the migrated list in the same commit that migrates it.
