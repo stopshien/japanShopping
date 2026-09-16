@@ -49,21 +49,21 @@ Migrated infrastructure:
 - `PayMethod` models the payment choice, replacing the overloaded `payType` string
 - `ExchangeRateService` wraps the rate API; `TaxMode` and `PriceBreakdown` own the tax arithmetic
 - `Main.storyboard` is deleted. `SceneDelegate` builds the window and the root navigation controller in code
+- `AppScreenFactory` is the composition root: it owns the concrete services and builds every screen. `SceneDelegate` creates it once and screens receive it as an injected `ScreenFactory`
 - The exchange-rate API key moved out of Swift source into the `EXCHANGE_RATE_API_KEY` build setting, surfaced through `Info.plist`
 
 Remaining debt:
 - **The API key is still not a secret.** It ships inside the app bundle and it is still present in this repository's git history. Moving it to a build setting only made it configurable. Rotating the key and proxying the request through a backend is the only real fix.
-- `LegacyScreenFactory` still exists as `UIViewController` extensions. Now that every screen is migrated, each screen could construct the next ViewModel directly and the file could be deleted.
 - `PriceText` still renders `206.0`. Changing it to `206` is now a one-line change in one place.
 - The unimplemented wish in the old `ComputeViewController` header comment — clearing the screen after tapping Done in the list — was never built and is still not built.
 
-### Bridging while the migration is in progress
+### Screen composition
 
-`ComputeViewController` is the last legacy screen. It builds the detail and shopping list screens through `UIViewController.makeDetailViewController(item:)` and `makeShoppingListViewController()` in `LegacyScreenFactory.swift`, because it cannot construct a ViewModel of its own yet.
+There is no bridging left. A ViewModel emits a route, its ViewController asks the injected `ScreenFactory` for the next screen, and pushes it.
 
-`DetailViewModel` emits `DetailRoute` values and `DetailViewController` performs the navigation, including handing the card screens an `onFinish` closure that calls back into `reloadCards()`.
+Only `ComputeViewController` and `DetailViewController` take a `ScreenFactory`, because they are the only screens that navigate onward. `AppScreenFactory` attaches the card screens' `onFinish` closure at construction time, so `DetailViewController` passes a callback rather than reaching into the controller it just built.
 
-When `ComputeViewController` is migrated, `LegacyScreenFactory` is deleted and each screen constructs the next one's ViewModel directly.
+Concrete services (`FileCardRepository`, `FileShoppingListRepository`, `FileImageStore`, `RemoteExchangeRateService`) are named in exactly one place: `AppScreenFactory`'s default initializer arguments.
 
 ## Known Behavior To Preserve
 

@@ -16,11 +16,11 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         guard let windowScene = scene as? UIWindowScene else { return }
 
         // 所有畫面都已改為程式碼建立，Main.storyboard 已移除。
-        let viewModel = ComputeViewModel(service: RemoteExchangeRateService())
-        let rootViewController = ComputeViewController(viewModel: viewModel)
+        // AppScreenFactory 是整個 App 的組裝根，各畫面只透過 ScreenFactory 取得下一個畫面。
+        let factory = AppScreenFactory()
 
         let window = UIWindow(windowScene: windowScene)
-        window.rootViewController = UINavigationController(rootViewController: rootViewController)
+        window.rootViewController = UINavigationController(rootViewController: factory.makeCompute())
         window.makeKeyAndVisible()
         self.window = window
     }

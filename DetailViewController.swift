@@ -19,6 +19,7 @@ final class DetailViewController: UIViewController {
     }
 
     private let viewModel: DetailViewModelType
+    private let factory: ScreenFactory
     private var cancellables = Set<AnyCancellable>()
 
     // MARK: - Views
@@ -100,8 +101,9 @@ final class DetailViewController: UIViewController {
 
     // MARK: - Init
 
-    init(viewModel: DetailViewModelType) {
+    init(viewModel: DetailViewModelType, factory: ScreenFactory) {
         self.viewModel = viewModel
+        self.factory = factory
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -223,21 +225,19 @@ final class DetailViewController: UIViewController {
     private func navigate(to route: DetailRoute) {
         switch route {
         case .addCard:
-            let controller = makeCardSetViewController()
-            controller.onFinish = { [weak self] in
+            let controller = factory.makeCardSet { [weak self] in
                 self?.viewModel.input.reloadCards()
             }
             navigationController?.pushViewController(controller, animated: true)
 
         case .editCards:
-            let controller = makeCardListViewController()
-            controller.onFinish = { [weak self] in
+            let controller = factory.makeCardList { [weak self] in
                 self?.viewModel.input.reloadCards()
             }
             navigationController?.pushViewController(controller, animated: true)
 
         case .shoppingList:
-            navigationController?.pushViewController(makeShoppingListViewController(), animated: true)
+            navigationController?.pushViewController(factory.makeShoppingList(), animated: true)
         }
     }
 

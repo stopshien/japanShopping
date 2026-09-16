@@ -41,12 +41,12 @@
 		AF0000062A00000100AF0001 /* FileShoppingListRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0000052A00000100AF0001 /* FileShoppingListRepositoryTests.swift */; };
 		AF0000082A00000100AF0001 /* FileImageStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0000072A00000100AF0001 /* FileImageStoreTests.swift */; };
 		BA0000022A00000100BA0001 /* DetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000012A00000100BA0001 /* DetailViewModel.swift */; };
-		BA0000042A00000100BA0001 /* LegacyScreenFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000032A00000100BA0001 /* LegacyScreenFactory.swift */; };
 		BB0000022A00000100BB0001 /* DetailViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000012A00000100BB0001 /* DetailViewModelTests.swift */; };
 		BC0000022A00000100BC0001 /* ExchangeRateService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC0000012A00000100BC0001 /* ExchangeRateService.swift */; };
 		BC0000042A00000100BC0001 /* TaxMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC0000032A00000100BC0001 /* TaxMode.swift */; };
 		BC0000062A00000100BC0001 /* ComputeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC0000052A00000100BC0001 /* ComputeViewModel.swift */; };
 		BD0000022A00000100BD0001 /* ComputeViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD0000012A00000100BD0001 /* ComputeViewModelTests.swift */; };
+		BE0000022A00000100BE0001 /* ScreenFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE0000012A00000100BE0001 /* ScreenFactory.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -87,12 +87,12 @@
 		AF0000052A00000100AF0001 /* FileShoppingListRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileShoppingListRepositoryTests.swift; sourceTree = "<group>"; };
 		AF0000072A00000100AF0001 /* FileImageStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileImageStoreTests.swift; sourceTree = "<group>"; };
 		BA0000012A00000100BA0001 /* DetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailViewModel.swift; sourceTree = "<group>"; };
-		BA0000032A00000100BA0001 /* LegacyScreenFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacyScreenFactory.swift; sourceTree = "<group>"; };
 		BB0000012A00000100BB0001 /* DetailViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailViewModelTests.swift; sourceTree = "<group>"; };
 		BC0000012A00000100BC0001 /* ExchangeRateService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExchangeRateService.swift; sourceTree = "<group>"; };
 		BC0000032A00000100BC0001 /* TaxMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaxMode.swift; sourceTree = "<group>"; };
 		BC0000052A00000100BC0001 /* ComputeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComputeViewModel.swift; sourceTree = "<group>"; };
 		BD0000012A00000100BD0001 /* ComputeViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComputeViewModelTests.swift; sourceTree = "<group>"; };
+		BE0000012A00000100BE0001 /* ScreenFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenFactory.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -136,10 +136,10 @@
 				AE00000D2A00000100AE0001 /* ShoppingListViewController.swift */,
 				AE00000F2A00000100AE0001 /* ShoppingListCell.swift */,
 				BA0000012A00000100BA0001 /* DetailViewModel.swift */,
-				BA0000032A00000100BA0001 /* LegacyScreenFactory.swift */,
 				BC0000012A00000100BC0001 /* ExchangeRateService.swift */,
 				BC0000032A00000100BC0001 /* TaxMode.swift */,
 				BC0000052A00000100BC0001 /* ComputeViewModel.swift */,
+				BE0000012A00000100BE0001 /* ScreenFactory.swift */,
 				CFF54D8D2A1A179800CEB598 /* japanShopping */,
 				AB0000062A00000100AB0001 /* japanShoppingTests */,
 				CFF54D8C2A1A179800CEB598 /* Products */,
@@ -297,11 +297,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				CFF54D8F2A1A179800CEB598 /* AppDelegate.swift in Sources */,
+				BE0000022A00000100BE0001 /* ScreenFactory.swift in Sources */,
 				BC0000022A00000100BC0001 /* ExchangeRateService.swift in Sources */,
 				BC0000042A00000100BC0001 /* TaxMode.swift in Sources */,
 				BC0000062A00000100BC0001 /* ComputeViewModel.swift in Sources */,
 				BA0000022A00000100BA0001 /* DetailViewModel.swift in Sources */,
-				BA0000042A00000100BA0001 /* LegacyScreenFactory.swift in Sources */,
 				AE0000022A00000100AE0001 /* AppColor.swift in Sources */,
 				AE0000042A00000100AE0001 /* ShoppingItem.swift in Sources */,
 				AE0000062A00000100AE0001 /* ShoppingListRepository.swift in Sources */,

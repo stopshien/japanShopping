@@ -17,6 +17,7 @@ final class ComputeViewController: UIViewController {
     }
 
     private let viewModel: ComputeViewModelType
+    private let factory: ScreenFactory
     private var cancellables = Set<AnyCancellable>()
 
     // MARK: - Views
@@ -82,8 +83,9 @@ final class ComputeViewController: UIViewController {
 
     // MARK: - Init
 
-    init(viewModel: ComputeViewModelType) {
+    init(viewModel: ComputeViewModelType, factory: ScreenFactory) {
         self.viewModel = viewModel
+        self.factory = factory
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -188,9 +190,9 @@ final class ComputeViewController: UIViewController {
     private func navigate(to route: ComputeRoute) {
         switch route {
         case .detail(let item):
-            navigationController?.pushViewController(makeDetailViewController(item: item), animated: true)
+            navigationController?.pushViewController(factory.makeDetail(item: item), animated: true)
         case .shoppingList:
-            navigationController?.pushViewController(makeShoppingListViewController(), animated: true)
+            navigationController?.pushViewController(factory.makeShoppingList(), animated: true)
         }
     }
 
