@@ -11,7 +11,7 @@ Each entry names the test that locks it. If a change makes one of these tests fa
 - **Deleting is only persisted on an explicit confirm.** Card list deletions save on 編輯完成; shopping list deletions save on Done. Leaving with the back button discards them, so a mis-tapped delete can be abandoned. `CardListViewModelTests`, `ShoppingListViewModelTests`.
 - **The shopping list total is recalculated from scratch after every deletion**, never accumulated. `ShoppingListViewModelTests`.
 - **Deleting a shopping list row deletes its photo file**, but only after the list has been saved successfully, so a failed save never destroys an image. `ShoppingListViewModelTests`.
-- **The card feedback calculation subtracts 1.5 from the card percentage** before applying it: `(percent - 1.5) * price * 0.01`. `DetailViewModelTests`.
+- **The card feedback calculation subtracts 1.5 from the card percentage** before applying it: `(percent - 1.5) * price * 0.01`. Both the feedback amount and the remaining limit are rounded to cents before being stored, otherwise floating point error accumulates across purchases. `DetailViewModelTests`.
 - **A new card's `feedbackRemaining` starts equal to its `limit`**, and `feedbackMoney` starts at 0. `CardSetViewModelTests`.
 - **Tax conversion uses a 1.08 multiplier**, applied in both directions depending on the selected segment. `TaxMode.taxMultiplier`, `PriceBreakdownTests`.
 - **The exchange rate is derived as TWD / JPY** and rounded to four decimal places. `ExchangeRateDecodingTests`.

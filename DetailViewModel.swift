@@ -134,13 +134,19 @@ final class DetailViewModel: DetailViewModelType {
     }
 
     private func feedbackMoney(for card: Card) -> Double {
-        (card.percent - Constants.baseFeedbackPercent) * item.price * 0.01
+        Self.roundedToCents((card.percent - Constants.baseFeedbackPercent) * item.price * 0.01)
     }
 
     private func persistSelectedCardFeedback() {
         guard let index = payMethod.selectedCardIndex, cards.indices.contains(index) else { return }
-        cards[index].feedbackRemaining = cards[index].limit - cards[index].feedbackMoney
+        cards[index].feedbackRemaining = Self.roundedToCents(cards[index].limit - cards[index].feedbackMoney)
         try? cardRepository.save(cards)
+    }
+
+    /// 回饋金額是浮點相乘相減的結果，不取到分位就會存進
+    /// 999.3629999999999 這種值，並在每次消費後持續累積誤差。
+    private static func roundedToCents(_ value: Double) -> Double {
+        (value * 100).rounded() / 100
     }
 }
 

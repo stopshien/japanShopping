@@ -155,6 +155,26 @@ final class DetailViewModelTests: XCTestCase {
         XCTAssertEqual(cardRepository.storedCards.first?.feedbackMoney, 20)
     }
 
+    /// 0.1% * 637 元會算出 0.6370000000000006，不取到分位就會存進檔案並持續累積。
+    func testFeedbackIsRoundedToCents() {
+        cardRepository.storedCards = [Card(name: "C卡", percent: 1.6, limit: 1000, feedbackRemaining: 1000)]
+        viewModel = DetailViewModel(
+            item: ShoppingItem(productName: "", price: 637, payType: "", taxState: "未稅"),
+            cardRepository: cardRepository,
+            shoppingListRepository: listRepository,
+            imageStore: imageStore
+        )
+
+        viewModel.input.viewDidLoad()
+        viewModel.input.payMethodSelected(row: 1)
+        viewModel.input.cardSelected(at: 0)
+        viewModel.input.productNameChanged("抹茶")
+        viewModel.input.saveTapped()
+
+        XCTAssertEqual(cardRepository.storedCards.first?.feedbackMoney, 0.64)
+        XCTAssertEqual(cardRepository.storedCards.first?.feedbackRemaining, 999.36)
+    }
+
     func testCashPurchaseDoesNotTouchCards() {
         viewModel.input.viewDidLoad()
         viewModel.input.payMethodSelected(row: 0)
