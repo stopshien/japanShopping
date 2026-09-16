@@ -53,7 +53,7 @@ final class DetailViewModelTests: XCTestCase {
 
         viewModel.input.viewDidLoad()
 
-        XCTAssertEqual(text, "價格：1000.0$ (未稅)")
+        XCTAssertEqual(text, "價格：1000$ (未稅)")
     }
 
     func testCardSectionIsHiddenInitially() {
@@ -140,7 +140,7 @@ final class DetailViewModelTests: XCTestCase {
         viewModel.input.payMethodSelected(row: 1)
         viewModel.input.cardSelected(at: 0)
 
-        XCTAssertEqual(title, "A卡卡 剩餘5000.0元")
+        XCTAssertEqual(title, "A卡卡 剩餘5000元")
     }
 
     func testSavingUpdatesRemainingFeedbackOnTheSelectedCard() {

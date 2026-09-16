@@ -23,7 +23,7 @@ Each entry names the test that locks it. If a change makes one of these tests fa
 
 - **`PayMethod` is separate from `ShoppingItem.payType`.** The original code kept only the `payType` string, and selecting a card overwrote it with the **card's name** — so `payType == "信用卡"` was never true once a card was chosen, and the code worked around it by inspecting whether the card button was hidden. `PayMethod` models the choice; `payType` is only the value that gets persisted. `DetailViewModelTests` locks both.
 - **`ComputeViewModel` keeps `.receive(on: DispatchQueue.main)` even though it makes tests asynchronous.** Removing it would let the rate be written from the URLSession background thread while the main thread reads it. The tests wait for the main queue instead.
-- **`PriceText` exists for a one-line change.** Every money string in the app goes through it, so the display format can be changed in one place.
+- **`PriceText` is the only place money is formatted.** It shows 0 to 2 decimal places with no grouping separator and a fixed `en_US_POSIX` locale, so output does not change with device settings. Every money string in the app goes through it.
 
 ## Deliberate Departures From The Original App
 
@@ -40,7 +40,6 @@ Each entry is behavior that intentionally differs from the Storyboard/MVC versio
 ## Open Debt
 
 - **The exchange-rate API key is not a secret.** It moved out of Swift source into the `EXCHANGE_RATE_API_KEY` build setting, surfaced through `Info.plist`, which only made it configurable. It still ships inside the app bundle and is still present in this repository's git history. Rotating the key and proxying the request through a backend is the only real fix.
-- **`PriceText` renders `206.0` rather than `206`.** Changing it is a one-line change in one place, but whether to show the decimal is a product decision.
 - **Clearing the entry screen after tapping Done in the list** was a wish in the original code's header comment. It was never built.
 
 ## Update Discipline

@@ -45,7 +45,7 @@ final class ShoppingListViewModelTests: XCTestCase {
 
         XCTAssertEqual(items.count, 2)
         XCTAssertEqual(items.first?.productName, "抹茶")
-        XCTAssertEqual(items.first?.priceDescription, "100.0$(含稅)")
+        XCTAssertEqual(items.first?.priceDescription, "100$(含稅)")
         XCTAssertEqual(items.first?.payType, "現金")
     }
 
@@ -79,7 +79,7 @@ final class ShoppingListViewModelTests: XCTestCase {
 
         viewModel.input.viewDidLoad()
 
-        XCTAssertEqual(text, "你已經花了350.0$")
+        XCTAssertEqual(text, "你已經花了350$")
     }
 
     func testTotalSpendTextIsRecalculatedAfterDeletion() {
@@ -89,7 +89,7 @@ final class ShoppingListViewModelTests: XCTestCase {
         viewModel.input.viewDidLoad()
         viewModel.input.deleteItem(at: 0)
 
-        XCTAssertEqual(text, "你已經花了250.0$", "刪除後要重算，不能累加")
+        XCTAssertEqual(text, "你已經花了250$", "刪除後要重算，不能累加")
     }
 
     func testTotalSpendTextIsZeroWhenEveryItemIsDeleted() {
@@ -100,7 +100,7 @@ final class ShoppingListViewModelTests: XCTestCase {
         viewModel.input.deleteItem(at: 0)
         viewModel.input.deleteItem(at: 0)
 
-        XCTAssertEqual(text, "你已經花了0.0$")
+        XCTAssertEqual(text, "你已經花了0$")
     }
 
     /// 遷移前這裡是 for i in 0...lists.count-1，空陣列會直接崩潰。
@@ -111,7 +111,7 @@ final class ShoppingListViewModelTests: XCTestCase {
 
         viewModel.input.viewDidLoad()
 
-        XCTAssertEqual(text, "你已經花了0.0$")
+        XCTAssertEqual(text, "你已經花了0$")
     }
 
     // MARK: - 刪除與存檔時機

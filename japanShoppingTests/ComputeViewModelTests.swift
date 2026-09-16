@@ -101,7 +101,7 @@ final class ComputeViewModelTests: XCTestCase {
         viewModel.input.computeTapped()
 
         // 1000 * 0.2 = 200，含稅 200 * 1.08 = 216
-        XCTAssertEqual(text, "台幣 \n未稅：200.0\n含稅：216.0")
+        XCTAssertEqual(text, "台幣 \n未稅：200\n含稅：216")
     }
 
     func testComputingFromATaxedPrice() {
@@ -115,7 +115,7 @@ final class ComputeViewModelTests: XCTestCase {
         viewModel.input.computeTapped()
 
         // 1080 * 0.2 = 216（含稅），未稅 216 / 1.08 = 200
-        XCTAssertEqual(text, "台幣 \n未稅：200.0\n含稅：216.0")
+        XCTAssertEqual(text, "台幣 \n未稅：200\n含稅：216")
     }
 
     func testNonNumericInputLeavesThePlaceholder() {

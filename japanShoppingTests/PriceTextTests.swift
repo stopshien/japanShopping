@@ -1,0 +1,40 @@
+//
+//  PriceTextTests.swift
+//  japanShoppingTests
+//
+
+import XCTest
+@testable import japanShopping
+
+final class PriceTextTests: XCTestCase {
+
+    func testWholeAmountsHaveNoDecimalPoint() {
+        XCTAssertEqual(PriceText.amount(206), "206")
+        XCTAssertEqual(PriceText.amount(0), "0")
+        XCTAssertEqual(PriceText.amount(1580), "1580")
+    }
+
+    func testRealCentsAreKept() {
+        XCTAssertEqual(PriceText.amount(4995.88), "4995.88")
+        XCTAssertEqual(PriceText.amount(2992.1), "2992.1")
+    }
+
+    /// 信用卡剩餘額度是浮點相減的結果，可能帶出一長串尾數。
+    func testFloatingPointTailIsTrimmed() {
+        XCTAssertEqual(PriceText.amount(999.3629999999999), "999.36")
+        XCTAssertEqual(PriceText.amount(1008.4879999999999), "1008.49")
+    }
+
+    func testThirdDecimalPlaceIsRoundedAway() {
+        XCTAssertEqual(PriceText.amount(1988.345), "1988.35")
+        XCTAssertEqual(PriceText.amount(1488.344), "1488.34")
+    }
+
+    func testNoThousandsSeparator() {
+        XCTAssertEqual(PriceText.amount(1234567), "1234567")
+    }
+
+    func testNegativeAmountsKeepTheirSign() {
+        XCTAssertEqual(PriceText.amount(-42), "-42")
+    }
+}

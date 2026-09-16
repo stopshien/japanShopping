@@ -47,6 +47,7 @@
 		BC0000062A00000100BC0001 /* ComputeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC0000052A00000100BC0001 /* ComputeViewModel.swift */; };
 		BD0000022A00000100BD0001 /* ComputeViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD0000012A00000100BD0001 /* ComputeViewModelTests.swift */; };
 		BE0000022A00000100BE0001 /* ScreenFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE0000012A00000100BE0001 /* ScreenFactory.swift */; };
+		BF0000022A00000100BF0001 /* PriceTextTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000012A00000100BF0001 /* PriceTextTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -93,6 +94,7 @@
 		BC0000052A00000100BC0001 /* ComputeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComputeViewModel.swift; sourceTree = "<group>"; };
 		BD0000012A00000100BD0001 /* ComputeViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComputeViewModelTests.swift; sourceTree = "<group>"; };
 		BE0000012A00000100BE0001 /* ScreenFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenFactory.swift; sourceTree = "<group>"; };
+		BF0000012A00000100BF0001 /* PriceTextTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PriceTextTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -172,6 +174,7 @@
 			children = (
 				AB0000022A00000100AB0001 /* PersistenceFormatTests.swift */,
 				AB0000032A00000100AB0001 /* ExchangeRateDecodingTests.swift */,
+				BF0000012A00000100BF0001 /* PriceTextTests.swift */,
 				BD0000012A00000100BD0001 /* ComputeViewModelTests.swift */,
 				BB0000012A00000100BB0001 /* DetailViewModelTests.swift */,
 				AF0000012A00000100AF0001 /* ShoppingListStubs.swift */,
@@ -331,6 +334,7 @@
 			files = (
 				AB0000042A00000100AB0001 /* PersistenceFormatTests.swift in Sources */,
 				AB0000052A00000100AB0001 /* ExchangeRateDecodingTests.swift in Sources */,
+				BF0000022A00000100BF0001 /* PriceTextTests.swift in Sources */,
 				BD0000022A00000100BD0001 /* ComputeViewModelTests.swift in Sources */,
 				BB0000022A00000100BB0001 /* DetailViewModelTests.swift in Sources */,
 				AF0000022A00000100AF0001 /* ShoppingListStubs.swift in Sources */,
