@@ -80,6 +80,8 @@ class ComputeViewController: UIViewController {
         }
     }
     
+    
+    // 下載即時匯率的 JSON 資料
     func fectch(){
     
         let myApiKey = "953c2dbe0b2c321ef179490a"
@@ -93,17 +95,11 @@ class ComputeViewController: UIViewController {
                     do {
                         let result = try JSONDecoder().decode(ExchangeRate.self, from: data)
                         let Rate = result.conversion_rates.TWD / result.conversion_rates.JPY
-                        print(Rate)
                         //ＧＰＴ提供的變相取進位數的方法，簡單暴力，好用！
                         self.JYPToTWD = (Rate * 10000).rounded() / 10000
                         
                         //以下將更新日期下載並轉圜為台灣地區時區
-//                        let dateFormatter = DateFormatter()
-//                        dateFormatter.timeZone = TimeZone(identifier: "Asia/Taipei")
-//                        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-//
-//                        let downloadedDate = dateFormatter.date(from: result.time_last_update_utc)
-//                        let convertedDate = dateFormatter.string(from: downloadedDate!)
+
                         let dateString = result.time_last_update_utc
 
                         let dateFormatter = DateFormatter()
@@ -119,7 +115,7 @@ class ComputeViewController: UIViewController {
                         dateFormatter.dateFormat = "E, d MMM yyyy HH:mm:ss"
                         let taiwanDateStr = dateFormatter.string(from: date!)
 
-                        
+                        // 解析資料完成後畫面更新
                         DispatchQueue.main.async {
                             self.exchangeRateLabel.text = "匯率：\(self.JYPToTWD)"
                             self.updateDate.text = "匯率更新於：\(taiwanDateStr)"
