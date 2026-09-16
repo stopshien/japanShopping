@@ -9,14 +9,16 @@ import UIKit
 
 class DetailViewController: UIViewController {
 
-    var list = List(productName: "", price: 0, payType: "", taxState: "")
-    var lists = [List]()
+    var list = ShoppingItem(productName: "", price: 0, payType: "", taxState: "")
+    var lists = [ShoppingItem]()
     var cards = [Card]()
     var numberOfCards = -1 // 紀錄選擇哪張信用卡對應到矩陣的順序。
 
     // 信用卡畫面已遷移至 MVVM，這裡透過 repository 取得資料，
     // 待 DetailViewController 自己遷移後會改為注入。
     private let cardRepository: CardRepository = FileCardRepository()
+    private let shoppingListRepository: ShoppingListRepository = FileShoppingListRepository()
+    private let imageStore: ImageStore = FileImageStore()
     var selectPhoto = false // 判定是否有選擇照片
 
     
@@ -48,9 +50,7 @@ class DetailViewController: UIViewController {
         reloadCards()
         
         // 讀取 List 檔案
-        if let readList = List.readList(){
-            lists = readList
-        }
+        lists = (try? shoppingListRepository.load()) ?? []
         UISet()
     }
 
@@ -107,42 +107,28 @@ class DetailViewController: UIViewController {
     
     //將購買的商品儲存到清單中
     func saveToList(){
-        if productTextField.text != ""{
-            list.productName = productTextField.text ?? ""
-            photoSaveSet()
-            if let controller = storyboard?.instantiateViewController(withIdentifier: "ListViewController") as? ListViewController{
-                lists.append(list)
-                controller.lists = lists
-                // 按下儲存至List清單的按鈕時會順便儲存檔案
-                List.saveList(list: controller.lists)
-                navigationController?.pushViewController(controller, animated: true)
-            }
-        }
+        guard productTextField.text != "" else { return }
+        list.productName = productTextField.text ?? ""
+        photoSaveSet()
+        lists.append(list)
+        // 按下儲存至List清單的按鈕時會順便儲存檔案
+        try? shoppingListRepository.save(lists)
+        navigationController?.pushViewController(makeShoppingListViewController(), animated: true)
+    }
+
+    // 購物清單已遷移為程式碼建立的畫面，取代原本的 storyboard segue。
+    @IBAction func showShoppingListTapped(_ sender: Any) {
+        navigationController?.pushViewController(makeShoppingListViewController(), animated: true)
     }
     
-    // 設定圖片的轉碼及路徑，最後存進 List 的物件中。
+    // 將選到的圖片交給 ImageStore 保存，並把回傳的檔名記到 list 上。
     func photoSaveSet(){
-        var imageName: String?
-       
-        if selectPhoto {
-
-            if imageName == nil {
-                imageName = UUID().uuidString
-            }
-        /*
-         使用 image.jpegData(compressionQuality:) 方法將圖片轉換為 JPEG 格式的二進位資料，並將其指派給 imageData 變數。
-         */
-            let imageData = imageSelectButtonOutlet.image(for: .normal)?.jpegData(compressionQuality: 0.9)
-            /*
-             使用 FileManager.default.urls(for:in:) 方法獲取 Document Directory 的路徑，並將其指派給 documentsDirectory 變數。
-             在 List 那邊有建立 documentDirectory，並使用 appendingPathComponent(_:) 方法將檔案名稱附加到 Document Directory 的路徑中，生成最終的檔案路徑 fileURL。
-             使用 imageData.write(to:) 方法將圖片資料寫入指定的檔案路徑中。
-             */
-            let imageUrl = List.documentDirectory.appendingPathComponent(imageName!).appendingPathExtension("jpg")
-            try? imageData?.write(to: imageUrl)
+        guard selectPhoto,
+              let imageData = imageSelectButtonOutlet.image(for: .normal)?.jpegData(compressionQuality: 0.9) else {
+            list.photoURL = nil
+            return
         }
-        // 將圖片路徑加入 list 。
-        list.photoURL = imageName
+        list.photoURL = try? imageStore.save(imageData)
     }
     
     // 設定ＵＩ顯示

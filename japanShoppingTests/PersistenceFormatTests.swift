@@ -6,15 +6,15 @@
 import XCTest
 @testable import japanShopping
 
-/// 這些測試鎖定 List 與 Card 的存檔格式。
+/// 這些測試鎖定 ShoppingItem 與 Card 的存檔格式。
 /// 遷移到 MVVM 的過程中，使用者既有的存檔必須仍然讀得回來，
 /// 所以任何會讓這些測試失敗的變更，都代表會弄壞既有使用者的資料。
 final class PersistenceFormatTests: XCTestCase {
 
-    // MARK: - List
+    // MARK: - ShoppingItem
 
-    func testListSurvivesPropertyListRoundTrip() throws {
-        let original = List(
+    func testShoppingItemSurvivesPropertyListRoundTrip() throws {
+        let original = ShoppingItem(
             productName: "抹茶巧克力",
             price: 1080,
             payType: "現金",
@@ -31,18 +31,18 @@ final class PersistenceFormatTests: XCTestCase {
         XCTAssertEqual(decoded.photoURL, original.photoURL)
     }
 
-    func testListWithoutPhotoDecodesWithNilPhotoURL() throws {
-        let original = List(productName: "咖啡", price: 450, payType: "信用卡", taxState: "未稅")
+    func testShoppingItemWithoutPhotoDecodesWithNilPhotoURL() throws {
+        let original = ShoppingItem(productName: "咖啡", price: 450, payType: "信用卡", taxState: "未稅")
 
         let decoded = try roundTrip(original)
 
         XCTAssertNil(decoded.photoURL)
     }
 
-    func testListArraySurvivesPropertyListRoundTrip() throws {
+    func testShoppingItemArraySurvivesPropertyListRoundTrip() throws {
         let original = [
-            List(productName: "第一項", price: 100, payType: "現金", taxState: "含稅"),
-            List(productName: "第二項", price: 200, payType: "信用卡", taxState: "未稅")
+            ShoppingItem(productName: "第一項", price: 100, payType: "現金", taxState: "含稅"),
+            ShoppingItem(productName: "第二項", price: 200, payType: "信用卡", taxState: "未稅")
         ]
 
         let decoded = try roundTrip(original)

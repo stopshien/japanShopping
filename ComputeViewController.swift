@@ -26,7 +26,7 @@ class ComputeViewController: UIViewController {
     
     @IBOutlet weak var updateDate: UILabel!
     
-    var list = List(productName: "", price : 0, payType: "", taxState: "")
+    var list = ShoppingItem(productName: "", price: 0, payType: "", taxState: "")
     
     var twdNoTax : Double = 0
     var twdTax : Double = 0
@@ -78,6 +78,11 @@ class ComputeViewController: UIViewController {
                 navigationController?.pushViewController(controller, animated: true)
             }
         }
+    }
+
+    // 購物清單已遷移為程式碼建立的畫面，取代原本的 storyboard segue。
+    @IBAction func showShoppingListTapped(_ sender: Any) {
+        navigationController?.pushViewController(makeShoppingListViewController(), animated: true)
     }
     
     

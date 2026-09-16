@@ -13,9 +13,6 @@
 		CFF54D982A1A179A00CEB598 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CFF54D972A1A179A00CEB598 /* Assets.xcassets */; };
 		CFF54D9B2A1A179A00CEB598 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = CFF54D992A1A179A00CEB598 /* LaunchScreen.storyboard */; };
 		CFF54DA32A1A17E100CEB598 /* ComputeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFF54DA22A1A17E100CEB598 /* ComputeViewController.swift */; };
-		CFF54DA52A1A2F9E00CEB598 /* ListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFF54DA42A1A2F9E00CEB598 /* ListViewController.swift */; };
-		CFF54DA72A1A2FBF00CEB598 /* ListTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFF54DA62A1A2FBF00CEB598 /* ListTableViewCell.swift */; };
-		CFF54DA92A1A306800CEB598 /* List.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFF54DA82A1A306800CEB598 /* List.swift */; };
 		CFF54DAB2A1A52BD00CEB598 /* DetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFF54DAA2A1A52BD00CEB598 /* DetailViewController.swift */; };
 		CFF54DAD2A1A8F2000CEB598 /* CardSetViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFF54DAC2A1A8F2000CEB598 /* CardSetViewController.swift */; };
 		CFF54DB12A39FD2C00CEB598 /* ExchangeRate.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFF54DB02A39FD2C00CEB598 /* ExchangeRate.swift */; };
@@ -32,6 +29,19 @@
 		AD0000042A00000100AD0001 /* CardSetViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD0000032A00000100AD0001 /* CardSetViewModelTests.swift */; };
 		AD0000062A00000100AD0001 /* CardListViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD0000052A00000100AD0001 /* CardListViewModelTests.swift */; };
 		AD0000082A00000100AD0001 /* FileCardRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD0000072A00000100AD0001 /* FileCardRepositoryTests.swift */; };
+		AE0000022A00000100AE0001 /* AppColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE0000012A00000100AE0001 /* AppColor.swift */; };
+		AE0000042A00000100AE0001 /* ShoppingItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE0000032A00000100AE0001 /* ShoppingItem.swift */; };
+		AE0000062A00000100AE0001 /* ShoppingListRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE0000052A00000100AE0001 /* ShoppingListRepository.swift */; };
+		AE0000082A00000100AE0001 /* ImageStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE0000072A00000100AE0001 /* ImageStore.swift */; };
+		AE00000A2A00000100AE0001 /* PriceText.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE0000092A00000100AE0001 /* PriceText.swift */; };
+		AE00000C2A00000100AE0001 /* ShoppingListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE00000B2A00000100AE0001 /* ShoppingListViewModel.swift */; };
+		AE00000E2A00000100AE0001 /* ShoppingListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE00000D2A00000100AE0001 /* ShoppingListViewController.swift */; };
+		AE0000102A00000100AE0001 /* ShoppingListCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE00000F2A00000100AE0001 /* ShoppingListCell.swift */; };
+		AE0000122A00000100AE0001 /* ShoppingListFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE0000112A00000100AE0001 /* ShoppingListFactory.swift */; };
+		AF0000022A00000100AF0001 /* ShoppingListStubs.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0000012A00000100AF0001 /* ShoppingListStubs.swift */; };
+		AF0000042A00000100AF0001 /* ShoppingListViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0000032A00000100AF0001 /* ShoppingListViewModelTests.swift */; };
+		AF0000062A00000100AF0001 /* FileShoppingListRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0000052A00000100AF0001 /* FileShoppingListRepositoryTests.swift */; };
+		AF0000082A00000100AF0001 /* FileImageStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0000072A00000100AF0001 /* FileImageStoreTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -43,9 +53,6 @@
 		CFF54D9A2A1A179A00CEB598 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		CFF54D9C2A1A179A00CEB598 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		CFF54DA22A1A17E100CEB598 /* ComputeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComputeViewController.swift; sourceTree = "<group>"; };
-		CFF54DA42A1A2F9E00CEB598 /* ListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListViewController.swift; sourceTree = "<group>"; };
-		CFF54DA62A1A2FBF00CEB598 /* ListTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListTableViewCell.swift; sourceTree = "<group>"; };
-		CFF54DA82A1A306800CEB598 /* List.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = List.swift; sourceTree = "<group>"; };
 		CFF54DAA2A1A52BD00CEB598 /* DetailViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailViewController.swift; sourceTree = "<group>"; };
 		CFF54DAC2A1A8F2000CEB598 /* CardSetViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardSetViewController.swift; sourceTree = "<group>"; };
 		CFF54DB02A39FD2C00CEB598 /* ExchangeRate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExchangeRate.swift; sourceTree = "<group>"; };
@@ -63,6 +70,19 @@
 		AD0000032A00000100AD0001 /* CardSetViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardSetViewModelTests.swift; sourceTree = "<group>"; };
 		AD0000052A00000100AD0001 /* CardListViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardListViewModelTests.swift; sourceTree = "<group>"; };
 		AD0000072A00000100AD0001 /* FileCardRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileCardRepositoryTests.swift; sourceTree = "<group>"; };
+		AE0000012A00000100AE0001 /* AppColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppColor.swift; sourceTree = "<group>"; };
+		AE0000032A00000100AE0001 /* ShoppingItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingItem.swift; sourceTree = "<group>"; };
+		AE0000052A00000100AE0001 /* ShoppingListRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingListRepository.swift; sourceTree = "<group>"; };
+		AE0000072A00000100AE0001 /* ImageStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageStore.swift; sourceTree = "<group>"; };
+		AE0000092A00000100AE0001 /* PriceText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PriceText.swift; sourceTree = "<group>"; };
+		AE00000B2A00000100AE0001 /* ShoppingListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingListViewModel.swift; sourceTree = "<group>"; };
+		AE00000D2A00000100AE0001 /* ShoppingListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingListViewController.swift; sourceTree = "<group>"; };
+		AE00000F2A00000100AE0001 /* ShoppingListCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingListCell.swift; sourceTree = "<group>"; };
+		AE0000112A00000100AE0001 /* ShoppingListFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingListFactory.swift; sourceTree = "<group>"; };
+		AF0000012A00000100AF0001 /* ShoppingListStubs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingListStubs.swift; sourceTree = "<group>"; };
+		AF0000032A00000100AF0001 /* ShoppingListViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingListViewModelTests.swift; sourceTree = "<group>"; };
+		AF0000052A00000100AF0001 /* FileShoppingListRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileShoppingListRepositoryTests.swift; sourceTree = "<group>"; };
+		AF0000072A00000100AF0001 /* FileImageStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileImageStoreTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -88,9 +108,6 @@
 			children = (
 				CFF54DAC2A1A8F2000CEB598 /* CardSetViewController.swift */,
 				CFF54DAA2A1A52BD00CEB598 /* DetailViewController.swift */,
-				CFF54DA82A1A306800CEB598 /* List.swift */,
-				CFF54DA62A1A2FBF00CEB598 /* ListTableViewCell.swift */,
-				CFF54DA42A1A2F9E00CEB598 /* ListViewController.swift */,
 				CFF54DA22A1A17E100CEB598 /* ComputeViewController.swift */,
 				CFF54DB02A39FD2C00CEB598 /* ExchangeRate.swift */,
 				AC0000012A00000100AC0001 /* DocumentsDirectory.swift */,
@@ -100,6 +117,15 @@
 				AC0000092A00000100AC0001 /* CardListViewModel.swift */,
 				AC00000B2A00000100AC0001 /* CardListViewController.swift */,
 				AC00000D2A00000100AC0001 /* UIViewController+KeyboardDismiss.swift */,
+				AE0000012A00000100AE0001 /* AppColor.swift */,
+				AE0000032A00000100AE0001 /* ShoppingItem.swift */,
+				AE0000052A00000100AE0001 /* ShoppingListRepository.swift */,
+				AE0000072A00000100AE0001 /* ImageStore.swift */,
+				AE0000092A00000100AE0001 /* PriceText.swift */,
+				AE00000B2A00000100AE0001 /* ShoppingListViewModel.swift */,
+				AE00000D2A00000100AE0001 /* ShoppingListViewController.swift */,
+				AE00000F2A00000100AE0001 /* ShoppingListCell.swift */,
+				AE0000112A00000100AE0001 /* ShoppingListFactory.swift */,
 				CFF54D8D2A1A179800CEB598 /* japanShopping */,
 				AB0000062A00000100AB0001 /* japanShoppingTests */,
 				CFF54D8C2A1A179800CEB598 /* Products */,
@@ -133,6 +159,10 @@
 			children = (
 				AB0000022A00000100AB0001 /* PersistenceFormatTests.swift */,
 				AB0000032A00000100AB0001 /* ExchangeRateDecodingTests.swift */,
+				AF0000012A00000100AF0001 /* ShoppingListStubs.swift */,
+				AF0000032A00000100AF0001 /* ShoppingListViewModelTests.swift */,
+				AF0000052A00000100AF0001 /* FileShoppingListRepositoryTests.swift */,
+				AF0000072A00000100AF0001 /* FileImageStoreTests.swift */,
 				AD0000012A00000100AD0001 /* CardRepositoryStub.swift */,
 				AD0000032A00000100AD0001 /* CardSetViewModelTests.swift */,
 				AD0000052A00000100AD0001 /* CardListViewModelTests.swift */,
@@ -253,6 +283,15 @@
 			buildActionMask = 2147483647;
 			files = (
 				CFF54D8F2A1A179800CEB598 /* AppDelegate.swift in Sources */,
+				AE0000022A00000100AE0001 /* AppColor.swift in Sources */,
+				AE0000042A00000100AE0001 /* ShoppingItem.swift in Sources */,
+				AE0000062A00000100AE0001 /* ShoppingListRepository.swift in Sources */,
+				AE0000082A00000100AE0001 /* ImageStore.swift in Sources */,
+				AE00000A2A00000100AE0001 /* PriceText.swift in Sources */,
+				AE00000C2A00000100AE0001 /* ShoppingListViewModel.swift in Sources */,
+				AE00000E2A00000100AE0001 /* ShoppingListViewController.swift in Sources */,
+				AE0000102A00000100AE0001 /* ShoppingListCell.swift in Sources */,
+				AE0000122A00000100AE0001 /* ShoppingListFactory.swift in Sources */,
 				AC0000022A00000100AC0001 /* DocumentsDirectory.swift in Sources */,
 				AC0000042A00000100AC0001 /* Card.swift in Sources */,
 				AC0000062A00000100AC0001 /* CardRepository.swift in Sources */,
@@ -261,12 +300,9 @@
 				AC00000C2A00000100AC0001 /* CardListViewController.swift in Sources */,
 				AC00000E2A00000100AC0001 /* UIViewController+KeyboardDismiss.swift in Sources */,
 				CFF54DA32A1A17E100CEB598 /* ComputeViewController.swift in Sources */,
-				CFF54DA52A1A2F9E00CEB598 /* ListViewController.swift in Sources */,
 				CFF54DAD2A1A8F2000CEB598 /* CardSetViewController.swift in Sources */,
 				CFF54D912A1A179800CEB598 /* SceneDelegate.swift in Sources */,
 				CFF54DB12A39FD2C00CEB598 /* ExchangeRate.swift in Sources */,
-				CFF54DA72A1A2FBF00CEB598 /* ListTableViewCell.swift in Sources */,
-				CFF54DA92A1A306800CEB598 /* List.swift in Sources */,
 				CFF54DAB2A1A52BD00CEB598 /* DetailViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -277,6 +313,10 @@
 			files = (
 				AB0000042A00000100AB0001 /* PersistenceFormatTests.swift in Sources */,
 				AB0000052A00000100AB0001 /* ExchangeRateDecodingTests.swift in Sources */,
+				AF0000022A00000100AF0001 /* ShoppingListStubs.swift in Sources */,
+				AF0000042A00000100AF0001 /* ShoppingListViewModelTests.swift in Sources */,
+				AF0000062A00000100AF0001 /* FileShoppingListRepositoryTests.swift in Sources */,
+				AF0000082A00000100AF0001 /* FileImageStoreTests.swift in Sources */,
 				AD0000022A00000100AD0001 /* CardRepositoryStub.swift in Sources */,
 				AD0000042A00000100AD0001 /* CardSetViewModelTests.swift in Sources */,
 				AD0000062A00000100AD0001 /* CardListViewModelTests.swift in Sources */,
