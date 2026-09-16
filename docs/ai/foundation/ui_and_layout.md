@@ -1,10 +1,9 @@
 # UI And Layout Conventions
 
 ## UI Construction
-- Build UI programmatically. Do not add new Storyboard or XIB scenes.
+- Build UI programmatically. There is no Storyboard in this project; do not add one.
 - Use `NSLayoutConstraint` anchors with `translatesAutoresizingMaskIntoConstraints = false`. Do not add SnapKit or any other layout library.
 - Declare views as `private let` properties initialized inline or by a factory method.
-- `Main.storyboard` remains only for screens that have not been migrated yet; see `docs/ai/foundation/migration_status.md`.
 
 ## Screen Structure
 - Organize every view controller as `setupViews()`, `setupConstraints()`, and `bindViewModel()`, called in that order from `viewDidLoad()`.

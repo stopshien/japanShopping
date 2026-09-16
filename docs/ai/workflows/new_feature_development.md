@@ -4,18 +4,16 @@ Use this workflow when building a new screen or adding a substantial new capabil
 
 ## Starting Sequence
 1. Read `docs/ai-playbook.md` and the applicable foundational rules.
-2. Read `docs/ai/foundation/migration_status.md` to see whether the affected screens are migrated.
+2. Read `docs/ai/foundation/behavior_contract.md` if the feature touches anything it records.
 3. Check whether the target area has feature-local knowledge under `docs/ai/features/<feature>/`.
 4. If no feature-local knowledge exists and the change is non-trivial, create `context.md`, `rules.md`, and `plan.md` before expanding implementation scope.
 
-If the feature lands on a screen that has not been migrated yet, migrate that screen first via `screen_migration.md`, in its own commit. Do not build new features in the legacy style.
-
 ## Implementation Expectations
-- Follow the target stack: Swift, UIKit built programmatically, MVVM, Combine, no third-party dependencies.
+- Follow the stack: Swift, UIKit built programmatically, MVVM, Combine, no third-party dependencies.
 - A new screen is at minimum three files: the ViewModel protocols, the ViewModel, and the view controller.
 - Put every business rule in the ViewModel. The controller only binds and renders.
 - Put every IO operation behind a service protocol and inject it.
-- Pass data forward by constructing the next ViewModel, never by assigning properties on an instantiated controller.
+- Add new screens to `ScreenFactory` rather than constructing services at the call site.
 - Give the ViewModel a test alongside it.
 
 ## Deliverables

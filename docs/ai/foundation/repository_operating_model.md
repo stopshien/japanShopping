@@ -30,5 +30,4 @@ Treat repository-local knowledge as the system of record.
 ## Scope Discipline
 - This is a small single-target app. Prefer the smallest change that solves the task.
 - Do not introduce a framework, architecture pattern, or dependency beyond the target stack in `ios_architecture.md` without explicit approval.
-- The repository is mid-migration. Read `migration_status.md` before deciding whether existing code is wrong or merely not migrated yet.
-- Migrating a screen is never a side effect of another task. It is its own commit, following `docs/ai/workflows/screen_migration.md`.
+- Read `behavior_contract.md` before changing anything that looks like an oddity. Several deliberate behaviours look like bugs.

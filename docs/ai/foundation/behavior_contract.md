@@ -1,0 +1,50 @@
+# Behavior Contract
+
+Rules this app enforces that the code alone does not explain, plus the record of where today's behavior deliberately differs from the app's original Storyboard/MVC version.
+
+Read this before changing anything that looks like an oddity. Several entries below look like bugs and are not.
+
+## Behavior That Must Not Change Silently
+
+Each entry names the test that locks it. If a change makes one of these tests fail, the change is wrong until proven otherwise — do not edit the test to match the new behavior.
+
+- **Deleting is only persisted on an explicit confirm.** Card list deletions save on 編輯完成; shopping list deletions save on Done. Leaving with the back button discards them, so a mis-tapped delete can be abandoned. `CardListViewModelTests`, `ShoppingListViewModelTests`.
+- **The shopping list total is recalculated from scratch after every deletion**, never accumulated. `ShoppingListViewModelTests`.
+- **Deleting a shopping list row deletes its photo file**, but only after the list has been saved successfully, so a failed save never destroys an image. `ShoppingListViewModelTests`.
+- **The card feedback calculation subtracts 1.5 from the card percentage** before applying it: `(percent - 1.5) * price * 0.01`. `DetailViewModelTests`.
+- **A new card's `feedbackRemaining` starts equal to its `limit`**, and `feedbackMoney` starts at 0. `CardSetViewModelTests`.
+- **Tax conversion uses a 1.08 multiplier**, applied in both directions depending on the selected segment. `TaxMode.taxMultiplier`, `PriceBreakdownTests`.
+- **The exchange rate is derived as TWD / JPY** and rounded to four decimal places. `ExchangeRateDecodingTests`.
+- **The rate's update time is parsed with `en_US_POSIX`** and displayed in `Asia/Taipei`. Without the POSIX locale it fails to parse on non-English devices. `ComputeViewModelTests`.
+- **The on-disk property list format of `ShoppingItem` and `Card`.** The stored keys are the property names, so renaming a property silently breaks every existing user's saved data. `PersistenceFormatTests`, `FileShoppingListRepositoryTests`, `FileCardRepositoryTests`.
+- **Photos are referenced by bare filename, never by absolute path.** The app container path changes between installs. `FileImageStoreTests`.
+
+## Why The Code Looks Like This
+
+- **`PayMethod` is separate from `ShoppingItem.payType`.** The original code kept only the `payType` string, and selecting a card overwrote it with the **card's name** — so `payType == "信用卡"` was never true once a card was chosen, and the code worked around it by inspecting whether the card button was hidden. `PayMethod` models the choice; `payType` is only the value that gets persisted. `DetailViewModelTests` locks both.
+- **`ComputeViewModel` keeps `.receive(on: DispatchQueue.main)` even though it makes tests asynchronous.** Removing it would let the rate be written from the URLSession background thread while the main thread reads it. The tests wait for the main queue instead.
+- **`PriceText` exists for a one-line change.** Every money string in the app goes through it, so the display format can be changed in one place.
+
+## Deliberate Departures From The Original App
+
+Each entry is behavior that intentionally differs from the Storyboard/MVC version. They are listed so nobody "restores" them as bugs.
+
+- **Card setup rejects non-numeric input instead of crashing.** The original used `Double(moneyBack)!` and `Double(limit)!`, so non-numeric input crashed the app.
+- **Choosing 信用卡 without picking a card no longer crashes.** `PayMethod.card(index:)` makes "credit card, none chosen" a representable state.
+- **Returning from a card screen resets the selected card.** The original kept the old index, which could point past the end of the array after a deletion.
+- **Converting before the rate arrives reports an error instead of producing 0.** The original started with a rate of `0`, so tapping 換算 too early silently produced 0 元. Likewise 使用未稅價格 / 使用含稅價格 do nothing until a conversion has been made, rather than carrying a 0 price forward.
+- **Pay type defaults to `現金`.** The picker has always displayed 現金 as its initial row, but `didSelectRow` never fires for it, so an item saved without touching the picker stored an empty `payType`.
+- **Deleting a shopping list row deletes its photo file.** The original left the JPEG behind forever.
+- **An empty shopping list shows `你已經花了0.0$`.** The original skipped the calculation when the list was empty, leaving the storyboard's design-time placeholder `總花費` on screen.
+
+## Open Debt
+
+- **The exchange-rate API key is not a secret.** It moved out of Swift source into the `EXCHANGE_RATE_API_KEY` build setting, surfaced through `Info.plist`, which only made it configurable. It still ships inside the app bundle and is still present in this repository's git history. Rotating the key and proxying the request through a backend is the only real fix.
+- **`PriceText` renders `206.0` rather than `206`.** Changing it is a one-line change in one place, but whether to show the decimal is a product decision.
+- **Clearing the entry screen after tapping Done in the list** was a wish in the original code's header comment. It was never built.
+
+## Update Discipline
+
+- When behavior in the first section changes on purpose, move the entry to Deliberate Departures and say so in the commit message.
+- When a piece of debt is closed, delete its entry rather than marking it done.
+- Do not add migration bookkeeping here. This file records what the app does and why, not how it got there.

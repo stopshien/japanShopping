@@ -7,8 +7,6 @@ This repository is a single-target UIKit app with the following stack:
 - MVVM with Combine
 - No third-party dependencies: no CocoaPods, no Swift Package Manager, no Carthage
 
-The repository is migrating from Storyboard-based MVC to this baseline. Read `docs/ai/foundation/migration_status.md` before judging whether a given file is expected to follow these rules yet.
-
 ## Layer Responsibilities
 
 ### View (`UIViewController`, `UIView`)
@@ -81,5 +79,5 @@ protocol ExchangeRateViewModelOutput {
 ## Forbidden Without Explicit Approval
 - Adding a third-party dependency or a dependency manager.
 - Introducing SwiftUI, RxSwift, or async-await-based rewrites of the Combine layer.
-- Reintroducing Storyboard or XIB for a screen that has already been migrated.
+- Introducing Storyboard or XIB. Every screen is built in code.
 - Moving IO into a view controller.

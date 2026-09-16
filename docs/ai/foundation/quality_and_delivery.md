@@ -13,7 +13,7 @@
 - Explanatory comments are written in Traditional Chinese; keep that voice.
 - Write `// MARK:` section names in English.
 - Add comments only when they explain intent that the code does not show.
-- A comment documenting deliberate behavior must be preserved or promoted into `migration_status.md` before the code is rewritten.
+- A comment documenting deliberate behavior must be preserved, or promoted into `behavior_contract.md`, before the code is rewritten.
 - Remove a comment that no longer matches the code instead of leaving it stale.
 
 ## Testing
@@ -31,12 +31,11 @@
 ## Git And Review
 - Write commit messages in the format defined in `docs/ai/foundation/commit_message_conventions.md`.
 - Keep each commit focused on one reviewable goal.
-- Keep a migration commit separate from a behavior change.
 - Do not commit `xcuserdata/` or other per-developer Xcode state.
 - Do not commit unless the user asks.
 
 ## Change Hygiene
 - Do not mix unrelated refactors with feature work unless they are tightly coupled.
 - Do not reformat or rename across a file you were asked to make a small change in.
-- Update `docs/ai/foundation/migration_status.md` in the same commit that migrates a screen.
+- Update `docs/ai/foundation/behavior_contract.md` in the same commit that changes a behaviour it records.
 - Treat stale AI guidance as technical debt and clean it up promptly.

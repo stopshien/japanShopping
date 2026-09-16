@@ -3,7 +3,7 @@
 ## File Scope
 - Keep one primary type per file, named after that type.
 - A screen is split across files: `<Screen>ViewController.swift`, `<Screen>ViewModel.swift`, and the protocol declarations beside the ViewModel.
-- Models, services, and view controllers do not share a file. `List.swift` currently holds both `List` and `Card`; split it during migration and never add a third type to it.
+- Models, services, and view controllers do not share a file.
 - Do not place mocks or test doubles in production files.
 
 ## Preferred Type Order
@@ -43,7 +43,6 @@ For a ViewModel:
 
 ## Naming
 - Types are `UpperCamelCase`; properties and methods are `lowerCamelCase`.
-- Legacy names such as `TypeOfPay`, `UISet()`, `fectch()`, and `JYPToTWD` are wrong. Do not carry them into migrated code; fix them when the file is migrated.
 - Prefer descriptive names over abbreviations: `yenToTaiwanDollarRate`, not `JYPToTWD`.
 - Name a publisher for the value it carries, not for the mechanism.
 

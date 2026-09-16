@@ -14,7 +14,7 @@ Use this workflow when reviewing changes in this repository.
 - Lead with findings, not summary.
 - Prefer concrete, actionable feedback tied to behavior.
 - Treat feature-local hard constraints as higher priority than generic style advice.
-- Check `docs/ai/foundation/migration_status.md` before flagging a legacy file. Legacy style in a screen that has not been migrated is not a finding; legacy style in new or migrated code is.
+- Check `docs/ai/foundation/behavior_contract.md` before flagging something as a bug. Several deliberate behaviours look like defects.
 
 ## Repository-Specific Checks
 - A ViewModel that imports UIKit, or a controller that computes a business value.
@@ -28,4 +28,4 @@ Use this workflow when reviewing changes in this repository.
 - Absolute image paths persisted instead of a bare filename; deleted items that leave orphaned image files.
 - New hard-coded API keys or credentials.
 - Derived UI values not recomputed after a mutation.
-- A migration commit that also changes behavior.
+- A change to anything listed in `behavior_contract.md` without a matching update to that file.
