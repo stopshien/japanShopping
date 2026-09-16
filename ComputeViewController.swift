@@ -2,137 +2,243 @@
 //  ComputeViewController.swift
 //  japanShopping
 //
-//  Created by 沈庭鋒 on 2023/5/21.
-// 完成基本功能，待加拍照、即時匯率。
-/*
-    待修改功能：
-    信用卡剩餘回饋金額 // 使用文字 list.payType == "信用卡" 無法正常做判定，理由未知，先用使否出現信用卡選項做判定。
 
-    從 List 按下 done 後清空畫面
- */
-
+import Combine
 import UIKit
 
-class ComputeViewController: UIViewController {
+final class ComputeViewController: UIViewController {
 
-    
-    @IBOutlet weak var yenTextField: UITextField!
-    
-    @IBOutlet weak var taxChoose: UISegmentedControl!
-    
-    @IBOutlet weak var resultLabel: UILabel!
-    
-    @IBOutlet weak var exchangeRateLabel: UILabel!
-    
-    @IBOutlet weak var updateDate: UILabel!
-    
-    var list = ShoppingItem(productName: "", price: 0, payType: "", taxState: "")
-    
-    var twdNoTax : Double = 0
-    var twdTax : Double = 0
-    
-    var JYPToTWD = 0.0
-        
+    private enum Constants {
+        static let horizontalInset: CGFloat = 24
+        static let spacing: CGFloat = 20
+        static let fieldHeight: CGFloat = 44
+        static let titleFontSize: CGFloat = 28
+        static let resultFontSize: CGFloat = 24
+    }
+
+    private let viewModel: ComputeViewModelType
+    private var cancellables = Set<AnyCancellable>()
+
+    // MARK: - Views
+
+    private let rateLabel: UILabel = {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: Constants.titleFontSize)
+        label.textAlignment = .center
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+
+    private let yenTextField: UITextField = {
+        let textField = UITextField()
+        textField.placeholder = "請輸入日幣價格..."
+        textField.borderStyle = .none
+        textField.backgroundColor = .white
+        textField.keyboardType = .decimalPad
+        textField.font = .systemFont(ofSize: 20)
+        textField.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 12, height: 0))
+        textField.leftViewMode = .always
+        textField.translatesAutoresizingMaskIntoConstraints = false
+        return textField
+    }()
+
+    private let taxSegmentedControl: UISegmentedControl = {
+        let control = UISegmentedControl(items: TaxMode.allCases.map(\.title))
+        control.selectedSegmentIndex = TaxMode.excludingTax.rawValue
+        control.translatesAutoresizingMaskIntoConstraints = false
+        return control
+    }()
+
+    private let computeButton = ComputeViewController.makeButton(title: "換算")
+    private let useUntaxedButton = ComputeViewController.makeButton(title: "使用未稅價格")
+    private let useTaxedButton = ComputeViewController.makeButton(title: "使用含稅價格")
+    private let showShoppingListButton = ComputeViewController.makeButton(title: "確認清單")
+
+    private let resultLabel: UILabel = {
+        let label = UILabel()
+        label.text = "換算結果"
+        label.numberOfLines = 0
+        label.textAlignment = .center
+        label.font = .boldSystemFont(ofSize: Constants.resultFontSize)
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+
+    private let updatedAtLabel: UILabel = {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 13)
+        label.textAlignment = .center
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+
+    private let contentStackView: UIStackView = {
+        let stackView = UIStackView()
+        stackView.axis = .vertical
+        stackView.spacing = Constants.spacing
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        return stackView
+    }()
+
+    // MARK: - Init
+
+    init(viewModel: ComputeViewModelType) {
+        self.viewModel = viewModel
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) is not supported")
+    }
+
+    // MARK: - Lifecycle
+
     override func viewDidLoad() {
         super.viewDidLoad()
-        //點空白處收鍵盤
-        let tapGesture = UITapGestureRecognizer(target: view, action: #selector(UIView.endEditing(_:)))
-        view.addGestureRecognizer(tapGesture)
-        fectch()
+        setupViews()
+        setupConstraints()
+        bindViewModel()
+        viewModel.input.viewDidLoad()
     }
-    
-    @IBAction func computeButton(_ sender: Any) {
-        yenTextField.resignFirstResponder()
 
-        if let yenTextField = yenTextField.text{
-            if taxChoose.selectedSegmentIndex == 0{
-                twdNoTax = ((Double(yenTextField) ?? 0)*JYPToTWD).rounded()
-                twdTax = (twdNoTax*1.08).rounded()
-                resultLabel.text = "台幣 \n未稅：\(twdNoTax)\n含稅：\(twdTax)"
-            }else if taxChoose.selectedSegmentIndex == 1{
-                twdTax = ((Double(yenTextField) ?? 0)*JYPToTWD).rounded()
-                twdNoTax = (twdTax/1.08).rounded()
-                resultLabel.text = "台幣 \n未稅：\(twdNoTax)\n含稅：\(twdTax)"
+    // MARK: - Setup
 
+    private func setupViews() {
+        view.backgroundColor = AppColor.brand
+        addTapToDismissKeyboard()
+
+        [
+            rateLabel,
+            yenTextField,
+            taxSegmentedControl,
+            computeButton,
+            resultLabel,
+            useUntaxedButton,
+            useTaxedButton,
+            showShoppingListButton
+        ].forEach(contentStackView.addArrangedSubview)
+
+        view.addSubview(contentStackView)
+        view.addSubview(updatedAtLabel)
+
+        yenTextField.addTarget(self, action: #selector(yenTextChanged), for: .editingChanged)
+        taxSegmentedControl.addTarget(self, action: #selector(taxModeChanged), for: .valueChanged)
+        computeButton.addTarget(self, action: #selector(computeTapped), for: .touchUpInside)
+        useUntaxedButton.addTarget(self, action: #selector(useUntaxedTapped), for: .touchUpInside)
+        useTaxedButton.addTarget(self, action: #selector(useTaxedTapped), for: .touchUpInside)
+        showShoppingListButton.addTarget(self, action: #selector(showShoppingListTapped), for: .touchUpInside)
+    }
+
+    private func setupConstraints() {
+        NSLayoutConstraint.activate([
+            contentStackView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: Constants.spacing),
+            contentStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalInset),
+            contentStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalInset),
+
+            yenTextField.heightAnchor.constraint(equalToConstant: Constants.fieldHeight),
+
+            updatedAtLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalInset),
+            updatedAtLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalInset),
+            updatedAtLabel.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -8)
+        ])
+    }
+
+    // MARK: - Binding
+
+    private func bindViewModel() {
+        viewModel.output.rateDescription
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] text in
+                self?.rateLabel.text = text
             }
+            .store(in: &cancellables)
+
+        viewModel.output.updatedAtDescription
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] text in
+                self?.updatedAtLabel.text = text
+            }
+            .store(in: &cancellables)
+
+        viewModel.output.resultText
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] text in
+                self?.resultLabel.text = text
+            }
+            .store(in: &cancellables)
+
+        viewModel.output.errorMessage
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] message in
+                self?.presentError(message)
+            }
+            .store(in: &cancellables)
+
+        viewModel.output.route
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] route in
+                self?.navigate(to: route)
+            }
+            .store(in: &cancellables)
+    }
+
+    // MARK: - Navigation
+
+    private func navigate(to route: ComputeRoute) {
+        switch route {
+        case .detail(let item):
+            navigationController?.pushViewController(makeDetailViewController(item: item), animated: true)
+        case .shoppingList:
+            navigationController?.pushViewController(makeShoppingListViewController(), animated: true)
         }
     }
 
-    @IBAction func nextPageButtton(_ sender: UIButton) {
-        if sender.tag == 1{
-            list.price = twdNoTax
-            list.taxState = "未稅"
-        }else if sender.tag == 2{
-            list.price = twdTax
-            list.taxState = "含稅"
-        }
-        nextPage()
-    }
-    
+    // MARK: - Actions
 
-    func nextPage(){
-        guard yenTextField.text != "" else { return }
-        navigationController?.pushViewController(makeDetailViewController(item: list), animated: true)
+    @objc private func yenTextChanged() {
+        viewModel.input.yenTextChanged(yenTextField.text ?? "")
     }
 
-    // 購物清單已遷移為程式碼建立的畫面，取代原本的 storyboard segue。
-    @IBAction func showShoppingListTapped(_ sender: Any) {
-        navigationController?.pushViewController(makeShoppingListViewController(), animated: true)
+    @objc private func taxModeChanged() {
+        guard let mode = TaxMode(rawValue: taxSegmentedControl.selectedSegmentIndex) else { return }
+        viewModel.input.taxModeChanged(to: mode)
     }
-    
-    
-    // 下載即時匯率的 JSON 資料
-    func fectch(){
-    
-        let myApiKey = "953c2dbe0b2c321ef179490a"
-        let baseURL = "https://v6.exchangerate-api.com/v6/\(myApiKey)/latest/USD"
-        if let url = URL(string: baseURL){
-            let request = URLRequest(url: url)
-//            request.setValue("Bearer keyTaDO1pC3Wi8kV3", forHTTPHeaderField: "Authorization")
-//            print(request)
-            URLSession.shared.dataTask(with: request) { data, response, error in
-                if let data = data{
-                    do {
-                        let result = try JSONDecoder().decode(ExchangeRate.self, from: data)
-                        let Rate = result.conversion_rates.TWD / result.conversion_rates.JPY
-                        //ＧＰＴ提供的變相取進位數的方法，簡單暴力，好用！
-                        self.JYPToTWD = (Rate * 10000).rounded() / 10000
-                        
-                        //以下將更新日期下載並轉圜為台灣地區時區
 
-                        let dateString = result.time_last_update_utc
-
-                        let dateFormatter = DateFormatter()
-                        dateFormatter.dateFormat = "E, d MMM yyyy HH:mm:ss Z"
-                        dateFormatter.locale = Locale(identifier: "en_US_POSIX")  // 設置日期格式的語言環境
-                        let date = dateFormatter.date(from: dateString)
-
-                        // 轉換為台灣時區
-                        let taiwanTimeZone = TimeZone(identifier: "Asia/Taipei")
-                        dateFormatter.timeZone = taiwanTimeZone
-
-                        // 格式化日期為文字
-                        dateFormatter.dateFormat = "E, d MMM yyyy HH:mm:ss"
-                        let taiwanDateStr = dateFormatter.string(from: date!)
-
-                        // 解析資料完成後畫面更新
-                        DispatchQueue.main.async {
-                            self.exchangeRateLabel.text = "匯率：\(self.JYPToTWD)"
-                            self.updateDate.text = "匯率更新於：\(taiwanDateStr)"
-
-                        }
-//                        print(content)
-                    } catch  {
-                        print(error)
-
-                    }
-                }
-                
-            }.resume()
-        }
+    @objc private func computeTapped() {
+        yenTextField.resignFirstResponder()
+        viewModel.input.computeTapped()
     }
-    
+
+    @objc private func useUntaxedTapped() {
+        viewModel.input.usePrice(for: .excludingTax)
+    }
+
+    @objc private func useTaxedTapped() {
+        viewModel.input.usePrice(for: .includingTax)
+    }
+
+    @objc private func showShoppingListTapped() {
+        viewModel.input.showShoppingListTapped()
+    }
+
+    // MARK: - Private
+
+    private func presentError(_ message: String) {
+        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "好", style: .default))
+        present(alert, animated: true)
+    }
+
+    private static func makeButton(title: String) -> UIButton {
+        var configuration = UIButton.Configuration.plain()
+        configuration.title = title
+        configuration.background.backgroundColor = .white
+        configuration.background.strokeColor = UIColor(white: 0.667, alpha: 1)
+        configuration.background.strokeWidth = 3
+        configuration.background.cornerRadius = 16
+        let button = UIButton(configuration: configuration)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        return button
+    }
 }
-
-
-

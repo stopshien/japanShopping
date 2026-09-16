@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		CFF54D8F2A1A179800CEB598 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFF54D8E2A1A179800CEB598 /* AppDelegate.swift */; };
 		CFF54D912A1A179800CEB598 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFF54D902A1A179800CEB598 /* SceneDelegate.swift */; };
-		CFF54D962A1A179800CEB598 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = CFF54D942A1A179800CEB598 /* Main.storyboard */; };
 		CFF54D982A1A179A00CEB598 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CFF54D972A1A179A00CEB598 /* Assets.xcassets */; };
 		CFF54D9B2A1A179A00CEB598 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = CFF54D992A1A179A00CEB598 /* LaunchScreen.storyboard */; };
 		CFF54DA32A1A17E100CEB598 /* ComputeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFF54DA22A1A17E100CEB598 /* ComputeViewController.swift */; };
@@ -44,13 +43,16 @@
 		BA0000022A00000100BA0001 /* DetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000012A00000100BA0001 /* DetailViewModel.swift */; };
 		BA0000042A00000100BA0001 /* LegacyScreenFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000032A00000100BA0001 /* LegacyScreenFactory.swift */; };
 		BB0000022A00000100BB0001 /* DetailViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000012A00000100BB0001 /* DetailViewModelTests.swift */; };
+		BC0000022A00000100BC0001 /* ExchangeRateService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC0000012A00000100BC0001 /* ExchangeRateService.swift */; };
+		BC0000042A00000100BC0001 /* TaxMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC0000032A00000100BC0001 /* TaxMode.swift */; };
+		BC0000062A00000100BC0001 /* ComputeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC0000052A00000100BC0001 /* ComputeViewModel.swift */; };
+		BD0000022A00000100BD0001 /* ComputeViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD0000012A00000100BD0001 /* ComputeViewModelTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		CFF54D8B2A1A179800CEB598 /* japanShopping.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = japanShopping.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CFF54D8E2A1A179800CEB598 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		CFF54D902A1A179800CEB598 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
-		CFF54D952A1A179800CEB598 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		CFF54D972A1A179A00CEB598 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		CFF54D9A2A1A179A00CEB598 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		CFF54D9C2A1A179A00CEB598 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -87,6 +89,10 @@
 		BA0000012A00000100BA0001 /* DetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailViewModel.swift; sourceTree = "<group>"; };
 		BA0000032A00000100BA0001 /* LegacyScreenFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacyScreenFactory.swift; sourceTree = "<group>"; };
 		BB0000012A00000100BB0001 /* DetailViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailViewModelTests.swift; sourceTree = "<group>"; };
+		BC0000012A00000100BC0001 /* ExchangeRateService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExchangeRateService.swift; sourceTree = "<group>"; };
+		BC0000032A00000100BC0001 /* TaxMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaxMode.swift; sourceTree = "<group>"; };
+		BC0000052A00000100BC0001 /* ComputeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComputeViewModel.swift; sourceTree = "<group>"; };
+		BD0000012A00000100BD0001 /* ComputeViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComputeViewModelTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -131,6 +137,9 @@
 				AE00000F2A00000100AE0001 /* ShoppingListCell.swift */,
 				BA0000012A00000100BA0001 /* DetailViewModel.swift */,
 				BA0000032A00000100BA0001 /* LegacyScreenFactory.swift */,
+				BC0000012A00000100BC0001 /* ExchangeRateService.swift */,
+				BC0000032A00000100BC0001 /* TaxMode.swift */,
+				BC0000052A00000100BC0001 /* ComputeViewModel.swift */,
 				CFF54D8D2A1A179800CEB598 /* japanShopping */,
 				AB0000062A00000100AB0001 /* japanShoppingTests */,
 				CFF54D8C2A1A179800CEB598 /* Products */,
@@ -151,7 +160,6 @@
 			children = (
 				CFF54D8E2A1A179800CEB598 /* AppDelegate.swift */,
 				CFF54D902A1A179800CEB598 /* SceneDelegate.swift */,
-				CFF54D942A1A179800CEB598 /* Main.storyboard */,
 				CFF54D972A1A179A00CEB598 /* Assets.xcassets */,
 				CFF54D992A1A179A00CEB598 /* LaunchScreen.storyboard */,
 				CFF54D9C2A1A179A00CEB598 /* Info.plist */,
@@ -164,6 +172,7 @@
 			children = (
 				AB0000022A00000100AB0001 /* PersistenceFormatTests.swift */,
 				AB0000032A00000100AB0001 /* ExchangeRateDecodingTests.swift */,
+				BD0000012A00000100BD0001 /* ComputeViewModelTests.swift */,
 				BB0000012A00000100BB0001 /* DetailViewModelTests.swift */,
 				AF0000012A00000100AF0001 /* ShoppingListStubs.swift */,
 				AF0000032A00000100AF0001 /* ShoppingListViewModelTests.swift */,
@@ -270,7 +279,6 @@
 			files = (
 				CFF54D9B2A1A179A00CEB598 /* LaunchScreen.storyboard in Resources */,
 				CFF54D982A1A179A00CEB598 /* Assets.xcassets in Resources */,
-				CFF54D962A1A179800CEB598 /* Main.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -289,6 +297,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				CFF54D8F2A1A179800CEB598 /* AppDelegate.swift in Sources */,
+				BC0000022A00000100BC0001 /* ExchangeRateService.swift in Sources */,
+				BC0000042A00000100BC0001 /* TaxMode.swift in Sources */,
+				BC0000062A00000100BC0001 /* ComputeViewModel.swift in Sources */,
 				BA0000022A00000100BA0001 /* DetailViewModel.swift in Sources */,
 				BA0000042A00000100BA0001 /* LegacyScreenFactory.swift in Sources */,
 				AE0000022A00000100AE0001 /* AppColor.swift in Sources */,
@@ -320,6 +331,7 @@
 			files = (
 				AB0000042A00000100AB0001 /* PersistenceFormatTests.swift in Sources */,
 				AB0000052A00000100AB0001 /* ExchangeRateDecodingTests.swift in Sources */,
+				BD0000022A00000100BD0001 /* ComputeViewModelTests.swift in Sources */,
 				BB0000022A00000100BB0001 /* DetailViewModelTests.swift in Sources */,
 				AF0000022A00000100AF0001 /* ShoppingListStubs.swift in Sources */,
 				AF0000042A00000100AF0001 /* ShoppingListViewModelTests.swift in Sources */,
@@ -343,14 +355,6 @@
 /* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
-		CFF54D942A1A179800CEB598 /* Main.storyboard */ = {
-			isa = PBXVariantGroup;
-			children = (
-				CFF54D952A1A179800CEB598 /* Base */,
-			);
-			name = Main.storyboard;
-			sourceTree = "<group>";
-		};
 		CFF54D992A1A179A00CEB598 /* LaunchScreen.storyboard */ = {
 			isa = PBXVariantGroup;
 			children = (
@@ -484,11 +488,11 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = T2T367NW35;
+				EXCHANGE_RATE_API_KEY = 953c2dbe0b2c321ef179490a;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = japanShopping/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
-				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.3;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -512,11 +516,11 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = T2T367NW35;
+				EXCHANGE_RATE_API_KEY = 953c2dbe0b2c321ef179490a;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = japanShopping/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
-				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.3;
 				LD_RUNPATH_SEARCH_PATHS = (

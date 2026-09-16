@@ -25,25 +25,22 @@ final class ExchangeRateDecodingTests: XCTestCase {
     func testDecodesConversionRates() throws {
         let rate = try JSONDecoder().decode(ExchangeRate.self, from: sampleJSON)
 
-        XCTAssertEqual(rate.conversion_rates.USD, 1)
-        XCTAssertEqual(rate.conversion_rates.JPY, 157.25)
-        XCTAssertEqual(rate.conversion_rates.TWD, 32.5)
+        XCTAssertEqual(rate.conversionRates.usd, 1)
+        XCTAssertEqual(rate.conversionRates.jpy, 157.25)
+        XCTAssertEqual(rate.conversionRates.twd, 32.5)
     }
 
     func testDecodesUpdateTimestamp() throws {
         let rate = try JSONDecoder().decode(ExchangeRate.self, from: sampleJSON)
 
-        XCTAssertEqual(rate.time_last_update_utc, "Fri, 13 Jun 2025 00:00:01 +0000")
+        XCTAssertEqual(rate.lastUpdatedUTC, "Fri, 13 Jun 2025 00:00:01 +0000")
     }
 
     /// 日圓兌台幣是由 TWD / JPY 推導，並取到小數點後四位。
     func testYenToTaiwanDollarRateIsDerivedAndRoundedToFourPlaces() throws {
         let rate = try JSONDecoder().decode(ExchangeRate.self, from: sampleJSON)
 
-        let raw = rate.conversion_rates.TWD / rate.conversion_rates.JPY
-        let rounded = (raw * 10000).rounded() / 10000
-
-        XCTAssertEqual(rounded, 0.2067, accuracy: 0.00001)
+        XCTAssertEqual(rate.yenToTaiwanDollar, 0.2067, accuracy: 0.00001)
     }
 
     /// API 回傳的時間字串必須用 en_US_POSIX 解析，否則在非英文語系裝置上會解析失敗。
@@ -54,6 +51,6 @@ final class ExchangeRateDecodingTests: XCTestCase {
         formatter.dateFormat = "E, d MMM yyyy HH:mm:ss Z"
         formatter.locale = Locale(identifier: "en_US_POSIX")
 
-        XCTAssertNotNil(formatter.date(from: rate.time_last_update_utc))
+        XCTAssertNotNil(formatter.date(from: rate.lastUpdatedUTC))
     }
 }

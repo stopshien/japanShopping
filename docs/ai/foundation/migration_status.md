@@ -4,6 +4,10 @@ The repository is migrating from Storyboard-based MVC to programmatic UIKit with
 
 This file exists so agents can tell the difference between "code that violates the rules" and "code that has not been migrated yet". Keep it current; it is the only place that records migration progress.
 
+## Status
+
+The migration is complete: every screen follows the target architecture, and `Main.storyboard` no longer exists. What remains below is the record of what was preserved, what was deliberately changed, and the debt that is still open. The carve-outs for legacy code can be removed from the foundation rules whenever the remaining debt above is closed.
+
 ## Rule Application
 
 - **New code follows the target architecture** in `ios_architecture.md`, `ui_and_layout.md`, and `persistence_and_networking.md`. There is no grace period for new files.
@@ -25,9 +29,9 @@ Migrated screens:
 - `CardListViewController` + `CardListViewModel` — replaces `EditCardsTableViewController`
 - `ShoppingListViewController` + `ShoppingListViewModel` — replaces `ListViewController` and `ListTableViewCell`
 - `DetailViewController` + `DetailViewModel` — programmatic UI, `PayMethod` state, feedback calculation, photo capture
+- `ComputeViewController` + `ComputeViewModel` — programmatic UI, `ExchangeRateService`, `TaxMode` / `PriceBreakdown`
 
-Legacy, not yet migrated:
-- `ComputeViewController` — rate fetch, tax arithmetic, and navigation all inline
+Legacy, not yet migrated: none. The migration is complete.
 
 Migrated infrastructure:
 - `japanShoppingTests` unit test target exists, hosted by the app, with a shared scheme at `japanShopping.xcodeproj/xcshareddata/xcschemes/japanShopping.xcscheme`
@@ -43,11 +47,15 @@ Migrated infrastructure:
 - `UIViewController.addTapToDismissKeyboard()` is the shared keyboard-dismiss helper
 
 - `PayMethod` models the payment choice, replacing the overloaded `payType` string
+- `ExchangeRateService` wraps the rate API; `TaxMode` and `PriceBreakdown` own the tax arithmetic
+- `Main.storyboard` is deleted. `SceneDelegate` builds the window and the root navigation controller in code
+- The exchange-rate API key moved out of Swift source into the `EXCHANGE_RATE_API_KEY` build setting, surfaced through `Info.plist`
 
-Legacy infrastructure:
-- `Main.storyboard` holds only the Compute scene
-- The exchange-rate API key is hard-coded in source
-- `LegacyScreenFactory` bridges `ComputeViewController` to the migrated screens; delete it once Compute is migrated
+Remaining debt:
+- **The API key is still not a secret.** It ships inside the app bundle and it is still present in this repository's git history. Moving it to a build setting only made it configurable. Rotating the key and proxying the request through a backend is the only real fix.
+- `LegacyScreenFactory` still exists as `UIViewController` extensions. Now that every screen is migrated, each screen could construct the next ViewModel directly and the file could be deleted.
+- `PriceText` still renders `206.0`. Changing it to `206` is now a one-line change in one place.
+- The unimplemented wish in the old `ComputeViewController` header comment — clearing the screen after tapping Done in the list — was never built and is still not built.
 
 ### Bridging while the migration is in progress
 
@@ -63,7 +71,9 @@ Carry these forward deliberately during migration; do not drop them by accident.
 
 - `ListViewController` deliberately saves only when the user taps Done, so a mis-tapped deletion can be abandoned.
 - The card feedback calculation subtracts 1.5 from the card percentage before applying it.
-- Tax conversion uses a 1.08 multiplier, applied in both directions depending on the selected segment.
+- Tax conversion uses a 1.08 multiplier, applied in both directions depending on the selected segment. Now `TaxMode.taxMultiplier`, locked by `PriceBreakdownTests`.
+- The exchange rate is derived as TWD / JPY and rounded to four decimal places. Locked by `ExchangeRateDecodingTests`.
+- The rate's update time is parsed with `en_US_POSIX` and displayed in `Asia/Taipei`. Locked by `ComputeViewModelTests`.
 - A new card's `feedbackRemaining` starts equal to its `limit`, and `feedbackMoney` starts at 0. Locked by `CardSetViewModelTests`.
 - Deleting a card in the card list is only persisted when the user taps 編輯完成. Leaving with the back button discards the deletions. Locked by `CardListViewModelTests`.
 - Deleting a shopping list row is only persisted when the user taps Done. Leaving with the back button discards the deletions. Locked by `ShoppingListViewModelTests`.
@@ -83,6 +93,7 @@ Each entry is a place where migrated behavior deliberately differs from the lega
 - **Deleting a shopping list row now deletes its photo file.** The legacy screen left the JPEG behind forever. The deletion happens only after the list has been saved successfully, so a failed save never destroys an image.
 - **Pay type defaults to `現金`.** The picker has always displayed 現金 as the initial row, but `didSelectRow` never fires for it, so an item saved without touching the picker stored an empty `payType` and the list row showed nothing. The saved value now matches what the picker shows.
 - **Choosing 信用卡 without picking a card no longer crashes.** The legacy screen guarded this with `numberOfCards > -1` in one place but still indexed `cards` elsewhere; `PayMethod.card(index:)` makes "credit card, none chosen" a representable state.
+- **Converting before the rate arrives reports an error instead of producing 0.** The legacy screen started with a rate of `0`, so tapping 換算 too early silently produced 0 元. For the same reason, 使用未稅價格 / 使用含稅價格 now do nothing until a conversion has actually been made, rather than carrying a 0 price into the detail screen.
 - **An empty shopping list shows `你已經花了0.0$`.** The legacy screen skipped the calculation when the list was empty on load, leaving the storyboard's design-time placeholder `總花費` on screen. A programmatic view has no design-time text, and the delete path already produced the computed string.
 
 ## Update Discipline
