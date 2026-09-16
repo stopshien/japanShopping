@@ -2,215 +2,367 @@
 //  DetailViewController.swift
 //  japanShopping
 //
-//  Created by 沈庭鋒 on 2023/5/21.
-//
 
+import Combine
 import UIKit
 
-class DetailViewController: UIViewController {
+final class DetailViewController: UIViewController {
 
-    var list = ShoppingItem(productName: "", price: 0, payType: "", taxState: "")
-    var lists = [ShoppingItem]()
-    var cards = [Card]()
-    var numberOfCards = -1 // 紀錄選擇哪張信用卡對應到矩陣的順序。
+    private enum Constants {
+        static let horizontalInset: CGFloat = 24
+        static let spacing: CGFloat = 16
+        static let photoHeight: CGFloat = 220
+        static let photoBorderWidth: CGFloat = 4
+        static let fieldHeight: CGFloat = 34
+        static let pickerHeight: CGFloat = 99
+        static let labelFontSize: CGFloat = 20
+    }
 
-    // 信用卡畫面已遷移至 MVVM，這裡透過 repository 取得資料，
-    // 待 DetailViewController 自己遷移後會改為注入。
-    private let cardRepository: CardRepository = FileCardRepository()
-    private let shoppingListRepository: ShoppingListRepository = FileShoppingListRepository()
-    private let imageStore: ImageStore = FileImageStore()
-    var selectPhoto = false // 判定是否有選擇照片
+    private let viewModel: DetailViewModelType
+    private var cancellables = Set<AnyCancellable>()
 
-    
-    @IBOutlet weak var priceLabel: UILabel!
-    
-    @IBOutlet weak var productTextField: UITextField!
-    
-    @IBOutlet weak var payTypePicker: UIPickerView!
-        
-    @IBOutlet weak var cardsChooseOutlet: UIButton!
-    
-    @IBOutlet weak var feedbackLabel: UILabel!
-    
-    @IBOutlet weak var editCardsButtonOutlet: UIButton!
-    
-    @IBOutlet weak var imageSelectButtonOutlet: UIButton!
-    
+    // MARK: - Views
+
+    private let imageSelectButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.backgroundColor = .white
+        button.imageView?.contentMode = .scaleAspectFit
+        button.layer.borderColor = UIColor.white.cgColor
+        button.layer.borderWidth = Constants.photoBorderWidth
+        button.setImage(UIImage(systemName: "photo"), for: .normal)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        return button
+    }()
+
+    private let priceLabel = DetailViewController.makeLabel()
+    private let productLabel = DetailViewController.makeLabel(text: "商品")
+    private let payTypeLabel = DetailViewController.makeLabel(text: "付款方式")
+
+    private let productTextField: UITextField = {
+        let textField = UITextField()
+        textField.borderStyle = .roundedRect
+        textField.font = .systemFont(ofSize: 14)
+        textField.translatesAutoresizingMaskIntoConstraints = false
+        return textField
+    }()
+
+    private let payTypePicker: UIPickerView = {
+        let picker = UIPickerView()
+        picker.translatesAutoresizingMaskIntoConstraints = false
+        return picker
+    }()
+
+    private let cardsChooseButton: UIButton = {
+        var configuration = UIButton.Configuration.plain()
+        configuration.title = "請選擇信用卡"
+        let button = UIButton(configuration: configuration)
+        button.showsMenuAsPrimaryAction = true
+        button.translatesAutoresizingMaskIntoConstraints = false
+        return button
+    }()
+
+    private let editCardsButton: UIButton = {
+        var configuration = UIButton.Configuration.plain()
+        configuration.title = "編輯信用卡"
+        let button = UIButton(configuration: configuration)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        return button
+    }()
+
+    private let feedbackLabel: UILabel = {
+        let label = UILabel()
+        label.text = "信用卡回饋金額"
+        label.textAlignment = .center
+        label.font = .systemFont(ofSize: 17)
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+
+    private let saveToListButton = DetailViewController.makeActionButton(title: "確認新增至 List")
+    private let showShoppingListButton = DetailViewController.makeActionButton(title: "確認清單")
+
+    private let cardButtonsStackView: UIStackView = {
+        let stackView = UIStackView()
+        stackView.axis = .horizontal
+        stackView.distribution = .fillEqually
+        stackView.spacing = Constants.spacing
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        return stackView
+    }()
+
+    private let contentStackView: UIStackView = {
+        let stackView = UIStackView()
+        stackView.axis = .vertical
+        stackView.spacing = Constants.spacing
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        return stackView
+    }()
+
+    // MARK: - Init
+
+    init(viewModel: DetailViewModelType) {
+        self.viewModel = viewModel
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) is not supported")
+    }
+
+    // MARK: - Lifecycle
+
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        imageSelectButtonOutlet.imageView?.contentMode = .scaleAspectFit
-        imageSelectButtonOutlet.layer.borderColor = CGColor(red: 1, green: 1, blue: 1, alpha: 1)
-        imageSelectButtonOutlet.layer.borderWidth = 4
-        
+        setupViews()
+        setupConstraints()
+        bindViewModel()
+        viewModel.input.viewDidLoad()
+    }
+
+    // MARK: - Setup
+
+    private func setupViews() {
+        view.backgroundColor = AppColor.brand
+        addTapToDismissKeyboard()
+
         payTypePicker.delegate = self
         payTypePicker.dataSource = self
-        
-        // 一進到畫面先讀取cards 資料
-        reloadCards()
-        
-        // 讀取 List 檔案
-        lists = (try? shoppingListRepository.load()) ?? []
-        UISet()
+
+        cardButtonsStackView.addArrangedSubview(cardsChooseButton)
+        cardButtonsStackView.addArrangedSubview(editCardsButton)
+
+        [
+            imageSelectButton,
+            priceLabel,
+            makeRow(label: productLabel, field: productTextField),
+            makeRow(label: payTypeLabel, field: payTypePicker),
+            cardButtonsStackView,
+            feedbackLabel,
+            saveToListButton,
+            showShoppingListButton
+        ].forEach(contentStackView.addArrangedSubview)
+
+        view.addSubview(contentStackView)
+
+        imageSelectButton.addTarget(self, action: #selector(imagePickerTapped), for: .touchUpInside)
+        editCardsButton.addTarget(self, action: #selector(editCardsTapped), for: .touchUpInside)
+        saveToListButton.addTarget(self, action: #selector(saveTapped), for: .touchUpInside)
+        showShoppingListButton.addTarget(self, action: #selector(showShoppingListTapped), for: .touchUpInside)
+        productTextField.addTarget(self, action: #selector(productNameChanged), for: .editingChanged)
     }
 
-    // 信用卡畫面（新增／編輯）返回後重新載入，取代原本的 unwind segue。
-    private func reloadCards() {
-        do {
-            cards = try cardRepository.load()
-        } catch {
-            cards = []
-        }
-        // 卡片數量或內容變了，選單與選取索引都必須重建。
-        numberOfCards = -1
-        cardChooseButtonSet()
+    private func setupConstraints() {
+        NSLayoutConstraint.activate([
+            contentStackView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: Constants.spacing),
+            contentStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalInset),
+            contentStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalInset),
+
+            imageSelectButton.heightAnchor.constraint(equalToConstant: Constants.photoHeight),
+            productTextField.heightAnchor.constraint(equalToConstant: Constants.fieldHeight),
+            payTypePicker.heightAnchor.constraint(equalToConstant: Constants.pickerHeight)
+        ])
     }
-    
-    @IBAction func saveToListButton(_ sender: Any) {
-        // 在儲存到 List 頁面前需要先計算回饋的金額以及回饋上限剩下多少，並且記錄到 cards 的矩陣資料中。
-        // 回饋剩餘金額獨立建立一個變數，並且在 CardSetViewController 設定 limit 時賦予設定初始數值。
-        // 需要判斷使用現金還是信用卡，因為現金無法執行 cards 屬性的使用，會崩潰。
-        // 使用文字 list.payType == "信用卡" 無法正常做判定，理由未知，先用使否出現信用卡選項做判定。
-        if cardsChooseOutlet.isHidden == false{
-            // 不能沒選信用卡就按確認存到List，不然沒辦法跑下面這行，會崩潰。
-            if numberOfCards > -1{
-                cards[numberOfCards].feedbackRemaining = cards[numberOfCards].limit - cards[numberOfCards].feedbackMoney
-                try? cardRepository.save(cards)
+
+    // MARK: - Binding
+
+    private func bindViewModel() {
+        viewModel.output.priceDescription
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] text in
+                self?.priceLabel.text = text
             }
-        }
-        saveToList()
+            .store(in: &cancellables)
 
+        viewModel.output.isCardSectionVisible
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isVisible in
+                self?.cardButtonsStackView.isHidden = !isVisible
+                self?.feedbackLabel.isHidden = !isVisible
+            }
+            .store(in: &cancellables)
+
+        viewModel.output.cardButtonTitle
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] title in
+                self?.cardsChooseButton.setTitle(title, for: .normal)
+            }
+            .store(in: &cancellables)
+
+        viewModel.output.cardMenuItems
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] items in
+                self?.rebuildCardMenu(with: items)
+            }
+            .store(in: &cancellables)
+
+        viewModel.output.feedbackText
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] text in
+                self?.feedbackLabel.text = text
+            }
+            .store(in: &cancellables)
+
+        viewModel.output.errorMessage
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] message in
+                self?.presentError(message)
+            }
+            .store(in: &cancellables)
+
+        viewModel.output.route
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] route in
+                self?.navigate(to: route)
+            }
+            .store(in: &cancellables)
     }
-    
-    @IBAction func cardChoose(_ sender: Any) {
-        //下拉按鈕的action 還沒用到，設定在outlet那邊
-    }
-    
-    
-    @IBAction func editCardsButton(_ sender: Any) {
-        let viewModel = CardListViewModel(repository: cardRepository)
-        let controller = CardListViewController(viewModel: viewModel)
-        controller.onFinish = { [weak self] in
-            self?.reloadCards()
+
+    // MARK: - Navigation
+
+    private func navigate(to route: DetailRoute) {
+        switch route {
+        case .addCard:
+            let controller = makeCardSetViewController()
+            controller.onFinish = { [weak self] in
+                self?.viewModel.input.reloadCards()
+            }
+            navigationController?.pushViewController(controller, animated: true)
+
+        case .editCards:
+            let controller = makeCardListViewController()
+            controller.onFinish = { [weak self] in
+                self?.viewModel.input.reloadCards()
+            }
+            navigationController?.pushViewController(controller, animated: true)
+
+        case .shoppingList:
+            navigationController?.pushViewController(makeShoppingListViewController(), animated: true)
         }
-        navigationController?.pushViewController(controller, animated: true)
     }
-    
-    @IBAction func imagePickerButton(_ sender: Any) {
+
+    // MARK: - Actions
+
+    @objc private func imagePickerTapped() {
         let imagePickerController = UIImagePickerController()
         imagePickerController.sourceType = .photoLibrary
         imagePickerController.delegate = self
-        present(imagePickerController, animated: true, completion: nil)
-    }
-    
-    
-    
-    //將購買的商品儲存到清單中
-    func saveToList(){
-        guard productTextField.text != "" else { return }
-        list.productName = productTextField.text ?? ""
-        photoSaveSet()
-        lists.append(list)
-        // 按下儲存至List清單的按鈕時會順便儲存檔案
-        try? shoppingListRepository.save(lists)
-        navigationController?.pushViewController(makeShoppingListViewController(), animated: true)
+        present(imagePickerController, animated: true)
     }
 
-    // 購物清單已遷移為程式碼建立的畫面，取代原本的 storyboard segue。
-    @IBAction func showShoppingListTapped(_ sender: Any) {
-        navigationController?.pushViewController(makeShoppingListViewController(), animated: true)
+    @objc private func editCardsTapped() {
+        viewModel.input.editCardsTapped()
     }
-    
-    // 將選到的圖片交給 ImageStore 保存，並把回傳的檔名記到 list 上。
-    func photoSaveSet(){
-        guard selectPhoto,
-              let imageData = imageSelectButtonOutlet.image(for: .normal)?.jpegData(compressionQuality: 0.9) else {
-            list.photoURL = nil
-            return
-        }
-        list.photoURL = try? imageStore.save(imageData)
-    }
-    
-    // 設定ＵＩ顯示
-    func UISet(){
-        priceLabel.text = "價格：\(list.price)$ (\(list.taxState))"
-        //點擊空白處收鍵盤
-        let tapGesture = UITapGestureRecognizer(target: view, action: #selector(UIView.endEditing(_:)))
-        view.addGestureRecognizer(tapGesture)
-        cardChooseButtonSet()
-    }
-    
-    //信用卡選擇下拉式選單功能設定
-    func cardChooseButtonSet(){
-        
-        var cardsArray = [UIAction(title: "新增信用卡", handler: { [weak self] _ in
-            guard let self else { return }
-            let viewModel = CardSetViewModel(repository: self.cardRepository)
-            let controller = CardSetViewController(viewModel: viewModel)
-            controller.onFinish = { [weak self] in
-                self?.reloadCards()
-            }
-            self.navigationController?.pushViewController(controller, animated: true)
-        })]
-        if cards.count > 0{
-            for i in 0...cards.count-1{
-                let action = UIAction(title: "\(cards[i].name) \(cards[i].percent)%") { _ in
-                    self.cardsChooseOutlet.setTitle("\(self.cards[i].name)卡 剩餘\(self.cards[i].feedbackRemaining)元", for: .normal)
-                    self.list.payType = self.cards[i].name
-                    self.cards[i].feedbackMoney = (self.cards[i].percent - 1.5) * self.list.price * 0.01
-                    self.feedbackLabel.text = "回饋金額為：\(String(format: "%.2f", self.cards[i].feedbackMoney))"
-                    self.numberOfCards = i
-                }
-                cardsArray.append(action)
-            }
-        }
-        cardsChooseOutlet.menu = UIMenu(children:cardsArray)
 
+    @objc private func saveTapped() {
+        view.endEditing(true)
+        viewModel.input.saveTapped()
     }
-    
+
+    @objc private func showShoppingListTapped() {
+        viewModel.input.showShoppingListTapped()
+    }
+
+    @objc private func productNameChanged() {
+        viewModel.input.productNameChanged(productTextField.text ?? "")
+    }
+
+    // MARK: - Private
+
+    private func rebuildCardMenu(with items: [CardMenuItem]) {
+        var actions = [UIAction(title: "新增信用卡") { [weak self] _ in
+            self?.viewModel.input.addCardTapped()
+        }]
+
+        for (index, item) in items.enumerated() {
+            actions.append(UIAction(title: item.title) { [weak self] _ in
+                self?.viewModel.input.cardSelected(at: index)
+            })
+        }
+
+        cardsChooseButton.menu = UIMenu(children: actions)
+    }
+
+    private func presentError(_ message: String) {
+        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "好", style: .default))
+        present(alert, animated: true)
+    }
+
+    private func makeRow(label: UILabel, field: UIView) -> UIStackView {
+        let row = UIStackView(arrangedSubviews: [label, field])
+        row.axis = .horizontal
+        row.spacing = Constants.spacing
+        row.alignment = .center
+        return row
+    }
+
+    private static func makeLabel(text: String? = nil) -> UILabel {
+        let label = UILabel()
+        label.text = text
+        label.numberOfLines = 0
+        label.font = .boldSystemFont(ofSize: Constants.labelFontSize)
+        label.textColor = .white
+        label.setContentHuggingPriority(.required, for: .horizontal)
+        label.setContentCompressionResistancePriority(.required, for: .horizontal)
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }
+
+    private static func makeActionButton(title: String) -> UIButton {
+        var configuration = UIButton.Configuration.plain()
+        configuration.title = title
+        configuration.background.backgroundColor = .white
+        configuration.background.strokeColor = UIColor(white: 0.667, alpha: 1)
+        configuration.background.strokeWidth = 3
+        let button = UIButton(configuration: configuration)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        return button
+    }
 }
 
-extension DetailViewController: UIPickerViewDelegate,UIPickerViewDataSource{
+// MARK: - UIPickerViewDataSource
+
+extension DetailViewController: UIPickerViewDataSource {
+
     func numberOfComponents(in pickerView: UIPickerView) -> Int {
-        return 1
+        1
     }
-    
+
     func pickerView(_ pickerView: UIPickerView, numberOfRowsInComponent component: Int) -> Int {
-        return 2
+        2
     }
-    
-    func pickerView(_ pickerView: UIPickerView, titleForRow row: Int, forComponent component: Int) -> String? {
-        if row == 0 {
-            return "現金"
-        }else{
-            return "信用卡"
-        }
-    }
-    
-    func pickerView(_ pickerView: UIPickerView, didSelectRow row: Int, inComponent component: Int) {
-        if row == 0{
-            list.payType = "現金"
-            cardsChooseOutlet.isHidden = true
-            feedbackLabel.isHidden = true
-            editCardsButtonOutlet.isHidden = true
-        }else{
-            list.payType = "信用卡"
-            cardsChooseOutlet.isHidden = false
-            feedbackLabel.isHidden = false
-            editCardsButtonOutlet.isHidden = false
-        }
-    }
-    
 }
 
-extension DetailViewController: UIImagePickerControllerDelegate,UINavigationControllerDelegate{
-    
-    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
-        selectPhoto = true
-        let image = info[.originalImage] as? UIImage
-        imageSelectButtonOutlet.setImage(image, for: .normal)
+// MARK: - UIPickerViewDelegate
 
-        dismiss(animated: true, completion: nil)
+extension DetailViewController: UIPickerViewDelegate {
+
+    func pickerView(_ pickerView: UIPickerView, titleForRow row: Int, forComponent component: Int) -> String? {
+        row == 0 ? "現金" : "信用卡"
     }
-    
+
+    func pickerView(_ pickerView: UIPickerView, didSelectRow row: Int, inComponent component: Int) {
+        viewModel.input.payMethodSelected(row: row)
+    }
+}
+
+// MARK: - UIImagePickerControllerDelegate
+
+extension DetailViewController: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+
+    func imagePickerController(
+        _ picker: UIImagePickerController,
+        didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]
+    ) {
+        if let image = info[.originalImage] as? UIImage {
+            imageSelectButton.setImage(image, for: .normal)
+            viewModel.input.photoSelected(image.jpegData(compressionQuality: 0.9))
+        }
+        dismiss(animated: true)
+    }
+
+    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+        dismiss(animated: true)
+    }
 }

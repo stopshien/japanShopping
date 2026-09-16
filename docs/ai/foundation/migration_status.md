@@ -24,10 +24,10 @@ Migrated screens:
 - `CardSetViewController` + `CardSetViewModel` — programmatic UI, validates input, writes through `CardRepository`
 - `CardListViewController` + `CardListViewModel` — replaces `EditCardsTableViewController`
 - `ShoppingListViewController` + `ShoppingListViewModel` — replaces `ListViewController` and `ListTableViewCell`
+- `DetailViewController` + `DetailViewModel` — programmatic UI, `PayMethod` state, feedback calculation, photo capture
 
 Legacy, not yet migrated:
 - `ComputeViewController` — rate fetch, tax arithmetic, and navigation all inline
-- `DetailViewController` — holds `lists`, `cards`, `numberOfCards`; owns the feedback calculation
 
 Migrated infrastructure:
 - `japanShoppingTests` unit test target exists, hosted by the app, with a shared scheme at `japanShopping.xcodeproj/xcshareddata/xcschemes/japanShopping.xcscheme`
@@ -42,18 +42,20 @@ Migrated infrastructure:
 - `PriceText` is the single place that formats money
 - `UIViewController.addTapToDismissKeyboard()` is the shared keyboard-dismiss helper
 
+- `PayMethod` models the payment choice, replacing the overloaded `payType` string
+
 Legacy infrastructure:
-- `Main.storyboard` still holds the Compute and Detail scenes
+- `Main.storyboard` holds only the Compute scene
 - The exchange-rate API key is hard-coded in source
-- `ShoppingListFactory` bridges the two legacy screens to the migrated shopping list; delete it once both are migrated
+- `LegacyScreenFactory` bridges `ComputeViewController` to the migrated screens; delete it once Compute is migrated
 
 ### Bridging while the migration is in progress
 
-`DetailViewController` is still legacy but already drives every migrated screen. It holds a `FileCardRepository`, a `FileShoppingListRepository`, and a `FileImageStore`, constructs the child ViewModels, and refreshes itself through the child's `onFinish` closure. This replaced the `unwindToCardVSetViewController(_:)` unwind segue, which is gone.
+`ComputeViewController` is the last legacy screen. It builds the detail and shopping list screens through `UIViewController.makeDetailViewController(item:)` and `makeShoppingListViewController()` in `LegacyScreenFactory.swift`, because it cannot construct a ViewModel of its own yet.
 
-`ComputeViewController` and `DetailViewController` reach the shopping list through `showShoppingListTapped(_:)`, an `@IBAction` that replaced the two `show` segues to the old `ListViewController` scene. Both build the screen through `UIViewController.makeShoppingListViewController()` in `ShoppingListFactory.swift`.
+`DetailViewModel` emits `DetailRoute` values and `DetailViewController` performs the navigation, including handing the card screens an `onFinish` closure that calls back into `reloadCards()`.
 
-When these two screens are migrated, the repositories become injected dependencies, `onFinish` becomes a route output, and `ShoppingListFactory` is deleted.
+When `ComputeViewController` is migrated, `LegacyScreenFactory` is deleted and each screen constructs the next one's ViewModel directly.
 
 ## Known Behavior To Preserve
 
@@ -62,12 +64,15 @@ Carry these forward deliberately during migration; do not drop them by accident.
 - `ListViewController` deliberately saves only when the user taps Done, so a mis-tapped deletion can be abandoned.
 - The card feedback calculation subtracts 1.5 from the card percentage before applying it.
 - Tax conversion uses a 1.08 multiplier, applied in both directions depending on the selected segment.
-- `DetailViewController` currently decides pay type by checking whether the card button is hidden, because comparing `payType` against the string `"信用卡"` did not work. Find the real cause during migration rather than reproducing the workaround.
 - A new card's `feedbackRemaining` starts equal to its `limit`, and `feedbackMoney` starts at 0. Locked by `CardSetViewModelTests`.
 - Deleting a card in the card list is only persisted when the user taps 編輯完成. Leaving with the back button discards the deletions. Locked by `CardListViewModelTests`.
 - Deleting a shopping list row is only persisted when the user taps Done. Leaving with the back button discards the deletions. Locked by `ShoppingListViewModelTests`.
 - The shopping list total is recalculated from scratch after every deletion, never accumulated. Locked by `ShoppingListViewModelTests`.
 - Tax conversion produces prices such as `206.0`, and the UI shows that raw value. `PriceText` centralises this so it can be changed in one place later.
+
+## Resolved Mysteries
+
+- **Why `list.payType == "信用卡"` never matched.** Selecting a card overwrote `payType` with the **card's name**, so by the time the check ran the string was e.g. `ESUN`, never `信用卡`. The legacy code worked around this by inspecting whether the card button was hidden. `PayMethod` now models the choice separately from the string that gets persisted, and `DetailViewModelTests` locks both behaviours.
 
 ## Intentional Behavior Changes
 
@@ -76,6 +81,8 @@ Each entry is a place where migrated behavior deliberately differs from the lega
 - **Card setup rejects non-numeric input instead of crashing.** The legacy `CardSetViewController` used `Double(moneyBack)!` and `Double(limit)!`, so entering anything non-numeric crashed the app. `CardSetViewModel` now reports a validation message instead. Reproducing a crash was not a defensible reading of "behavior must be identical".
 - **Returning from a card screen resets the selected card.** `reloadCards()` sets `numberOfCards = -1`. The legacy unwind kept the old index, which could point past the end of the array after a deletion and trap in `saveToListButton`.
 - **Deleting a shopping list row now deletes its photo file.** The legacy screen left the JPEG behind forever. The deletion happens only after the list has been saved successfully, so a failed save never destroys an image.
+- **Pay type defaults to `現金`.** The picker has always displayed 現金 as the initial row, but `didSelectRow` never fires for it, so an item saved without touching the picker stored an empty `payType` and the list row showed nothing. The saved value now matches what the picker shows.
+- **Choosing 信用卡 without picking a card no longer crashes.** The legacy screen guarded this with `numberOfCards > -1` in one place but still indexed `cards` elsewhere; `PayMethod.card(index:)` makes "credit card, none chosen" a representable state.
 - **An empty shopping list shows `你已經花了0.0$`.** The legacy screen skipped the calculation when the list was empty on load, leaving the storyboard's design-time placeholder `總花費` on screen. A programmatic view has no design-time text, and the delete path already produced the computed string.
 
 ## Update Discipline

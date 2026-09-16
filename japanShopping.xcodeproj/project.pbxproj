@@ -37,11 +37,13 @@
 		AE00000C2A00000100AE0001 /* ShoppingListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE00000B2A00000100AE0001 /* ShoppingListViewModel.swift */; };
 		AE00000E2A00000100AE0001 /* ShoppingListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE00000D2A00000100AE0001 /* ShoppingListViewController.swift */; };
 		AE0000102A00000100AE0001 /* ShoppingListCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE00000F2A00000100AE0001 /* ShoppingListCell.swift */; };
-		AE0000122A00000100AE0001 /* ShoppingListFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE0000112A00000100AE0001 /* ShoppingListFactory.swift */; };
 		AF0000022A00000100AF0001 /* ShoppingListStubs.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0000012A00000100AF0001 /* ShoppingListStubs.swift */; };
 		AF0000042A00000100AF0001 /* ShoppingListViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0000032A00000100AF0001 /* ShoppingListViewModelTests.swift */; };
 		AF0000062A00000100AF0001 /* FileShoppingListRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0000052A00000100AF0001 /* FileShoppingListRepositoryTests.swift */; };
 		AF0000082A00000100AF0001 /* FileImageStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0000072A00000100AF0001 /* FileImageStoreTests.swift */; };
+		BA0000022A00000100BA0001 /* DetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000012A00000100BA0001 /* DetailViewModel.swift */; };
+		BA0000042A00000100BA0001 /* LegacyScreenFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000032A00000100BA0001 /* LegacyScreenFactory.swift */; };
+		BB0000022A00000100BB0001 /* DetailViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000012A00000100BB0001 /* DetailViewModelTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -78,11 +80,13 @@
 		AE00000B2A00000100AE0001 /* ShoppingListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingListViewModel.swift; sourceTree = "<group>"; };
 		AE00000D2A00000100AE0001 /* ShoppingListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingListViewController.swift; sourceTree = "<group>"; };
 		AE00000F2A00000100AE0001 /* ShoppingListCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingListCell.swift; sourceTree = "<group>"; };
-		AE0000112A00000100AE0001 /* ShoppingListFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingListFactory.swift; sourceTree = "<group>"; };
 		AF0000012A00000100AF0001 /* ShoppingListStubs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingListStubs.swift; sourceTree = "<group>"; };
 		AF0000032A00000100AF0001 /* ShoppingListViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingListViewModelTests.swift; sourceTree = "<group>"; };
 		AF0000052A00000100AF0001 /* FileShoppingListRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileShoppingListRepositoryTests.swift; sourceTree = "<group>"; };
 		AF0000072A00000100AF0001 /* FileImageStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileImageStoreTests.swift; sourceTree = "<group>"; };
+		BA0000012A00000100BA0001 /* DetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailViewModel.swift; sourceTree = "<group>"; };
+		BA0000032A00000100BA0001 /* LegacyScreenFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacyScreenFactory.swift; sourceTree = "<group>"; };
+		BB0000012A00000100BB0001 /* DetailViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailViewModelTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -125,7 +129,8 @@
 				AE00000B2A00000100AE0001 /* ShoppingListViewModel.swift */,
 				AE00000D2A00000100AE0001 /* ShoppingListViewController.swift */,
 				AE00000F2A00000100AE0001 /* ShoppingListCell.swift */,
-				AE0000112A00000100AE0001 /* ShoppingListFactory.swift */,
+				BA0000012A00000100BA0001 /* DetailViewModel.swift */,
+				BA0000032A00000100BA0001 /* LegacyScreenFactory.swift */,
 				CFF54D8D2A1A179800CEB598 /* japanShopping */,
 				AB0000062A00000100AB0001 /* japanShoppingTests */,
 				CFF54D8C2A1A179800CEB598 /* Products */,
@@ -159,6 +164,7 @@
 			children = (
 				AB0000022A00000100AB0001 /* PersistenceFormatTests.swift */,
 				AB0000032A00000100AB0001 /* ExchangeRateDecodingTests.swift */,
+				BB0000012A00000100BB0001 /* DetailViewModelTests.swift */,
 				AF0000012A00000100AF0001 /* ShoppingListStubs.swift */,
 				AF0000032A00000100AF0001 /* ShoppingListViewModelTests.swift */,
 				AF0000052A00000100AF0001 /* FileShoppingListRepositoryTests.swift */,
@@ -283,6 +289,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				CFF54D8F2A1A179800CEB598 /* AppDelegate.swift in Sources */,
+				BA0000022A00000100BA0001 /* DetailViewModel.swift in Sources */,
+				BA0000042A00000100BA0001 /* LegacyScreenFactory.swift in Sources */,
 				AE0000022A00000100AE0001 /* AppColor.swift in Sources */,
 				AE0000042A00000100AE0001 /* ShoppingItem.swift in Sources */,
 				AE0000062A00000100AE0001 /* ShoppingListRepository.swift in Sources */,
@@ -291,7 +299,6 @@
 				AE00000C2A00000100AE0001 /* ShoppingListViewModel.swift in Sources */,
 				AE00000E2A00000100AE0001 /* ShoppingListViewController.swift in Sources */,
 				AE0000102A00000100AE0001 /* ShoppingListCell.swift in Sources */,
-				AE0000122A00000100AE0001 /* ShoppingListFactory.swift in Sources */,
 				AC0000022A00000100AC0001 /* DocumentsDirectory.swift in Sources */,
 				AC0000042A00000100AC0001 /* Card.swift in Sources */,
 				AC0000062A00000100AC0001 /* CardRepository.swift in Sources */,
@@ -313,6 +320,7 @@
 			files = (
 				AB0000042A00000100AB0001 /* PersistenceFormatTests.swift in Sources */,
 				AB0000052A00000100AB0001 /* ExchangeRateDecodingTests.swift in Sources */,
+				BB0000022A00000100BB0001 /* DetailViewModelTests.swift in Sources */,
 				AF0000022A00000100AF0001 /* ShoppingListStubs.swift in Sources */,
 				AF0000042A00000100AF0001 /* ShoppingListViewModelTests.swift in Sources */,
 				AF0000062A00000100AF0001 /* FileShoppingListRepositoryTests.swift in Sources */,

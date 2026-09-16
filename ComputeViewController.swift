@@ -71,13 +71,8 @@ class ComputeViewController: UIViewController {
     
 
     func nextPage(){
-
-        if let controller = storyboard?.instantiateViewController(withIdentifier: "DetailViewController") as? DetailViewController{
-            if yenTextField.text != ""{
-                controller.list = list
-                navigationController?.pushViewController(controller, animated: true)
-            }
-        }
+        guard yenTextField.text != "" else { return }
+        navigationController?.pushViewController(makeDetailViewController(item: list), animated: true)
     }
 
     // 購物清單已遷移為程式碼建立的畫面，取代原本的 storyboard segue。

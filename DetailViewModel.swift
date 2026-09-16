@@ -1,0 +1,241 @@
+//
+//  DetailViewModel.swift
+//  japanShopping
+//
+
+import Combine
+import Foundation
+
+// MARK: - Contract
+
+/// 付款方式。
+///
+/// 遷移前這裡只有 `list.payType` 一個字串，而選了信用卡之後那個字串會被改寫成
+/// **卡片名稱**，所以 `list.payType == "信用卡"` 永遠不成立 —— 這就是舊程式碼裡
+/// 「理由未知，先用是否出現信用卡選項做判定」的真正原因。
+/// 現在把「付款方式」與「要存進檔案的字串」分成兩件事，判定就不需要看畫面狀態了。
+enum PayMethod: Equatable {
+    case cash
+    case card(index: Int?)
+
+    var isCard: Bool {
+        if case .card = self { return true }
+        return false
+    }
+
+    var selectedCardIndex: Int? {
+        if case .card(let index) = self { return index }
+        return nil
+    }
+}
+
+struct CardMenuItem: Equatable {
+    let title: String
+}
+
+enum DetailRoute: Equatable {
+    case addCard
+    case editCards
+    case shoppingList
+}
+
+protocol DetailViewModelType {
+    var input: DetailViewModelInput { get }
+    var output: DetailViewModelOutput { get }
+}
+
+protocol DetailViewModelInput {
+    func viewDidLoad()
+    func reloadCards()
+    func productNameChanged(_ text: String)
+    func payMethodSelected(row: Int)
+    func cardSelected(at index: Int)
+    func addCardTapped()
+    func editCardsTapped()
+    func photoSelected(_ data: Data?)
+    func saveTapped()
+    func showShoppingListTapped()
+}
+
+protocol DetailViewModelOutput {
+    var priceDescription: AnyPublisher<String, Never> { get }
+    var isCardSectionVisible: AnyPublisher<Bool, Never> { get }
+    var cardButtonTitle: AnyPublisher<String, Never> { get }
+    var cardMenuItems: AnyPublisher<[CardMenuItem], Never> { get }
+    var feedbackText: AnyPublisher<String, Never> { get }
+    var route: AnyPublisher<DetailRoute, Never> { get }
+    var errorMessage: AnyPublisher<String, Never> { get }
+}
+
+// MARK: - ViewModel
+
+final class DetailViewModel: DetailViewModelType {
+
+    private enum Constants {
+        /// 回饋趴數要先扣掉的基礎趴數。
+        static let baseFeedbackPercent = 1.5
+        static let cardButtonPlaceholder = "請選擇信用卡"
+        static let feedbackPlaceholder = "信用卡回饋金額"
+    }
+
+    private let cardRepository: CardRepository
+    private let shoppingListRepository: ShoppingListRepository
+    private let imageStore: ImageStore
+
+    private var item: ShoppingItem
+    private var cards: [Card] = []
+    private var payMethod: PayMethod = .cash
+    private var photoData: Data?
+
+    private let priceDescriptionSubject = CurrentValueSubject<String, Never>("")
+    private let isCardSectionVisibleSubject = CurrentValueSubject<Bool, Never>(false)
+    private let cardButtonTitleSubject = CurrentValueSubject<String, Never>(Constants.cardButtonPlaceholder)
+    private let cardMenuItemsSubject = CurrentValueSubject<[CardMenuItem], Never>([])
+    private let feedbackTextSubject = CurrentValueSubject<String, Never>(Constants.feedbackPlaceholder)
+    private let routeSubject = PassthroughSubject<DetailRoute, Never>()
+    private let errorMessageSubject = PassthroughSubject<String, Never>()
+
+    init(
+        item: ShoppingItem,
+        cardRepository: CardRepository,
+        shoppingListRepository: ShoppingListRepository,
+        imageStore: ImageStore
+    ) {
+        self.item = item
+        self.cardRepository = cardRepository
+        self.shoppingListRepository = shoppingListRepository
+        self.imageStore = imageStore
+        // 畫面上的 picker 預設停在「現金」，所以付款方式的初始值也是現金。
+        self.item.payType = "現金"
+    }
+
+    var input: DetailViewModelInput { self }
+    var output: DetailViewModelOutput { self }
+
+    // MARK: - Private
+
+    private func loadCards() {
+        do {
+            cards = try cardRepository.load()
+        } catch {
+            cards = []
+            errorMessageSubject.send("信用卡資料讀取失敗")
+        }
+        cardMenuItemsSubject.send(cards.map { CardMenuItem(title: "\($0.name) \($0.percent)%") })
+    }
+
+    /// 卡片清單變動後，先前選到的索引就不再可信，一律回到未選取狀態。
+    private func resetCardSelection() {
+        if payMethod.isCard {
+            payMethod = .card(index: nil)
+        }
+        cardButtonTitleSubject.send(Constants.cardButtonPlaceholder)
+        feedbackTextSubject.send(Constants.feedbackPlaceholder)
+    }
+
+    private func feedbackMoney(for card: Card) -> Double {
+        (card.percent - Constants.baseFeedbackPercent) * item.price * 0.01
+    }
+
+    private func persistSelectedCardFeedback() {
+        guard let index = payMethod.selectedCardIndex, cards.indices.contains(index) else { return }
+        cards[index].feedbackRemaining = cards[index].limit - cards[index].feedbackMoney
+        try? cardRepository.save(cards)
+    }
+}
+
+// MARK: - DetailViewModelInput
+
+extension DetailViewModel: DetailViewModelInput {
+
+    func viewDidLoad() {
+        priceDescriptionSubject.send("價格：\(PriceText.amount(item.price))$ (\(item.taxState))")
+        loadCards()
+    }
+
+    func reloadCards() {
+        loadCards()
+        resetCardSelection()
+    }
+
+    func productNameChanged(_ text: String) {
+        item.productName = text
+    }
+
+    func payMethodSelected(row: Int) {
+        if row == 0 {
+            payMethod = .cash
+            item.payType = "現金"
+            isCardSectionVisibleSubject.send(false)
+        } else {
+            payMethod = .card(index: nil)
+            item.payType = "信用卡"
+            isCardSectionVisibleSubject.send(true)
+        }
+    }
+
+    func cardSelected(at index: Int) {
+        guard cards.indices.contains(index) else { return }
+
+        payMethod = .card(index: index)
+        // 存進清單的是卡片名稱，不是「信用卡」三個字。
+        item.payType = cards[index].name
+        cards[index].feedbackMoney = feedbackMoney(for: cards[index])
+
+        cardButtonTitleSubject.send("\(cards[index].name)卡 剩餘\(PriceText.amount(cards[index].feedbackRemaining))元")
+        feedbackTextSubject.send("回饋金額為：\(String(format: "%.2f", cards[index].feedbackMoney))")
+    }
+
+    func addCardTapped() {
+        routeSubject.send(.addCard)
+    }
+
+    func editCardsTapped() {
+        routeSubject.send(.editCards)
+    }
+
+    func photoSelected(_ data: Data?) {
+        photoData = data
+    }
+
+    func saveTapped() {
+        // 先結算選到的那張卡的回饋上限剩餘額度。
+        if payMethod.isCard {
+            persistSelectedCardFeedback()
+        }
+
+        guard !item.productName.isEmpty else { return }
+
+        if let photoData {
+            item.photoURL = try? imageStore.save(photoData)
+        }
+
+        do {
+            var items = try shoppingListRepository.load()
+            items.append(item)
+            try shoppingListRepository.save(items)
+        } catch {
+            errorMessageSubject.send("購物清單儲存失敗，請再試一次")
+            return
+        }
+
+        routeSubject.send(.shoppingList)
+    }
+
+    func showShoppingListTapped() {
+        routeSubject.send(.shoppingList)
+    }
+}
+
+// MARK: - DetailViewModelOutput
+
+extension DetailViewModel: DetailViewModelOutput {
+
+    var priceDescription: AnyPublisher<String, Never> { priceDescriptionSubject.eraseToAnyPublisher() }
+    var isCardSectionVisible: AnyPublisher<Bool, Never> { isCardSectionVisibleSubject.eraseToAnyPublisher() }
+    var cardButtonTitle: AnyPublisher<String, Never> { cardButtonTitleSubject.eraseToAnyPublisher() }
+    var cardMenuItems: AnyPublisher<[CardMenuItem], Never> { cardMenuItemsSubject.eraseToAnyPublisher() }
+    var feedbackText: AnyPublisher<String, Never> { feedbackTextSubject.eraseToAnyPublisher() }
+    var route: AnyPublisher<DetailRoute, Never> { routeSubject.eraseToAnyPublisher() }
+    var errorMessage: AnyPublisher<String, Never> { errorMessageSubject.eraseToAnyPublisher() }
+}
