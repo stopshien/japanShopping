@@ -38,11 +38,17 @@ Path: `docs/ai/`
 Tool-specific folders (`.claude/`, `.cursor/`) may hold thin adapters or commands, but they must not become the canonical home of the rules themselves.
 
 ### Repository landmarks
-- Swift sources: repository root (`ListViewController.swift`, `DetailViewController.swift`, …)
-- App lifecycle and resources: `japanShopping/`
+- Production Swift sources: repository root, flat, one primary type per file
+  - screens: `<Screen>ViewController.swift` + `<Screen>ViewModel.swift`
+  - services: `<Thing>Repository.swift`, `ImageStore.swift`, `ExchangeRateService.swift`
+  - models: `ShoppingItem.swift`, `Card.swift`, `ExchangeRate.swift`
+  - composition root: `ScreenFactory.swift`
+  - shared helpers: `AppColor.swift`, `PriceText.swift`, `DocumentsDirectory.swift`, `TaxMode.swift`, `UIViewController+KeyboardDismiss.swift`
+- App lifecycle and resources: `japanShopping/` (`AppDelegate.swift`, `SceneDelegate.swift`, `Info.plist`, `Assets.xcassets`, `LaunchScreen.storyboard`)
+- Tests: `japanShoppingTests/`
 - Xcode project: `japanShopping.xcodeproj`
 
-Note: production Swift files currently live at the repository root rather than inside `japanShopping/`. Keep new files consistent with the existing layout unless a restructure is explicitly requested.
+Note: production Swift files live at the repository root rather than inside `japanShopping/`, and there are no group folders. Keep new files consistent with this layout unless a restructure is explicitly requested.
 
 ### Architecture
 
