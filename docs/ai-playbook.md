@@ -40,25 +40,31 @@ Tool-specific folders (`.claude/`, `.cursor/`) may hold thin adapters or command
 ### Repository landmarks
 - Swift sources: repository root (`ListViewController.swift`, `DetailViewController.swift`, …)
 - App lifecycle and resources: `japanShopping/`
-- UI definitions: `japanShopping/Base.lproj/Main.storyboard`
+- Legacy UI definitions: `japanShopping/Base.lproj/Main.storyboard`
 - Xcode project: `japanShopping.xcodeproj`
 
 Note: production Swift files currently live at the repository root rather than inside `japanShopping/`. Keep new files consistent with the existing layout unless a restructure is explicitly requested.
+
+### Architecture direction
+
+The repository is migrating from Storyboard-based MVC to programmatic UIKit with MVVM and Combine, with no third-party dependencies. The foundation rules describe the **target** architecture; `docs/ai/foundation/migration_status.md` records which screens have reached it. Read that file before concluding that a legacy file breaks the rules.
 
 ### Foundational rules
 Path: `docs/ai/foundation/`
 
 - `repository_operating_model.md` — how agents load and maintain knowledge here
-- `ios_architecture.md` — stack, MVC boundaries, screen navigation model
-- `storyboard_and_ui.md` — Storyboard, IBOutlet, and UI conventions
-- `persistence_and_networking.md` — file-based persistence, image storage, URLSession usage
+- `migration_status.md` — which screens follow the target architecture and which are still legacy
+- `ios_architecture.md` — stack, MVVM layer responsibilities, ViewModel contract, navigation
+- `ui_and_layout.md` — programmatic UIKit, screen structure, Combine binding rules
+- `persistence_and_networking.md` — service protocols, file persistence, image storage, URLSession
 - `swift_file_organization.md` — file scope, type order, `MARK:`, access control
 - `commit_message_conventions.md` — commit format for this repository
-- `quality_and_delivery.md` — code quality, safety, verification, change hygiene
+- `quality_and_delivery.md` — code quality, testing, verification, change hygiene
 
 ### Workflow guidance
 Path: `docs/ai/workflows/`
 
+- `screen_migration.md` — converting a legacy Storyboard/MVC screen to MVVM
 - `new_feature_development.md`
 - `refactor_analysis.md`
 - `code_review.md`
@@ -125,4 +131,5 @@ See `docs/ai/features/README.md` for the contract. Each feature directory is the
 - Foundational rules: `docs/ai/foundation/`
 - Task workflows: `docs/ai/workflows/`
 - Feature-local knowledge: `docs/ai/features/`
+- Migration status: `docs/ai/foundation/migration_status.md`
 - Commit command: `.claude/commands/commit.md`

@@ -1,37 +1,51 @@
 # Swift File Organization
 
 ## File Scope
-- Keep one primary type per file unless a small related helper clearly belongs beside it.
-- Name the file after its primary type (`ListViewController.swift` contains `ListViewController`).
-- Do not place unrelated helper types, mocks, or large utility code in production files.
-- `List.swift` currently holds both `List` and `Card`. Keep new model types out of it; give a new model its own file.
+- Keep one primary type per file, named after that type.
+- A screen is split across files: `<Screen>ViewController.swift`, `<Screen>ViewModel.swift`, and the protocol declarations beside the ViewModel.
+- Models, services, and view controllers do not share a file. `List.swift` currently holds both `List` and `Card`; split it during migration and never add a third type to it.
+- Do not place mocks or test doubles in production files.
 
 ## Preferred Type Order
+
+For a view controller:
 - type declaration
-- `@IBOutlet` properties
-- stored properties
+- injected dependencies (`viewModel`)
+- `cancellables`
+- private view properties
 - initializers
-- lifecycle (`viewDidLoad`, `viewWillAppear`, …)
-- `@IBAction` methods
-- other methods
+- lifecycle
+- setup methods
+- binding
+- action handlers
 - private helpers
 - protocol conformances in extensions
+
+For a ViewModel:
+- type declaration and `Input` / `Output` conformance
+- injected services
+- private subjects and state
+- initializer
+- `input` / `output` accessors
+- private logic
+- extensions conforming to the `Input` and `Output` protocols
 
 ## Extensions
 - Use extensions to separate protocol conformances and focused responsibilities.
 - Keep each extension limited to a single responsibility or protocol.
-- Do not use extensions to hide logic that should live in another type.
+- Do not use extensions to hide logic that belongs in another type.
 
 ## MARK Organization
-- Use `// MARK: - ...` to separate outlets, lifecycle, actions, helpers, and protocol conformances.
+- Use `// MARK: - ...` to separate properties, lifecycle, setup, binding, actions, and protocol conformances.
 - Keep section names in English.
-- Avoid vague section names such as `Misc` or `Helper` when a more specific name is possible.
+- Avoid vague section names such as `Misc` or `Helper`.
 - Avoid excessive fragmentation in very small files.
 
 ## Naming
 - Types are `UpperCamelCase`; properties and methods are `lowerCamelCase`.
-- Existing outlets such as `TypeOfPay` and methods such as `UISet()` violate this. Do not copy the pattern into new code; rename only when the change is the point of the task, and update the storyboard connection in the same change.
-- Prefer descriptive names over abbreviations (`japaneseYenToTaiwanDollar` over `JYPToTWD`) in new code.
+- Legacy names such as `TypeOfPay`, `UISet()`, `fectch()`, and `JYPToTWD` are wrong. Do not carry them into migrated code; fix them when the file is migrated.
+- Prefer descriptive names over abbreviations: `yenToTaiwanDollarRate`, not `JYPToTWD`.
+- Name a publisher for the value it carries, not for the mechanism.
 
 ## Formatting
 - Use 4-space indentation.
@@ -40,7 +54,8 @@
 - Match the surrounding file when the local style is already consistent.
 
 ## Access Control
-- Default to `private` for helper methods and stored properties that no other type reads.
-- Properties assigned by a pushing controller during navigation must stay internal; document why with a short comment when it is not obvious.
+- Default to `private`. A property that no other type reads must be `private`.
+- Subjects are always `private`; expose `AnyPublisher` instead.
 - Use `private(set)` when write access should stay internal to the owner type.
-- Prefer `final class` for view controllers and cells unless subclassing is intended.
+- Mark view controllers, cells, ViewModels, and services `final` unless subclassing is intended.
+- Mark `init(coder:)` unavailable on programmatic view controllers rather than leaving a live `fatalError` path.

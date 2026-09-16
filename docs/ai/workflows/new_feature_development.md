@@ -4,25 +4,30 @@ Use this workflow when building a new screen or adding a substantial new capabil
 
 ## Starting Sequence
 1. Read `docs/ai-playbook.md` and the applicable foundational rules.
-2. Check whether the target area already has feature-local knowledge under `docs/ai/features/<feature>/`.
-3. If no feature-local knowledge exists and the change is non-trivial, create `context.md`, `rules.md`, and `plan.md` before expanding implementation scope.
+2. Read `docs/ai/foundation/migration_status.md` to see whether the affected screens are migrated.
+3. Check whether the target area has feature-local knowledge under `docs/ai/features/<feature>/`.
+4. If no feature-local knowledge exists and the change is non-trivial, create `context.md`, `rules.md`, and `plan.md` before expanding implementation scope.
+
+If the feature lands on a screen that has not been migrated yet, migrate that screen first via `screen_migration.md`, in its own commit. Do not build new features in the legacy style.
 
 ## Implementation Expectations
-- Follow the repository stack: Swift, UIKit, Storyboard, MVC, no third-party dependencies.
-- A new screen means a new storyboard scene plus a `UIViewController` subclass in its own file; set the storyboard ID to the type name.
-- Pass data to the next screen by assigning its properties before the push, matching the existing pattern.
-- Persist new model data through a `Codable` model type with its own save/read methods, as `List` and `Card` do.
-- Keep networking on `URLSession` with `JSONDecoder`, and update UI on the main queue.
+- Follow the target stack: Swift, UIKit built programmatically, MVVM, Combine, no third-party dependencies.
+- A new screen is at minimum three files: the ViewModel protocols, the ViewModel, and the view controller.
+- Put every business rule in the ViewModel. The controller only binds and renders.
+- Put every IO operation behind a service protocol and inject it.
+- Pass data forward by constructing the next ViewModel, never by assigning properties on an instantiated controller.
+- Give the ViewModel a test alongside it.
 
 ## Deliverables
 - compilable, runnable code
-- storyboard connections that match the code
+- unit tests for new ViewModel logic
 - updated feature-local knowledge when the behavior is durable
 - a stated verification result: what was built, what was run, what was not checked
 
 ## Review Checklist
-- Are responsibilities separated between the controller and the model?
-- Does any new stored property break existing saved `list` / `cards` files?
-- Are new outlets and actions connected, and are old connections still valid?
-- Are there force unwraps or unchecked array ranges on the new path?
-- Is there feature-specific knowledge that should be written down for future agent runs?
+- Does the ViewModel import UIKit? It must not.
+- Are services injected as protocols, or constructed inline?
+- Does any new stored property break existing saved files?
+- Are there force unwraps, unchecked array ranges, or strong `self` captures on the new path?
+- Is every subscription stored in a `cancellables` set owned by the subscriber?
+- Is formatting done in the ViewModel rather than the view?
