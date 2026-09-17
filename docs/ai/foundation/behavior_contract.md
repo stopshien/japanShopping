@@ -23,10 +23,14 @@ Each entry names the test that locks it. If a change makes one of these tests fa
 - **The on-disk property list format of `ShoppingItem` and `Card`.** The stored keys are the property names, so renaming a property silently breaks every existing user's saved data. `PersistenceFormatTests`, `FileShoppingListRepositoryTests`, `FileCardRepositoryTests`.
 - **Photos are referenced by bare filename, never by absolute path.** The app container path changes between installs. `FileImageStoreTests`.
 
+- **The welcome screen shows only when no `UserProfile` is stored.** There is no separate "has onboarded" flag: a stored profile *is* the flag. `WelcomeViewModelTests`, `UserDefaultsUserProfileRepositoryTests`.
+
 ## Why The Code Looks Like This
 
 - **`PayMethod` is separate from `ShoppingItem.payType`.** The original code kept only the `payType` string, and selecting a card overwrote it with the **card's name** — so `payType == "信用卡"` was never true once a card was chosen, and the code worked around it by inspecting whether the card button was hidden. `PayMethod` models the choice; `payType` is only the value that gets persisted. `DetailViewModelTests` locks both.
 - **`ComputeViewModel` keeps `.receive(on: DispatchQueue.main)` even though it makes tests asynchronous.** Removing it would let the rate be written from the URLSession background thread while the main thread reads it. The tests wait for the main queue instead.
+- **The user profile lives in `UserDefaults`, not a property list file.** The shopping list and cards are growing collections that earn a file; the user's name is a single setting. It still goes through `UserProfileRepository` so the ViewModel stays testable.
+- **`SceneDelegate` swaps the window's root controller** after the welcome screen finishes, rather than pushing or presenting the main flow. The welcome screen is then released and no back gesture can return to it.
 - **`PriceText` is the only place money is formatted.** It shows 0 to 2 decimal places with no grouping separator and a fixed `en_US_POSIX` locale, so output does not change with device settings. Every money string in the app goes through it.
 
 ## Deliberate Departures From The Original App

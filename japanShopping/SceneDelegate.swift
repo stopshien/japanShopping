@@ -10,6 +10,7 @@ import UIKit
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     var window: UIWindow?
+    private var factory: ScreenFactory?
 
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
@@ -18,15 +19,36 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // 所有畫面都已改為程式碼建立，Main.storyboard 已移除。
         // AppScreenFactory 是整個 App 的組裝根，各畫面只透過 ScreenFactory 取得下一個畫面。
         let factory = AppScreenFactory()
+        self.factory = factory
+
+        let window = UIWindow(windowScene: windowScene)
+        window.tintColor = AppColor.accent
+        window.makeKeyAndVisible()
+        self.window = window
+
+        if factory.needsWelcome {
+            window.rootViewController = factory.makeWelcome { [weak self] in
+                self?.showMain(animated: true)
+            }
+        } else {
+            showMain(animated: false)
+        }
+    }
+
+    /// 歡迎頁完成後換掉 root，歡迎頁隨之釋放，返回手勢也不會回到它。
+    private func showMain(animated: Bool) {
+        guard let window, let factory else { return }
 
         let navigationController = UINavigationController(rootViewController: factory.makeCompute())
         ComputeAppearance.apply(to: navigationController.navigationBar)
 
-        let window = UIWindow(windowScene: windowScene)
-        window.tintColor = AppColor.accent
-        window.rootViewController = navigationController
-        window.makeKeyAndVisible()
-        self.window = window
+        guard animated else {
+            window.rootViewController = navigationController
+            return
+        }
+        UIView.transition(with: window, duration: 0.3, options: .transitionCrossDissolve) {
+            window.rootViewController = navigationController
+        }
     }
 
     func sceneDidDisconnect(_ scene: UIScene) {

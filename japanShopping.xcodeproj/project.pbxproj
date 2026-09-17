@@ -54,6 +54,11 @@
 		CC0000042A00000100CC0001 /* AppView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0000032A00000100CC0001 /* AppView.swift */; };
 		CD0000022A00000100CD0001 /* AppAppearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD0000012A00000100CD0001 /* AppAppearance.swift */; };
 		CE0000022A00000100CE0001 /* CardListCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE0000012A00000100CE0001 /* CardListCell.swift */; };
+		DA0000022A00000100DA0001 /* UserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA0000012A00000100DA0001 /* UserProfile.swift */; };
+		DA0000042A00000100DA0001 /* UserProfileRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA0000032A00000100DA0001 /* UserProfileRepository.swift */; };
+		DA0000062A00000100DA0001 /* WelcomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA0000052A00000100DA0001 /* WelcomeViewModel.swift */; };
+		DA0000082A00000100DA0001 /* WelcomeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA0000072A00000100DA0001 /* WelcomeViewController.swift */; };
+		DB0000022A00000100DB0001 /* WelcomeViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB0000012A00000100DB0001 /* WelcomeViewModelTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -107,6 +112,11 @@
 		CC0000032A00000100CC0001 /* AppView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppView.swift; sourceTree = "<group>"; };
 		CD0000012A00000100CD0001 /* AppAppearance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppAppearance.swift; sourceTree = "<group>"; };
 		CE0000012A00000100CE0001 /* CardListCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardListCell.swift; sourceTree = "<group>"; };
+		DA0000012A00000100DA0001 /* UserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfile.swift; sourceTree = "<group>"; };
+		DA0000032A00000100DA0001 /* UserProfileRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfileRepository.swift; sourceTree = "<group>"; };
+		DA0000052A00000100DA0001 /* WelcomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeViewModel.swift; sourceTree = "<group>"; };
+		DA0000072A00000100DA0001 /* WelcomeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeViewController.swift; sourceTree = "<group>"; };
+		DB0000012A00000100DB0001 /* WelcomeViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeViewModelTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -159,6 +169,10 @@
 				CC0000032A00000100CC0001 /* AppView.swift */,
 				CD0000012A00000100CD0001 /* AppAppearance.swift */,
 				CE0000012A00000100CE0001 /* CardListCell.swift */,
+				DA0000012A00000100DA0001 /* UserProfile.swift */,
+				DA0000032A00000100DA0001 /* UserProfileRepository.swift */,
+				DA0000052A00000100DA0001 /* WelcomeViewModel.swift */,
+				DA0000072A00000100DA0001 /* WelcomeViewController.swift */,
 				CFF54D8D2A1A179800CEB598 /* japanShopping */,
 				AB0000062A00000100AB0001 /* japanShoppingTests */,
 				CFF54D8C2A1A179800CEB598 /* Products */,
@@ -191,6 +205,7 @@
 			children = (
 				AB0000022A00000100AB0001 /* PersistenceFormatTests.swift */,
 				AB0000032A00000100AB0001 /* ExchangeRateDecodingTests.swift */,
+				DB0000012A00000100DB0001 /* WelcomeViewModelTests.swift */,
 				CA0000012A00000100CA0001 /* PriceBreakdownTests.swift */,
 				BF0000012A00000100BF0001 /* PriceTextTests.swift */,
 				BD0000012A00000100BD0001 /* ComputeViewModelTests.swift */,
@@ -318,6 +333,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				CFF54D8F2A1A179800CEB598 /* AppDelegate.swift in Sources */,
+				DA0000082A00000100DA0001 /* WelcomeViewController.swift in Sources */,
+				DA0000062A00000100DA0001 /* WelcomeViewModel.swift in Sources */,
+				DA0000042A00000100DA0001 /* UserProfileRepository.swift in Sources */,
+				DA0000022A00000100DA0001 /* UserProfile.swift in Sources */,
 				CE0000022A00000100CE0001 /* CardListCell.swift in Sources */,
 				CD0000022A00000100CD0001 /* AppAppearance.swift in Sources */,
 				CC0000042A00000100CC0001 /* AppView.swift in Sources */,
@@ -357,6 +376,7 @@
 			files = (
 				AB0000042A00000100AB0001 /* PersistenceFormatTests.swift in Sources */,
 				AB0000052A00000100AB0001 /* ExchangeRateDecodingTests.swift in Sources */,
+				DB0000022A00000100DB0001 /* WelcomeViewModelTests.swift in Sources */,
 				CA0000022A00000100CA0001 /* PriceBreakdownTests.swift in Sources */,
 				BF0000022A00000100BF0001 /* PriceTextTests.swift in Sources */,
 				BD0000022A00000100BD0001 /* ComputeViewModelTests.swift in Sources */,
