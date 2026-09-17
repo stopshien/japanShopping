@@ -189,6 +189,76 @@ final class ComputeViewModelTests: XCTestCase {
         XCTAssertTrue(routes.isEmpty)
     }
 
+    // MARK: - 商品稅率類別
+
+    func testTaxCategorySegmentsCarryTheActualRates() {
+        var titles: [String] = []
+        viewModel.output.taxCategoryTitles.sink { titles = $0 }.store(in: &cancellables)
+
+        viewModel.input.viewDidLoad()
+        waitForMainQueue()
+
+        XCTAssertEqual(titles, ["一般 10%", "食品 8%"])
+    }
+
+    func testTaxCategoryIsHiddenForCurrenciesWithASingleRate() {
+        var isVisible: Bool?
+        viewModel.output.isTaxCategoryVisible.sink { isVisible = $0 }.store(in: &cancellables)
+
+        viewModel.input.viewDidLoad()
+        waitForMainQueue()
+        XCTAssertEqual(isVisible, true, "日幣有輕減稅率，應顯示")
+
+        viewModel.input.currencyChanged(to: .koreanWon)
+        XCTAssertEqual(isVisible, false, "韓幣單一稅率，應隱藏")
+    }
+
+    func testFoodCategoryUsesTheReducedRate() {
+        var text: String?
+        viewModel.output.resultText.sink { text = $0 }.store(in: &cancellables)
+
+        viewModel.input.viewDidLoad()
+        waitForMainQueue()
+        viewModel.input.taxCategoryChanged(to: .reducedFood)
+        viewModel.input.amountTextChanged("1000")
+        viewModel.input.computeTapped()
+
+        // 1000 * 0.2 = 200，含稅 200 * 1.08 = 216
+        XCTAssertEqual(text, "台幣 \n未稅：200\n含稅：216")
+    }
+
+    /// 以含稅價反推未稅價時，稅率類別直接決定退稅基準。
+    func testCategoryChangesTheDerivedUntaxedPrice() {
+        var text: String?
+        viewModel.output.resultText.sink { text = $0 }.store(in: &cancellables)
+
+        viewModel.input.viewDidLoad()
+        waitForMainQueue()
+        viewModel.input.taxModeChanged(to: .includingTax)
+        viewModel.input.amountTextChanged("1080")
+
+        viewModel.input.computeTapped()
+        XCTAssertEqual(text, "台幣 \n未稅：196\n含稅：216", "一般 10%：216 / 1.1")
+
+        viewModel.input.taxCategoryChanged(to: .reducedFood)
+        viewModel.input.computeTapped()
+        XCTAssertEqual(text, "台幣 \n未稅：200\n含稅：216", "食品 8%：216 / 1.08")
+    }
+
+    func testChangingCategoryClearsThePreviousResult() {
+        var text: String?
+        viewModel.output.resultText.sink { text = $0 }.store(in: &cancellables)
+
+        viewModel.input.viewDidLoad()
+        waitForMainQueue()
+        viewModel.input.amountTextChanged("1000")
+        viewModel.input.computeTapped()
+
+        viewModel.input.taxCategoryChanged(to: .reducedFood)
+
+        XCTAssertEqual(text, "換算結果")
+    }
+
     // MARK: - 幣別
 
     func testSwitchingCurrencyUpdatesTheRateAndPlaceholder() {

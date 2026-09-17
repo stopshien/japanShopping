@@ -49,6 +49,12 @@ final class ComputeViewController: UIViewController {
         return control
     }()
 
+    private let taxCategorySegmentedControl: UISegmentedControl = {
+        let control = UISegmentedControl()
+        control.translatesAutoresizingMaskIntoConstraints = false
+        return control
+    }()
+
     private let taxSegmentedControl: UISegmentedControl = {
         let control = UISegmentedControl(items: TaxMode.allCases.map(\.title))
         control.selectedSegmentIndex = TaxMode.excludingTax.rawValue
@@ -119,6 +125,7 @@ final class ComputeViewController: UIViewController {
         [
             rateLabel,
             currencySegmentedControl,
+            taxCategorySegmentedControl,
             amountTextField,
             taxSegmentedControl,
             computeButton,
@@ -132,6 +139,7 @@ final class ComputeViewController: UIViewController {
         view.addSubview(updatedAtLabel)
 
         currencySegmentedControl.addTarget(self, action: #selector(currencyChanged), for: .valueChanged)
+        taxCategorySegmentedControl.addTarget(self, action: #selector(taxCategoryChanged), for: .valueChanged)
         amountTextField.addTarget(self, action: #selector(amountTextChanged), for: .editingChanged)
         taxSegmentedControl.addTarget(self, action: #selector(taxModeChanged), for: .valueChanged)
         computeButton.addTarget(self, action: #selector(computeTapped), for: .touchUpInside)
@@ -168,6 +176,20 @@ final class ComputeViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] placeholder in
                 self?.amountTextField.placeholder = placeholder
+            }
+            .store(in: &cancellables)
+
+        viewModel.output.taxCategoryTitles
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] titles in
+                self?.rebuildTaxCategorySegments(with: titles)
+            }
+            .store(in: &cancellables)
+
+        viewModel.output.isTaxCategoryVisible
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isVisible in
+                self?.taxCategorySegmentedControl.isHidden = !isVisible
             }
             .store(in: &cancellables)
 
@@ -218,6 +240,11 @@ final class ComputeViewController: UIViewController {
         viewModel.input.currencyChanged(to: currency)
     }
 
+    @objc private func taxCategoryChanged() {
+        guard let category = TaxCategory(rawValue: taxCategorySegmentedControl.selectedSegmentIndex) else { return }
+        viewModel.input.taxCategoryChanged(to: category)
+    }
+
     @objc private func amountTextChanged() {
         viewModel.input.amountTextChanged(amountTextField.text ?? "")
     }
@@ -245,6 +272,17 @@ final class ComputeViewController: UIViewController {
     }
 
     // MARK: - Private
+
+    /// 標籤帶有稅率百分比，會隨幣別改變，因此重建而非固定建立。
+    private func rebuildTaxCategorySegments(with titles: [String]) {
+        let previousSelection = taxCategorySegmentedControl.selectedSegmentIndex
+        taxCategorySegmentedControl.removeAllSegments()
+        for (index, title) in titles.enumerated() {
+            taxCategorySegmentedControl.insertSegment(withTitle: title, at: index, animated: false)
+        }
+        taxCategorySegmentedControl.selectedSegmentIndex =
+            titles.indices.contains(previousSelection) ? previousSelection : TaxCategory.standard.rawValue
+    }
 
     private func presentError(_ message: String) {
         let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)

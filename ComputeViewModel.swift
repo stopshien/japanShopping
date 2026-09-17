@@ -21,6 +21,7 @@ protocol ComputeViewModelType {
 protocol ComputeViewModelInput {
     func viewDidLoad()
     func currencyChanged(to currency: Currency)
+    func taxCategoryChanged(to category: TaxCategory)
     func amountTextChanged(_ text: String)
     func taxModeChanged(to mode: TaxMode)
     func computeTapped()
@@ -31,6 +32,8 @@ protocol ComputeViewModelInput {
 protocol ComputeViewModelOutput {
     var rateDescription: AnyPublisher<String, Never> { get }
     var inputPlaceholder: AnyPublisher<String, Never> { get }
+    var taxCategoryTitles: AnyPublisher<[String], Never> { get }
+    var isTaxCategoryVisible: AnyPublisher<Bool, Never> { get }
     var updatedAtDescription: AnyPublisher<String, Never> { get }
     var resultText: AnyPublisher<String, Never> { get }
     var route: AnyPublisher<ComputeRoute, Never> { get }
@@ -53,11 +56,14 @@ final class ComputeViewModel: ComputeViewModelType {
     private var currency: Currency = .japaneseYen
     private var amountText = ""
     private var taxMode: TaxMode = .excludingTax
+    private var taxCategory: TaxCategory = .standard
     private var breakdown: PriceBreakdown?
     private var cancellables = Set<AnyCancellable>()
 
     private let rateDescriptionSubject = CurrentValueSubject<String, Never>("")
     private let inputPlaceholderSubject: CurrentValueSubject<String, Never>
+    private let taxCategoryTitlesSubject: CurrentValueSubject<[String], Never>
+    private let isTaxCategoryVisibleSubject: CurrentValueSubject<Bool, Never>
     private let updatedAtDescriptionSubject = CurrentValueSubject<String, Never>("")
     private let resultTextSubject = CurrentValueSubject<String, Never>(Constants.resultPlaceholder)
     private let routeSubject = PassthroughSubject<ComputeRoute, Never>()
@@ -66,7 +72,10 @@ final class ComputeViewModel: ComputeViewModelType {
     init(service: ExchangeRateService) {
         self.service = service
         self.updatedAtFormatter = ComputeViewModel.makeUpdatedAtFormatter()
-        self.inputPlaceholderSubject = CurrentValueSubject(Currency.japaneseYen.inputPlaceholder)
+        let initialCurrency = Currency.japaneseYen
+        self.inputPlaceholderSubject = CurrentValueSubject(initialCurrency.inputPlaceholder)
+        self.taxCategoryTitlesSubject = CurrentValueSubject(ComputeViewModel.taxCategoryTitles(for: initialCurrency))
+        self.isTaxCategoryVisibleSubject = CurrentValueSubject(initialCurrency.hasReducedTaxRate)
     }
 
     var input: ComputeViewModelInput { self }
@@ -96,11 +105,24 @@ final class ComputeViewModel: ComputeViewModelType {
     /// 幣別或匯率變動後，重新顯示匯率並清掉上一次的換算結果。
     private func refreshForCurrentCurrency() {
         inputPlaceholderSubject.send(currency.inputPlaceholder)
+        taxCategoryTitlesSubject.send(Self.taxCategoryTitles(for: currency))
+        isTaxCategoryVisibleSubject.send(currency.hasReducedTaxRate)
 
         if let exchangeRate {
             rateDescriptionSubject.send("\(currency.title)匯率：\(exchangeRate.rateToTaiwanDollar(for: currency))")
         }
 
+        breakdown = nil
+        resultTextSubject.send(Constants.resultPlaceholder)
+    }
+
+    /// 標籤帶上實際稅率（例如「食品 8%」），稅率調整時標籤不會對不上。
+    private static func taxCategoryTitles(for currency: Currency) -> [String] {
+        TaxCategory.allCases.map { "\($0.title) \(currency.taxPercent(for: $0))%" }
+    }
+
+    /// 換算結果會隨稅率改變，因此稅率相關的選擇變動時要一併清掉。
+    private func clearResult() {
         breakdown = nil
         resultTextSubject.send(Constants.resultPlaceholder)
     }
@@ -142,6 +164,12 @@ extension ComputeViewModel: ComputeViewModelInput {
         refreshForCurrentCurrency()
     }
 
+    func taxCategoryChanged(to category: TaxCategory) {
+        guard category != taxCategory else { return }
+        taxCategory = category
+        clearResult()
+    }
+
     func amountTextChanged(_ text: String) {
         amountText = text.trimmingCharacters(in: .whitespaces)
     }
@@ -165,7 +193,7 @@ extension ComputeViewModel: ComputeViewModelInput {
             amount: amount,
             rate: exchangeRate.rateToTaiwanDollar(for: currency),
             mode: taxMode,
-            taxMultiplier: currency.taxMultiplier
+            taxMultiplier: currency.taxMultiplier(for: taxCategory)
         )
         self.breakdown = breakdown
         resultTextSubject.send(
@@ -190,6 +218,8 @@ extension ComputeViewModel: ComputeViewModelOutput {
 
     var rateDescription: AnyPublisher<String, Never> { rateDescriptionSubject.eraseToAnyPublisher() }
     var inputPlaceholder: AnyPublisher<String, Never> { inputPlaceholderSubject.eraseToAnyPublisher() }
+    var taxCategoryTitles: AnyPublisher<[String], Never> { taxCategoryTitlesSubject.eraseToAnyPublisher() }
+    var isTaxCategoryVisible: AnyPublisher<Bool, Never> { isTaxCategoryVisibleSubject.eraseToAnyPublisher() }
     var updatedAtDescription: AnyPublisher<String, Never> { updatedAtDescriptionSubject.eraseToAnyPublisher() }
     var resultText: AnyPublisher<String, Never> { resultTextSubject.eraseToAnyPublisher() }
     var route: AnyPublisher<ComputeRoute, Never> { routeSubject.eraseToAnyPublisher() }
