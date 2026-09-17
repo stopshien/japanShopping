@@ -154,7 +154,10 @@ final class AppScreenFactory: ScreenFactory {
     }
 
     func makeCardList(onFinish: @escaping () -> Void) -> UIViewController {
-        let controller = CardListViewController(viewModel: CardListViewModel(repository: cardRepository))
+        let controller = CardListViewController(
+            viewModel: CardListViewModel(repository: cardRepository),
+            factory: self
+        )
         controller.onFinish = onFinish
         return controller
     }

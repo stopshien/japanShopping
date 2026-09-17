@@ -90,6 +90,58 @@ final class CardListViewModelTests: XCTestCase {
         XCTAssertEqual(repository.storedCards.count, 2)
     }
 
+    // MARK: - 從這頁新增卡片
+
+    func testCreateTappedRoutes() {
+        var routes: [CardListRoute] = []
+        viewModel.output.route.sink { routes.append($0) }.store(in: &cancellables)
+
+        viewModel.input.createTapped()
+
+        XCTAssertEqual(routes, [.createCard])
+    }
+
+    func testReloadPicksUpACardAddedFromThisScreen() {
+        var items: [CardListItem] = []
+        viewModel.output.items.sink { items = $0 }.store(in: &cancellables)
+
+        viewModel.input.viewDidLoad()
+        repository.storedCards.append(Card(name: "C卡", percent: 1, limit: 100, feedbackRemaining: 100))
+        viewModel.input.reloadAfterAddingCard()
+
+        XCTAssertEqual(items.map(\.name), ["A卡", "B卡", "C卡"])
+    }
+
+    /// 刪除要按「完成」才生效，所以去新增卡片再回來時，
+    /// 尚未套用的刪除不能被重載沖掉。
+    func testReloadKeepsPendingDeletions() {
+        var items: [CardListItem] = []
+        viewModel.output.items.sink { items = $0 }.store(in: &cancellables)
+
+        viewModel.input.viewDidLoad()
+        viewModel.input.deleteCard(at: 0)
+        XCTAssertEqual(items.map(\.name), ["B卡"])
+
+        repository.storedCards.append(Card(name: "C卡", percent: 1, limit: 100, feedbackRemaining: 100))
+        viewModel.input.reloadAfterAddingCard()
+
+        XCTAssertEqual(items.map(\.name), ["B卡", "C卡"], "A卡的刪除要保留")
+
+        viewModel.input.finishTapped()
+        XCTAssertEqual(repository.storedCards.map(\.name), ["B卡", "C卡"])
+    }
+
+    func testReloadWithNoNewCardChangesNothing() {
+        var items: [CardListItem] = []
+        viewModel.output.items.sink { items = $0 }.store(in: &cancellables)
+
+        viewModel.input.viewDidLoad()
+        viewModel.input.deleteCard(at: 0)
+        viewModel.input.reloadAfterAddingCard()
+
+        XCTAssertEqual(items.map(\.name), ["B卡"])
+    }
+
     func testFinishPublishesDidFinish() {
         var didFinish = false
         viewModel.output.didFinish.sink { didFinish = true }.store(in: &cancellables)

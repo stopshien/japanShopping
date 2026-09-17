@@ -17,6 +17,7 @@ final class CardListViewController: UIViewController {
     var onFinish: (() -> Void)?
 
     private let viewModel: CardListViewModelType
+    private let factory: ScreenFactory
     private var cancellables = Set<AnyCancellable>()
     private var items: [CardListItem] = []
 
@@ -36,14 +37,15 @@ final class CardListViewController: UIViewController {
     private let finishButton = AppView.primaryButton(title: "完成")
 
     private let emptyStateLabel = AppView.label(
-        "尚未新增任何信用卡\n回到上一頁的下拉選單即可新增",
+        "尚未新增任何信用卡\n點右上角的加號新增",
         font: AppStyle.Font.body,
         color: AppColor.textSecondary,
         alignment: .center
     )
 
-    init(viewModel: CardListViewModelType) {
+    init(viewModel: CardListViewModelType, factory: ScreenFactory) {
         self.viewModel = viewModel
+        self.factory = factory
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -67,6 +69,13 @@ final class CardListViewController: UIViewController {
     private func setupViews() {
         title = "管理信用卡"
         view.backgroundColor = AppColor.brand
+
+        navigationItem.rightBarButtonItem = AppView.barButton(
+            systemImage: "plus",
+            accessibilityLabel: "新增信用卡",
+            target: self,
+            action: #selector(createTapped)
+        )
 
         tableView.dataSource = self
         tableView.delegate = self
@@ -123,6 +132,16 @@ final class CardListViewController: UIViewController {
             }
             .store(in: &cancellables)
 
+        viewModel.output.route
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] route in
+                switch route {
+                case .createCard:
+                    self?.presentCardSet()
+                }
+            }
+            .store(in: &cancellables)
+
         viewModel.output.didFinish
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
@@ -136,6 +155,17 @@ final class CardListViewController: UIViewController {
 
     @objc private func finishTapped() {
         viewModel.input.finishTapped()
+    }
+
+    @objc private func createTapped() {
+        viewModel.input.createTapped()
+    }
+
+    private func presentCardSet() {
+        let controller = factory.makeCardSet { [weak self] in
+            self?.viewModel.input.reloadAfterAddingCard()
+        }
+        navigationController?.pushViewController(controller, animated: true)
     }
 
     // MARK: - Private
