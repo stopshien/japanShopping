@@ -28,21 +28,18 @@ final class UserProfileRepositoryStub: UserProfileRepository {
 
 final class WelcomeViewModelTests: XCTestCase {
 
-    private var repository: UserProfileRepositoryStub!
     private var viewModel: WelcomeViewModel!
     private var cancellables: Set<AnyCancellable>!
 
     override func setUp() {
         super.setUp()
-        repository = UserProfileRepositoryStub()
-        viewModel = WelcomeViewModel(repository: repository)
+        viewModel = WelcomeViewModel()
         cancellables = []
     }
 
     override func tearDown() {
         cancellables = nil
         viewModel = nil
-        repository = nil
         super.tearDown()
     }
 
@@ -66,46 +63,25 @@ final class WelcomeViewModelTests: XCTestCase {
         XCTAssertEqual(isEnabled, false)
     }
 
-    func testNameIsTrimmedBeforeSaving() {
+    /// 歡迎頁不負責儲存，只把名字交給下一步；
+    /// 引導流程全部完成才寫入，中途離開不會留下半套資料。
+    func testNameIsTrimmedBeforeBeingPassedOn() {
+        var passedName: String?
+        viewModel.output.didFinish.sink { passedName = $0 }.store(in: &cancellables)
+
         viewModel.input.nameChanged("  Angus  ")
         viewModel.input.startTapped()
 
-        XCTAssertEqual(repository.storedProfile, UserProfile(name: "Angus"))
-    }
-
-    func testStartSavesTheProfileAndFinishes() {
-        var didFinish = false
-        viewModel.output.didFinish.sink { didFinish = true }.store(in: &cancellables)
-
-        viewModel.input.nameChanged("Angus")
-        viewModel.input.startTapped()
-
-        XCTAssertTrue(didFinish)
-        XCTAssertEqual(repository.storedProfile?.name, "Angus")
+        XCTAssertEqual(passedName, "Angus")
     }
 
     func testStartIsIgnoredWithoutAName() {
         var didFinish = false
-        viewModel.output.didFinish.sink { didFinish = true }.store(in: &cancellables)
+        viewModel.output.didFinish.sink { _ in didFinish = true }.store(in: &cancellables)
 
         viewModel.input.startTapped()
 
         XCTAssertFalse(didFinish)
-        XCTAssertEqual(repository.saveCallCount, 0)
-    }
-
-    func testSaveFailureReportsErrorAndDoesNotFinish() {
-        repository.saveError = StubError.failure
-        var didFinish = false
-        var message: String?
-        viewModel.output.didFinish.sink { didFinish = true }.store(in: &cancellables)
-        viewModel.output.errorMessage.sink { message = $0 }.store(in: &cancellables)
-
-        viewModel.input.nameChanged("Angus")
-        viewModel.input.startTapped()
-
-        XCTAssertFalse(didFinish)
-        XCTAssertEqual(message, "設定儲存失敗，請再試一次")
     }
 }
 
@@ -138,7 +114,7 @@ final class UserDefaultsUserProfileRepositoryTests: XCTestCase {
     }
 
     func testSaveThenLoadReturnsTheSameProfile() throws {
-        let profile = UserProfile(name: "Angus")
+        let profile = UserProfile(name: "Angus", currency: .koreanWon)
 
         try repository.save(profile)
 
@@ -146,8 +122,8 @@ final class UserDefaultsUserProfileRepositoryTests: XCTestCase {
     }
 
     func testSavingAgainReplacesThePreviousProfile() throws {
-        try repository.save(UserProfile(name: "Angus"))
-        try repository.save(UserProfile(name: "庭鋒"))
+        try repository.save(UserProfile(name: "Angus", currency: .japaneseYen))
+        try repository.save(UserProfile(name: "庭鋒", currency: .koreanWon))
 
         XCTAssertEqual(repository.load()?.name, "庭鋒")
     }

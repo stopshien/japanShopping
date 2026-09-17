@@ -24,7 +24,7 @@ final class ShoppingListViewModelTests: XCTestCase {
             ShoppingItem(productName: "咖啡", price: 250, payType: "信用卡", taxState: "未稅")
         ])
         imageStore = ImageStoreStub(storedImages: ["photo-1": photoData])
-        profileRepository = UserProfileRepositoryStub(storedProfile: UserProfile(name: "Angus"))
+        profileRepository = UserProfileRepositoryStub(storedProfile: UserProfile(name: "Angus", currency: .japaneseYen))
         viewModel = makeViewModel()
         cancellables = []
     }

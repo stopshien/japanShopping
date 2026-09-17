@@ -29,21 +29,30 @@ private final class ExchangeRateServiceStub: ExchangeRateService {
 final class ComputeViewModelTests: XCTestCase {
 
     private var service: ExchangeRateServiceStub!
+    private var profileRepository: UserProfileRepositoryStub!
     private var viewModel: ComputeViewModel!
     private var cancellables: Set<AnyCancellable>!
 
     override func setUp() {
         super.setUp()
         service = ExchangeRateServiceStub(yenRate: 0.2, wonRate: 0.025)
-        viewModel = ComputeViewModel(service: service)
+        profileRepository = UserProfileRepositoryStub(
+            storedProfile: UserProfile(name: "Angus", currency: .japaneseYen)
+        )
+        viewModel = makeViewModel()
         cancellables = []
     }
 
     override func tearDown() {
         cancellables = nil
         viewModel = nil
+        profileRepository = nil
         service = nil
         super.tearDown()
+    }
+
+    private func makeViewModel() -> ComputeViewModel {
+        ComputeViewModel(service: service, userProfileRepository: profileRepository)
     }
 
     /// ViewModel 以 receive(on: DispatchQueue.main) 派送匯率結果，
@@ -209,7 +218,8 @@ final class ComputeViewModelTests: XCTestCase {
         waitForMainQueue()
         XCTAssertEqual(isVisible, true, "日幣有輕減稅率，應顯示")
 
-        viewModel.input.currencyChanged(to: .koreanWon)
+        profileRepository.storedProfile = UserProfile(name: "Angus", currency: .koreanWon)
+        viewModel.input.reloadSettings()
         XCTAssertEqual(isVisible, false, "韓幣單一稅率，應隱藏")
     }
 
@@ -261,7 +271,23 @@ final class ComputeViewModelTests: XCTestCase {
 
     // MARK: - 幣別
 
-    func testSwitchingCurrencyUpdatesTheRateAndPlaceholder() {
+    /// 幣別來自引導流程的設定，換算頁上沒有選擇器。
+    func testCurrencyComesFromTheStoredProfile() {
+        profileRepository.storedProfile = UserProfile(name: "Angus", currency: .koreanWon)
+        viewModel = makeViewModel()
+        var rateText: String?
+        var placeholder: String?
+        viewModel.output.rateDescription.sink { rateText = $0 }.store(in: &cancellables)
+        viewModel.output.inputPlaceholder.sink { placeholder = $0 }.store(in: &cancellables)
+
+        viewModel.input.viewDidLoad()
+        waitForMainQueue()
+
+        XCTAssertEqual(rateText, "韓幣匯率：0.025")
+        XCTAssertEqual(placeholder, "請輸入韓幣價格...")
+    }
+
+    func testReloadSettingsPicksUpAChangedCurrency() {
         var rateText: String?
         var placeholder: String?
         viewModel.output.rateDescription.sink { rateText = $0 }.store(in: &cancellables)
@@ -270,12 +296,35 @@ final class ComputeViewModelTests: XCTestCase {
         viewModel.input.viewDidLoad()
         waitForMainQueue()
         XCTAssertEqual(rateText, "日幣匯率：0.2")
-        XCTAssertEqual(placeholder, "請輸入日幣價格...")
 
-        viewModel.input.currencyChanged(to: .koreanWon)
+        profileRepository.storedProfile = UserProfile(name: "Angus", currency: .koreanWon)
+        viewModel.input.reloadSettings()
 
         XCTAssertEqual(rateText, "韓幣匯率：0.025")
         XCTAssertEqual(placeholder, "請輸入韓幣價格...")
+    }
+
+    func testReloadSettingsDoesNothingWhenTheCurrencyIsUnchanged() {
+        var text: String?
+        viewModel.output.resultText.sink { text = $0 }.store(in: &cancellables)
+
+        viewModel.input.viewDidLoad()
+        waitForMainQueue()
+        viewModel.input.amountTextChanged("1000")
+        viewModel.input.computeTapped()
+
+        viewModel.input.reloadSettings()
+
+        XCTAssertEqual(text, "台幣 \n未稅：200\n含稅：220", "幣別沒變就不該清掉結果")
+    }
+
+    func testSettingsTappedRoutes() {
+        var routes: [ComputeRoute] = []
+        viewModel.output.route.sink { routes.append($0) }.store(in: &cancellables)
+
+        viewModel.input.settingsTapped()
+
+        XCTAssertEqual(routes, [.settings])
     }
 
     func testKoreanWonUsesTenPercentTax() {
@@ -284,7 +333,8 @@ final class ComputeViewModelTests: XCTestCase {
 
         viewModel.input.viewDidLoad()
         waitForMainQueue()
-        viewModel.input.currencyChanged(to: .koreanWon)
+        profileRepository.storedProfile = UserProfile(name: "Angus", currency: .koreanWon)
+        viewModel.input.reloadSettings()
         viewModel.input.amountTextChanged("10000")
         viewModel.input.computeTapped()
 
@@ -305,25 +355,12 @@ final class ComputeViewModelTests: XCTestCase {
         viewModel.input.computeTapped()
         XCTAssertEqual(text, "台幣 \n未稅：200\n含稅：220")
 
-        viewModel.input.currencyChanged(to: .koreanWon)
+        profileRepository.storedProfile = UserProfile(name: "Angus", currency: .koreanWon)
+        viewModel.input.reloadSettings()
 
         XCTAssertEqual(text, "換算結果")
         viewModel.input.usePrice(for: .excludingTax)
         XCTAssertTrue(routes.isEmpty, "結果已清空，不該還能帶價格前往下一頁")
-    }
-
-    func testSelectingTheSameCurrencyDoesNotClearTheResult() {
-        var text: String?
-        viewModel.output.resultText.sink { text = $0 }.store(in: &cancellables)
-
-        viewModel.input.viewDidLoad()
-        waitForMainQueue()
-        viewModel.input.amountTextChanged("1000")
-        viewModel.input.computeTapped()
-
-        viewModel.input.currencyChanged(to: .japaneseYen)
-
-        XCTAssertEqual(text, "台幣 \n未稅：200\n含稅：220")
     }
 
     func testShowShoppingListRoutes() {

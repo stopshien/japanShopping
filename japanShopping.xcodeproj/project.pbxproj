@@ -59,6 +59,11 @@
 		DA0000062A00000100DA0001 /* WelcomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA0000052A00000100DA0001 /* WelcomeViewModel.swift */; };
 		DA0000082A00000100DA0001 /* WelcomeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA0000072A00000100DA0001 /* WelcomeViewController.swift */; };
 		DB0000022A00000100DB0001 /* WelcomeViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB0000012A00000100DB0001 /* WelcomeViewModelTests.swift */; };
+		DC0000022A00000100DC0001 /* CurrencySelectionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC0000012A00000100DC0001 /* CurrencySelectionViewModel.swift */; };
+		DC0000042A00000100DC0001 /* CurrencySelectionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC0000032A00000100DC0001 /* CurrencySelectionViewController.swift */; };
+		DC0000062A00000100DC0001 /* SettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC0000052A00000100DC0001 /* SettingsViewModel.swift */; };
+		DC0000082A00000100DC0001 /* SettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC0000072A00000100DC0001 /* SettingsViewController.swift */; };
+		DD0000022A00000100DD0001 /* OnboardingAndSettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD0000012A00000100DD0001 /* OnboardingAndSettingsTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -117,6 +122,11 @@
 		DA0000052A00000100DA0001 /* WelcomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeViewModel.swift; sourceTree = "<group>"; };
 		DA0000072A00000100DA0001 /* WelcomeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeViewController.swift; sourceTree = "<group>"; };
 		DB0000012A00000100DB0001 /* WelcomeViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeViewModelTests.swift; sourceTree = "<group>"; };
+		DC0000012A00000100DC0001 /* CurrencySelectionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrencySelectionViewModel.swift; sourceTree = "<group>"; };
+		DC0000032A00000100DC0001 /* CurrencySelectionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrencySelectionViewController.swift; sourceTree = "<group>"; };
+		DC0000052A00000100DC0001 /* SettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewModel.swift; sourceTree = "<group>"; };
+		DC0000072A00000100DC0001 /* SettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewController.swift; sourceTree = "<group>"; };
+		DD0000012A00000100DD0001 /* OnboardingAndSettingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingAndSettingsTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -173,6 +183,10 @@
 				DA0000032A00000100DA0001 /* UserProfileRepository.swift */,
 				DA0000052A00000100DA0001 /* WelcomeViewModel.swift */,
 				DA0000072A00000100DA0001 /* WelcomeViewController.swift */,
+				DC0000012A00000100DC0001 /* CurrencySelectionViewModel.swift */,
+				DC0000032A00000100DC0001 /* CurrencySelectionViewController.swift */,
+				DC0000052A00000100DC0001 /* SettingsViewModel.swift */,
+				DC0000072A00000100DC0001 /* SettingsViewController.swift */,
 				CFF54D8D2A1A179800CEB598 /* japanShopping */,
 				AB0000062A00000100AB0001 /* japanShoppingTests */,
 				CFF54D8C2A1A179800CEB598 /* Products */,
@@ -205,6 +219,7 @@
 			children = (
 				AB0000022A00000100AB0001 /* PersistenceFormatTests.swift */,
 				AB0000032A00000100AB0001 /* ExchangeRateDecodingTests.swift */,
+				DD0000012A00000100DD0001 /* OnboardingAndSettingsTests.swift */,
 				DB0000012A00000100DB0001 /* WelcomeViewModelTests.swift */,
 				CA0000012A00000100CA0001 /* PriceBreakdownTests.swift */,
 				BF0000012A00000100BF0001 /* PriceTextTests.swift */,
@@ -333,6 +348,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				CFF54D8F2A1A179800CEB598 /* AppDelegate.swift in Sources */,
+				DC0000082A00000100DC0001 /* SettingsViewController.swift in Sources */,
+				DC0000062A00000100DC0001 /* SettingsViewModel.swift in Sources */,
+				DC0000042A00000100DC0001 /* CurrencySelectionViewController.swift in Sources */,
+				DC0000022A00000100DC0001 /* CurrencySelectionViewModel.swift in Sources */,
 				DA0000082A00000100DA0001 /* WelcomeViewController.swift in Sources */,
 				DA0000062A00000100DA0001 /* WelcomeViewModel.swift in Sources */,
 				DA0000042A00000100DA0001 /* UserProfileRepository.swift in Sources */,
@@ -376,6 +395,7 @@
 			files = (
 				AB0000042A00000100AB0001 /* PersistenceFormatTests.swift in Sources */,
 				AB0000052A00000100AB0001 /* ExchangeRateDecodingTests.swift in Sources */,
+				DD0000022A00000100DD0001 /* OnboardingAndSettingsTests.swift in Sources */,
 				DB0000022A00000100DB0001 /* WelcomeViewModelTests.swift in Sources */,
 				CA0000022A00000100CA0001 /* PriceBreakdownTests.swift in Sources */,
 				BF0000022A00000100BF0001 /* PriceTextTests.swift in Sources */,

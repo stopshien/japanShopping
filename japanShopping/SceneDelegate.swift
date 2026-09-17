@@ -26,8 +26,8 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         window.makeKeyAndVisible()
         self.window = window
 
-        if factory.needsWelcome {
-            window.rootViewController = factory.makeWelcome { [weak self] in
+        if factory.needsOnboarding {
+            window.rootViewController = factory.makeOnboarding { [weak self] in
                 self?.showMain(animated: true)
             }
         } else {
@@ -35,12 +35,12 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         }
     }
 
-    /// 歡迎頁完成後換掉 root，歡迎頁隨之釋放，返回手勢也不會回到它。
+    /// 引導流程完成後換掉 root，引導頁隨之釋放，返回手勢也不會回到它。
     private func showMain(animated: Bool) {
         guard let window, let factory else { return }
 
         let navigationController = UINavigationController(rootViewController: factory.makeCompute())
-        ComputeAppearance.apply(to: navigationController.navigationBar)
+        AppAppearance.apply(to: navigationController.navigationBar)
 
         guard animated else {
             window.rootViewController = navigationController

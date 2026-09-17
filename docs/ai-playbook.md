@@ -44,7 +44,7 @@ Tool-specific folders (`.claude/`, `.cursor/`) may hold thin adapters or command
   - models: `ShoppingItem.swift`, `Card.swift`, `ExchangeRate.swift`, `UserProfile.swift`
   - composition root: `ScreenFactory.swift`
   - domain values: `Currency.swift`, `TaxMode.swift` (含 `PriceBreakdown`)
-  - shared helpers: `AppColor.swift`, `PriceText.swift`, `DocumentsDirectory.swift`, `UIViewController+KeyboardDismiss.swift`
+  - shared helpers: `AppColor.swift`, `AppStyle.swift`, `AppView.swift`, `AppAppearance.swift`, `PriceText.swift`, `DocumentsDirectory.swift`, `UIViewController+KeyboardDismiss.swift`
 - App lifecycle and resources: `japanShopping/` (`AppDelegate.swift`, `SceneDelegate.swift`, `Info.plist`, `Assets.xcassets`, `LaunchScreen.storyboard`)
 - Tests: `japanShoppingTests/`
 - Xcode project: `japanShopping.xcodeproj`

@@ -26,7 +26,7 @@ enum TaxCategory: Int, CaseIterable {
 }
 
 /// 可換算的外幣。稅率隨國別走。
-enum Currency: Int, CaseIterable {
+enum Currency: Int, CaseIterable, Codable {
 
     case japaneseYen = 0
     case koreanWon = 1

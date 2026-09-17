@@ -5,8 +5,8 @@
 
 import UIKit
 
-/// 導航列外觀。集中設定，避免各畫面各自調整而不一致。
-enum ComputeAppearance {
+/// 導航列外觀。全 App 共用，由 SceneDelegate 與引導流程各套用一次。
+enum AppAppearance {
 
     static func apply(to navigationBar: UINavigationBar) {
         let appearance = UINavigationBarAppearance()

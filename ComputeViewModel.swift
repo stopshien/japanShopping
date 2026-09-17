@@ -11,6 +11,7 @@ import Foundation
 enum ComputeRoute: Equatable {
     case detail(ShoppingItem)
     case shoppingList
+    case settings
 }
 
 protocol ComputeViewModelType {
@@ -20,13 +21,15 @@ protocol ComputeViewModelType {
 
 protocol ComputeViewModelInput {
     func viewDidLoad()
-    func currencyChanged(to currency: Currency)
+    /// 從設定頁返回後重新讀取幣別。
+    func reloadSettings()
     func taxCategoryChanged(to category: TaxCategory)
     func amountTextChanged(_ text: String)
     func taxModeChanged(to mode: TaxMode)
     func computeTapped()
     func usePrice(for mode: TaxMode)
     func showShoppingListTapped()
+    func settingsTapped()
 }
 
 protocol ComputeViewModelOutput {
@@ -50,10 +53,11 @@ final class ComputeViewModel: ComputeViewModelType {
     }
 
     private let service: ExchangeRateService
+    private let userProfileRepository: UserProfileRepository
     private let updatedAtFormatter: DateFormatter
 
     private var exchangeRate: ExchangeRate?
-    private var currency: Currency = .japaneseYen
+    private var currency: Currency
     private var amountText = ""
     private var taxMode: TaxMode = .excludingTax
     private var taxCategory: TaxCategory = .standard
@@ -69,10 +73,12 @@ final class ComputeViewModel: ComputeViewModelType {
     private let routeSubject = PassthroughSubject<ComputeRoute, Never>()
     private let errorMessageSubject = PassthroughSubject<String, Never>()
 
-    init(service: ExchangeRateService) {
+    init(service: ExchangeRateService, userProfileRepository: UserProfileRepository) {
         self.service = service
+        self.userProfileRepository = userProfileRepository
         self.updatedAtFormatter = ComputeViewModel.makeUpdatedAtFormatter()
-        let initialCurrency = Currency.japaneseYen
+        let initialCurrency = userProfileRepository.load()?.currency ?? .japaneseYen
+        self.currency = initialCurrency
         self.inputPlaceholderSubject = CurrentValueSubject(initialCurrency.inputPlaceholder)
         self.taxCategoryTitlesSubject = CurrentValueSubject(ComputeViewModel.taxCategoryTitles(for: initialCurrency))
         self.isTaxCategoryVisibleSubject = CurrentValueSubject(initialCurrency.hasReducedTaxRate)
@@ -158,9 +164,10 @@ extension ComputeViewModel: ComputeViewModelInput {
             .store(in: &cancellables)
     }
 
-    func currencyChanged(to currency: Currency) {
-        guard currency != self.currency else { return }
-        self.currency = currency
+    func reloadSettings() {
+        let updated = userProfileRepository.load()?.currency ?? .japaneseYen
+        guard updated != currency else { return }
+        currency = updated
         refreshForCurrentCurrency()
     }
 
@@ -209,6 +216,10 @@ extension ComputeViewModel: ComputeViewModelInput {
 
     func showShoppingListTapped() {
         routeSubject.send(.shoppingList)
+    }
+
+    func settingsTapped() {
+        routeSubject.send(.settings)
     }
 }
 

@@ -20,24 +20,19 @@ protocol WelcomeViewModelInput {
 
 protocol WelcomeViewModelOutput {
     var isStartEnabled: AnyPublisher<Bool, Never> { get }
-    var errorMessage: AnyPublisher<String, Never> { get }
-    var didFinish: AnyPublisher<Void, Never> { get }
+    /// 帶著輸入的名字進入下一步。引導流程全部完成才會寫入設定，
+    /// 中途離開不會留下半套資料。
+    var didFinish: AnyPublisher<String, Never> { get }
 }
 
 // MARK: - ViewModel
 
 final class WelcomeViewModel: WelcomeViewModelType {
 
-    private let repository: UserProfileRepository
     private var name = ""
 
     private let isStartEnabledSubject = CurrentValueSubject<Bool, Never>(false)
-    private let errorMessageSubject = PassthroughSubject<String, Never>()
-    private let didFinishSubject = PassthroughSubject<Void, Never>()
-
-    init(repository: UserProfileRepository) {
-        self.repository = repository
-    }
+    private let didFinishSubject = PassthroughSubject<String, Never>()
 
     var input: WelcomeViewModelInput { self }
     var output: WelcomeViewModelOutput { self }
@@ -54,14 +49,7 @@ extension WelcomeViewModel: WelcomeViewModelInput {
 
     func startTapped() {
         guard !name.isEmpty else { return }
-
-        do {
-            try repository.save(UserProfile(name: name))
-        } catch {
-            errorMessageSubject.send("設定儲存失敗，請再試一次")
-            return
-        }
-        didFinishSubject.send(())
+        didFinishSubject.send(name)
     }
 }
 
@@ -70,6 +58,5 @@ extension WelcomeViewModel: WelcomeViewModelInput {
 extension WelcomeViewModel: WelcomeViewModelOutput {
 
     var isStartEnabled: AnyPublisher<Bool, Never> { isStartEnabledSubject.eraseToAnyPublisher() }
-    var errorMessage: AnyPublisher<String, Never> { errorMessageSubject.eraseToAnyPublisher() }
-    var didFinish: AnyPublisher<Void, Never> { didFinishSubject.eraseToAnyPublisher() }
+    var didFinish: AnyPublisher<String, Never> { didFinishSubject.eraseToAnyPublisher() }
 }

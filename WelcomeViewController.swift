@@ -50,7 +50,7 @@ final class WelcomeViewController: UIViewController {
         return textField
     }()
 
-    private let startButton = AppView.primaryButton(title: "開始使用")
+    private let startButton = AppView.primaryButton(title: "下一步")
 
     private let contentStackView: UIStackView = {
         let stackView = UIStackView()
@@ -132,22 +132,15 @@ final class WelcomeViewController: UIViewController {
             }
             .store(in: &cancellables)
 
-        viewModel.output.errorMessage
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] message in
-                self?.presentError(message)
-            }
-            .store(in: &cancellables)
     }
 
-    /// didFinish 由 SceneDelegate 訂閱後換掉 root，
-    /// 這裡只負責把鍵盤收掉，避免轉場時鍵盤殘留。
-    func bindFinish(_ handler: @escaping () -> Void) {
+    /// 帶著輸入的名字進入下一步。收鍵盤避免推頁時殘留。
+    func bindFinish(_ handler: @escaping (String) -> Void) {
         viewModel.output.didFinish
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] in
+            .sink { [weak self] name in
                 self?.view.endEditing(true)
-                handler()
+                handler(name)
             }
             .store(in: &cancellables)
     }
@@ -164,9 +157,4 @@ final class WelcomeViewController: UIViewController {
 
     // MARK: - Private
 
-    private func presentError(_ message: String) {
-        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "好", style: .default))
-        present(alert, animated: true)
-    }
 }

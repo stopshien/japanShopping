@@ -27,7 +27,6 @@ final class ComputeViewController: UIViewController {
     private let inputCard = AppView.card()
     private let resultCard = AppView.card()
 
-    private let currencySegmentedControl = AppView.segmentedControl(items: Currency.allCases.map(\.title))
     private let taxCategorySegmentedControl = AppView.segmentedControl(items: [])
     private let taxSegmentedControl = AppView.segmentedControl(items: TaxMode.allCases.map(\.title))
     private let amountTextField = AppView.textField(keyboardType: .decimalPad)
@@ -79,6 +78,12 @@ final class ComputeViewController: UIViewController {
     private func setupViews() {
         title = "匯率換算"
         view.backgroundColor = AppColor.brand
+        navigationItem.leftBarButtonItem = AppView.barButton(
+            systemImage: "gearshape",
+            accessibilityLabel: "設定",
+            target: self,
+            action: #selector(settingsTapped)
+        )
         navigationItem.rightBarButtonItem = AppView.barButton(
             systemImage: "cart",
             accessibilityLabel: "查看購物清單",
@@ -90,7 +95,6 @@ final class ComputeViewController: UIViewController {
         // 輸入卡：幣別、稅率類別、金額、未稅／含稅
         let inputStack = AppView.cardStack(in: inputCard, spacing: AppStyle.Spacing.tight + 4)
         [
-            currencySegmentedControl,
             taxCategorySegmentedControl,
             amountTextField,
             taxSegmentedControl,
@@ -109,7 +113,6 @@ final class ComputeViewController: UIViewController {
         view.addSubview(contentStackView)
         view.addSubview(updatedAtLabel)
 
-        currencySegmentedControl.addTarget(self, action: #selector(currencyChanged), for: .valueChanged)
         taxCategorySegmentedControl.addTarget(self, action: #selector(taxCategoryChanged), for: .valueChanged)
         taxSegmentedControl.addTarget(self, action: #selector(taxModeChanged), for: .valueChanged)
         amountTextField.addTarget(self, action: #selector(amountTextChanged), for: .editingChanged)
@@ -117,7 +120,6 @@ final class ComputeViewController: UIViewController {
         useUntaxedButton.addTarget(self, action: #selector(useUntaxedTapped), for: .touchUpInside)
         useTaxedButton.addTarget(self, action: #selector(useTaxedTapped), for: .touchUpInside)
 
-        currencySegmentedControl.selectedSegmentIndex = Currency.japaneseYen.rawValue
         taxSegmentedControl.selectedSegmentIndex = TaxMode.excludingTax.rawValue
     }
 
@@ -134,7 +136,6 @@ final class ComputeViewController: UIViewController {
             ),
 
             amountTextField.heightAnchor.constraint(equalToConstant: Constants.fieldHeight),
-            currencySegmentedControl.heightAnchor.constraint(equalToConstant: Constants.segmentHeight),
             taxCategorySegmentedControl.heightAnchor.constraint(equalToConstant: Constants.segmentHeight),
             taxSegmentedControl.heightAnchor.constraint(equalToConstant: Constants.segmentHeight),
 
@@ -218,15 +219,16 @@ final class ComputeViewController: UIViewController {
             navigationController?.pushViewController(factory.makeDetail(item: item), animated: true)
         case .shoppingList:
             navigationController?.pushViewController(factory.makeShoppingList(), animated: true)
+
+        case .settings:
+            let controller = factory.makeSettings { [weak self] in
+                self?.viewModel.input.reloadSettings()
+            }
+            navigationController?.pushViewController(controller, animated: true)
         }
     }
 
     // MARK: - Actions
-
-    @objc private func currencyChanged() {
-        guard let currency = Currency(rawValue: currencySegmentedControl.selectedSegmentIndex) else { return }
-        viewModel.input.currencyChanged(to: currency)
-    }
 
     @objc private func taxCategoryChanged() {
         guard let category = TaxCategory(rawValue: taxCategorySegmentedControl.selectedSegmentIndex) else { return }
@@ -257,6 +259,10 @@ final class ComputeViewController: UIViewController {
 
     @objc private func showShoppingListTapped() {
         viewModel.input.showShoppingListTapped()
+    }
+
+    @objc private func settingsTapped() {
+        viewModel.input.settingsTapped()
     }
 
     // MARK: - Private
