@@ -53,7 +53,7 @@ final class DetailViewController: UIViewController {
         return button
     }()
 
-    private let editCardsButton = AppView.secondaryButton(title: "編輯信用卡")
+    private let editCardsButton = AppView.secondaryButton(title: "管理信用卡")
 
     private let feedbackLabel = AppView.label(
         "信用卡回饋金額", font: AppStyle.Font.body, color: AppColor.textSecondary, alignment: .center

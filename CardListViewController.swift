@@ -65,7 +65,7 @@ final class CardListViewController: UIViewController {
     // MARK: - Setup
 
     private func setupViews() {
-        title = "編輯信用卡"
+        title = "管理信用卡"
         view.backgroundColor = AppColor.brand
 
         tableView.dataSource = self
