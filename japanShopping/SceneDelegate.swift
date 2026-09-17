@@ -23,6 +23,9 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
         let window = UIWindow(windowScene: windowScene)
         window.tintColor = AppColor.accent
+        // 色票是寫死的淺色系（橄欖綠底、白色卡片），沒有對應的深色版本。
+        // 不鎖住外觀的話，系統提供的顏色（提示文字、停用狀態）會單獨變深色而糊掉。
+        window.overrideUserInterfaceStyle = .light
         window.makeKeyAndVisible()
         self.window = window
 

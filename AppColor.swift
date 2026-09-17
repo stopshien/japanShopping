@@ -27,6 +27,13 @@ enum AppColor {
     /// 強調色，用於主要按鈕底色與可點擊文字。白字在其上對比 9.11。
     static let accent = UIColor(displayP3Red: 0.22, green: 0.31, blue: 0.11, alpha: 1)
 
+    /// 輸入框的提示文字。
+    ///
+    /// 不能沿用系統的 placeholderText —— 它會隨深色模式變色，
+    /// 而本專案的底色是寫死的淺色，深色模式下對比度只剩 1.05（等於隱形）。
+    /// 這個值在白底上是 5.67，比主要文字淡但仍讀得到。
+    static let placeholder = UIColor(displayP3Red: 0.38, green: 0.42, blue: 0.28, alpha: 1)
+
     /// 次要按鈕的底色。疊在白色卡片上仍看得出是可點擊區域。
     static let accentSoft = UIColor(displayP3Red: 0.22, green: 0.31, blue: 0.11, alpha: 0.12)
 

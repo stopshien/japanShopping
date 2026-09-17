@@ -63,6 +63,8 @@ final class ShoppingListViewController: UIViewController {
 
 ## Design System
 
+- **The palette is light-only and the window is pinned to `.light`.** `AppColor` has no dark variants, so any colour left to the system would flip on its own and clash with the hardcoded light surfaces. If dark mode is ever wanted, every colour needs a dark counterpart first, then the override comes off.
+- **Never leave a colour to the system.** Placeholder text was the one that slipped through: its system colour dropped to a contrast of 1.05 on our white fields in dark mode. Use `AppTextField`, which pins `AppColor.placeholder`.
 - `AppColor` is the only place colours are defined. Every foreground/background pair in it passes WCAG AA (contrast ≥ 4.5); this app is used outdoors, so low contrast is a defect, not a style choice. Verify the ratio before changing any colour.
 - `AppStyle` owns spacing (8pt scale), corner radii and fonts. Do not write raw numbers for these in a view controller.
 - `AppView` builds the shared components: `primaryButton`, `secondaryButton`, `plainButton`, `card`, `cardStack`, `label`, `textField`, `segmentedControl`.

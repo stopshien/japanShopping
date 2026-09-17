@@ -119,7 +119,7 @@ enum AppView {
     }
 
     static func textField(keyboardType: UIKeyboardType = .default) -> UITextField {
-        let textField = UITextField()
+        let textField = AppTextField()
         textField.font = AppStyle.Font.body
         textField.textColor = AppColor.textPrimary
         textField.keyboardType = keyboardType
