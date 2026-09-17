@@ -100,8 +100,8 @@ final class ComputeViewModelTests: XCTestCase {
         viewModel.input.amountTextChanged("1000")
         viewModel.input.computeTapped()
 
-        // 1000 * 0.2 = 200，含稅 200 * 1.08 = 216
-        XCTAssertEqual(text, "台幣 \n未稅：200\n含稅：216")
+        // 1000 * 0.2 = 200，含稅 200 * 1.1 = 220
+        XCTAssertEqual(text, "台幣 \n未稅：200\n含稅：220")
     }
 
     func testComputingFromATaxedPrice() {
@@ -111,11 +111,11 @@ final class ComputeViewModelTests: XCTestCase {
         viewModel.input.viewDidLoad()
         waitForMainQueue()
         viewModel.input.taxModeChanged(to: .includingTax)
-        viewModel.input.amountTextChanged("1080")
+        viewModel.input.amountTextChanged("1100")
         viewModel.input.computeTapped()
 
-        // 1080 * 0.2 = 216（含稅），未稅 216 / 1.08 = 200
-        XCTAssertEqual(text, "台幣 \n未稅：200\n含稅：216")
+        // 1100 * 0.2 = 220（含稅），未稅 220 / 1.1 = 200
+        XCTAssertEqual(text, "台幣 \n未稅：200\n含稅：220")
     }
 
     func testNonNumericInputLeavesThePlaceholder() {
@@ -173,7 +173,7 @@ final class ComputeViewModelTests: XCTestCase {
         viewModel.input.usePrice(for: .includingTax)
 
         guard case .detail(let item) = routes.first else { return XCTFail("應導向明細頁") }
-        XCTAssertEqual(item.price, 216)
+        XCTAssertEqual(item.price, 220)
         XCTAssertEqual(item.taxState, "含稅")
     }
 
@@ -233,7 +233,7 @@ final class ComputeViewModelTests: XCTestCase {
         waitForMainQueue()
         viewModel.input.amountTextChanged("1000")
         viewModel.input.computeTapped()
-        XCTAssertEqual(text, "台幣 \n未稅：200\n含稅：216")
+        XCTAssertEqual(text, "台幣 \n未稅：200\n含稅：220")
 
         viewModel.input.currencyChanged(to: .koreanWon)
 
@@ -253,7 +253,7 @@ final class ComputeViewModelTests: XCTestCase {
 
         viewModel.input.currencyChanged(to: .japaneseYen)
 
-        XCTAssertEqual(text, "台幣 \n未稅：200\n含稅：216")
+        XCTAssertEqual(text, "台幣 \n未稅：200\n含稅：220")
     }
 
     func testShowShoppingListRoutes() {

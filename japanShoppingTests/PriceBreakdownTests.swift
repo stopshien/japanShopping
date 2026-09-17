@@ -8,21 +8,21 @@ import XCTest
 
 final class PriceBreakdownTests: XCTestCase {
 
-    // MARK: - 日幣（8%）
+    // MARK: - 日幣（10%）
 
     func testUntaxedModeDerivesTheTaxedPrice() {
         let breakdown = PriceBreakdown(amount: 1000, rate: 0.2, mode: .excludingTax,
                                        taxMultiplier: Currency.japaneseYen.taxMultiplier)
 
         XCTAssertEqual(breakdown.untaxed, 200)
-        XCTAssertEqual(breakdown.taxed, 216)
+        XCTAssertEqual(breakdown.taxed, 220)
     }
 
     func testTaxedModeDerivesTheUntaxedPrice() {
-        let breakdown = PriceBreakdown(amount: 1080, rate: 0.2, mode: .includingTax,
+        let breakdown = PriceBreakdown(amount: 1100, rate: 0.2, mode: .includingTax,
                                        taxMultiplier: Currency.japaneseYen.taxMultiplier)
 
-        XCTAssertEqual(breakdown.taxed, 216)
+        XCTAssertEqual(breakdown.taxed, 220)
         XCTAssertEqual(breakdown.untaxed, 200)
     }
 
@@ -56,8 +56,10 @@ final class PriceBreakdownTests: XCTestCase {
         XCTAssertEqual(breakdown.taxed, breakdown.taxed.rounded())
     }
 
+    /// 兩國目前同為 10%，但稅率仍掛在各自的幣別上，
+    /// 之後任一國調整稅率或加入新幣別時不需要改動計算邏輯。
     func testTaxMultipliersFollowTheCountry() {
-        XCTAssertEqual(Currency.japaneseYen.taxMultiplier, 1.08)
+        XCTAssertEqual(Currency.japaneseYen.taxMultiplier, 1.1)
         XCTAssertEqual(Currency.koreanWon.taxMultiplier, 1.1)
     }
 }

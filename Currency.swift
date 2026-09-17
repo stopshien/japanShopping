@@ -25,11 +25,12 @@ enum Currency: Int, CaseIterable {
     }
 
     /// 該國消費稅／加值稅的乘數。
-    /// 日本 8% 是食品飲料的輕減稅率；韓國加值稅為 10%。
+    /// 日本一般商品自 2019 年起為 10%（食品飲料另有 8% 的輕減稅率，本 App 不套用）；
+    /// 韓國加值稅同為 10%。
     var taxMultiplier: Double {
         switch self {
         case .japaneseYen:
-            return 1.08
+            return 1.1
         case .koreanWon:
             return 1.1
         }
