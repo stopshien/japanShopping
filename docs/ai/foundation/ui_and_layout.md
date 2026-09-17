@@ -61,6 +61,16 @@ final class ShoppingListViewController: UIViewController {
 - Give the cell a `configure(with:)` method that takes a display model. The data source must not reach into files or services.
 - Derived values such as total spend come from the ViewModel, recomputed on every mutation.
 
+## Design System
+
+- `AppColor` is the only place colours are defined. Every foreground/background pair in it passes WCAG AA (contrast ≥ 4.5); this app is used outdoors, so low contrast is a defect, not a style choice. Verify the ratio before changing any colour.
+- `AppStyle` owns spacing (8pt scale), corner radii and fonts. Do not write raw numbers for these in a view controller.
+- `AppView` builds the shared components: `primaryButton`, `secondaryButton`, `plainButton`, `card`, `cardStack`, `label`, `textField`, `segmentedControl`.
+- **One primary button per screen.** It is the action the screen exists for. Everything else is secondary or plain.
+- Secondary buttons use a tinted background, never white — they usually sit on a white card, where a white fill makes them look like plain text.
+- Group related controls into a `card`. A screen should read as a few blocks, not a flat list of controls.
+- `AppAppearance` configures the navigation bar once, from `SceneDelegate`.
+
 ## Text And Formatting
 - User-facing strings are Traditional Chinese.
 - Formatting belongs in the ViewModel, not the view. Never interpolate a raw `Double` into a user-facing label.

@@ -19,8 +19,12 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // AppScreenFactory 是整個 App 的組裝根，各畫面只透過 ScreenFactory 取得下一個畫面。
         let factory = AppScreenFactory()
 
+        let navigationController = UINavigationController(rootViewController: factory.makeCompute())
+        ComputeAppearance.apply(to: navigationController.navigationBar)
+
         let window = UIWindow(windowScene: windowScene)
-        window.rootViewController = UINavigationController(rootViewController: factory.makeCompute())
+        window.tintColor = AppColor.accent
+        window.rootViewController = navigationController
         window.makeKeyAndVisible()
         self.window = window
     }

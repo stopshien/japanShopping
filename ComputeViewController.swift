@@ -9,11 +9,8 @@ import UIKit
 final class ComputeViewController: UIViewController {
 
     private enum Constants {
-        static let horizontalInset: CGFloat = 24
-        static let spacing: CGFloat = 20
-        static let fieldHeight: CGFloat = 44
-        static let titleFontSize: CGFloat = 28
-        static let resultFontSize: CGFloat = 24
+        static let fieldHeight: CGFloat = 48
+        static let segmentHeight: CGFloat = 36
     }
 
     private let viewModel: ComputeViewModelType
@@ -22,73 +19,35 @@ final class ComputeViewController: UIViewController {
 
     // MARK: - Views
 
-    private let rateLabel: UILabel = {
-        let label = UILabel()
-        label.font = .systemFont(ofSize: Constants.titleFontSize)
-        label.textAlignment = .center
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
-    }()
+    private let rateLabel = AppView.label(font: AppStyle.Font.title, alignment: .center)
+    private let updatedAtLabel = AppView.label(
+        font: AppStyle.Font.caption, color: AppColor.textSecondary, alignment: .center
+    )
 
-    private let amountTextField: UITextField = {
-        let textField = UITextField()
-        textField.borderStyle = .none
-        textField.backgroundColor = .white
-        textField.keyboardType = .decimalPad
-        textField.font = .systemFont(ofSize: 20)
-        textField.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 12, height: 0))
-        textField.leftViewMode = .always
-        textField.translatesAutoresizingMaskIntoConstraints = false
-        return textField
-    }()
+    private let inputCard = AppView.card()
+    private let resultCard = AppView.card()
 
-    private let currencySegmentedControl: UISegmentedControl = {
-        let control = UISegmentedControl(items: Currency.allCases.map(\.title))
-        control.selectedSegmentIndex = Currency.japaneseYen.rawValue
-        control.translatesAutoresizingMaskIntoConstraints = false
-        return control
-    }()
+    private let currencySegmentedControl = AppView.segmentedControl(items: Currency.allCases.map(\.title))
+    private let taxCategorySegmentedControl = AppView.segmentedControl(items: [])
+    private let taxSegmentedControl = AppView.segmentedControl(items: TaxMode.allCases.map(\.title))
+    private let amountTextField = AppView.textField(keyboardType: .decimalPad)
 
-    private let taxCategorySegmentedControl: UISegmentedControl = {
-        let control = UISegmentedControl()
-        control.translatesAutoresizingMaskIntoConstraints = false
-        return control
-    }()
+    private let computeButton = AppView.primaryButton(title: "換算")
+    private let useUntaxedButton = AppView.secondaryButton(title: "使用未稅價格")
+    private let useTaxedButton = AppView.secondaryButton(title: "使用含稅價格")
+    private let showShoppingListButton = AppView.plainButton(title: "查看購物清單")
 
-    private let taxSegmentedControl: UISegmentedControl = {
-        let control = UISegmentedControl(items: TaxMode.allCases.map(\.title))
-        control.selectedSegmentIndex = TaxMode.excludingTax.rawValue
-        control.translatesAutoresizingMaskIntoConstraints = false
-        return control
-    }()
-
-    private let computeButton = ComputeViewController.makeButton(title: "換算")
-    private let useUntaxedButton = ComputeViewController.makeButton(title: "使用未稅價格")
-    private let useTaxedButton = ComputeViewController.makeButton(title: "使用含稅價格")
-    private let showShoppingListButton = ComputeViewController.makeButton(title: "確認清單")
-
-    private let resultLabel: UILabel = {
-        let label = UILabel()
-        label.text = "換算結果"
-        label.numberOfLines = 0
-        label.textAlignment = .center
-        label.font = .boldSystemFont(ofSize: Constants.resultFontSize)
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
-    }()
-
-    private let updatedAtLabel: UILabel = {
-        let label = UILabel()
-        label.font = .systemFont(ofSize: 13)
-        label.textAlignment = .center
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
-    }()
+    private let resultTitleLabel = AppView.label(
+        "換算結果", font: AppStyle.Font.label, color: AppColor.textSecondary, alignment: .center
+    )
+    private let resultLabel = AppView.label(
+        "—", font: AppStyle.Font.resultNumber, alignment: .center
+    )
 
     private let contentStackView: UIStackView = {
         let stackView = UIStackView()
         stackView.axis = .vertical
-        stackView.spacing = Constants.spacing
+        stackView.spacing = AppStyle.Spacing.normal
         stackView.translatesAutoresizingMaskIntoConstraints = false
         return stackView
     }()
@@ -119,46 +78,71 @@ final class ComputeViewController: UIViewController {
     // MARK: - Setup
 
     private func setupViews() {
+        title = "匯率換算"
         view.backgroundColor = AppColor.brand
         addTapToDismissKeyboard()
 
+        // 輸入卡：幣別、稅率類別、金額、未稅／含稅
+        let inputStack = AppView.cardStack(in: inputCard, spacing: AppStyle.Spacing.tight + 4)
         [
-            rateLabel,
             currencySegmentedControl,
             taxCategorySegmentedControl,
             amountTextField,
             taxSegmentedControl,
-            computeButton,
-            resultLabel,
-            useUntaxedButton,
-            useTaxedButton,
-            showShoppingListButton
-        ].forEach(contentStackView.addArrangedSubview)
+            computeButton
+        ].forEach(inputStack.addArrangedSubview)
+        inputStack.setCustomSpacing(AppStyle.Spacing.normal, after: taxSegmentedControl)
+
+        // 結果卡：標題 + 數字 + 兩顆帶價前往的按鈕
+        let resultStack = AppView.cardStack(in: resultCard, spacing: AppStyle.Spacing.tight)
+        [resultTitleLabel, resultLabel, useUntaxedButton, useTaxedButton].forEach(resultStack.addArrangedSubview)
+        resultStack.setCustomSpacing(AppStyle.Spacing.normal, after: resultLabel)
+
+        [rateLabel, inputCard, resultCard, showShoppingListButton].forEach(contentStackView.addArrangedSubview)
+        contentStackView.setCustomSpacing(AppStyle.Spacing.loose, after: rateLabel)
 
         view.addSubview(contentStackView)
         view.addSubview(updatedAtLabel)
 
         currencySegmentedControl.addTarget(self, action: #selector(currencyChanged), for: .valueChanged)
         taxCategorySegmentedControl.addTarget(self, action: #selector(taxCategoryChanged), for: .valueChanged)
-        amountTextField.addTarget(self, action: #selector(amountTextChanged), for: .editingChanged)
         taxSegmentedControl.addTarget(self, action: #selector(taxModeChanged), for: .valueChanged)
+        amountTextField.addTarget(self, action: #selector(amountTextChanged), for: .editingChanged)
         computeButton.addTarget(self, action: #selector(computeTapped), for: .touchUpInside)
         useUntaxedButton.addTarget(self, action: #selector(useUntaxedTapped), for: .touchUpInside)
         useTaxedButton.addTarget(self, action: #selector(useTaxedTapped), for: .touchUpInside)
         showShoppingListButton.addTarget(self, action: #selector(showShoppingListTapped), for: .touchUpInside)
+
+        currencySegmentedControl.selectedSegmentIndex = Currency.japaneseYen.rawValue
+        taxSegmentedControl.selectedSegmentIndex = TaxMode.excludingTax.rawValue
     }
 
     private func setupConstraints() {
         NSLayoutConstraint.activate([
-            contentStackView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: Constants.spacing),
-            contentStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalInset),
-            contentStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalInset),
+            contentStackView.topAnchor.constraint(
+                equalTo: view.safeAreaLayoutGuide.topAnchor, constant: AppStyle.Spacing.loose
+            ),
+            contentStackView.leadingAnchor.constraint(
+                equalTo: view.leadingAnchor, constant: AppStyle.Spacing.normal
+            ),
+            contentStackView.trailingAnchor.constraint(
+                equalTo: view.trailingAnchor, constant: -AppStyle.Spacing.normal
+            ),
 
             amountTextField.heightAnchor.constraint(equalToConstant: Constants.fieldHeight),
+            currencySegmentedControl.heightAnchor.constraint(equalToConstant: Constants.segmentHeight),
+            taxCategorySegmentedControl.heightAnchor.constraint(equalToConstant: Constants.segmentHeight),
+            taxSegmentedControl.heightAnchor.constraint(equalToConstant: Constants.segmentHeight),
 
-            updatedAtLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalInset),
-            updatedAtLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalInset),
-            updatedAtLabel.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -8)
+            updatedAtLabel.leadingAnchor.constraint(
+                equalTo: view.leadingAnchor, constant: AppStyle.Spacing.normal
+            ),
+            updatedAtLabel.trailingAnchor.constraint(
+                equalTo: view.trailingAnchor, constant: -AppStyle.Spacing.normal
+            ),
+            updatedAtLabel.bottomAnchor.constraint(
+                equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -AppStyle.Spacing.tight
+            )
         ])
     }
 
@@ -203,7 +187,7 @@ final class ComputeViewController: UIViewController {
         viewModel.output.resultText
             .receive(on: DispatchQueue.main)
             .sink { [weak self] text in
-                self?.resultLabel.text = text
+                self?.renderResult(text)
             }
             .store(in: &cancellables)
 
@@ -245,13 +229,13 @@ final class ComputeViewController: UIViewController {
         viewModel.input.taxCategoryChanged(to: category)
     }
 
-    @objc private func amountTextChanged() {
-        viewModel.input.amountTextChanged(amountTextField.text ?? "")
-    }
-
     @objc private func taxModeChanged() {
         guard let mode = TaxMode(rawValue: taxSegmentedControl.selectedSegmentIndex) else { return }
         viewModel.input.taxModeChanged(to: mode)
+    }
+
+    @objc private func amountTextChanged() {
+        viewModel.input.amountTextChanged(amountTextField.text ?? "")
     }
 
     @objc private func computeTapped() {
@@ -273,7 +257,18 @@ final class ComputeViewController: UIViewController {
 
     // MARK: - Private
 
-    /// 標籤帶有稅率百分比，會隨幣別改變，因此重建而非固定建立。
+    /// ViewModel 送出的是「台幣 \n未稅：X\n含稅：Y」，
+    /// 這裡只負責把它排成兩行等寬數字，不改內容。
+    private func renderResult(_ text: String) {
+        let hasResult = text.contains("\n")
+        resultLabel.text = hasResult
+            ? text.split(separator: "\n").dropFirst().joined(separator: "\n")
+            : "—"
+        resultTitleLabel.text = hasResult ? "換算結果（台幣）" : "換算結果"
+        useUntaxedButton.isEnabled = hasResult
+        useTaxedButton.isEnabled = hasResult
+    }
+
     private func rebuildTaxCategorySegments(with titles: [String]) {
         let previousSelection = taxCategorySegmentedControl.selectedSegmentIndex
         taxCategorySegmentedControl.removeAllSegments()
@@ -288,17 +283,5 @@ final class ComputeViewController: UIViewController {
         let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "好", style: .default))
         present(alert, animated: true)
-    }
-
-    private static func makeButton(title: String) -> UIButton {
-        var configuration = UIButton.Configuration.plain()
-        configuration.title = title
-        configuration.background.backgroundColor = .white
-        configuration.background.strokeColor = UIColor(white: 0.667, alpha: 1)
-        configuration.background.strokeWidth = 3
-        configuration.background.cornerRadius = 16
-        let button = UIButton(configuration: configuration)
-        button.translatesAutoresizingMaskIntoConstraints = false
-        return button
     }
 }

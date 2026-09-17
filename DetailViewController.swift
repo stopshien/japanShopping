@@ -9,11 +9,11 @@ import UIKit
 final class DetailViewController: UIViewController {
 
     private enum Constants {
-        static let horizontalInset: CGFloat = 24
+        static let horizontalInset: CGFloat = AppStyle.Spacing.normal
         static let spacing: CGFloat = 16
-        static let photoHeight: CGFloat = 220
+        static let photoHeight: CGFloat = 180
         static let photoBorderWidth: CGFloat = 4
-        static let fieldHeight: CGFloat = 34
+        static let fieldHeight: CGFloat = 48
         static let pickerHeight: CGFloat = 99
         static let labelFontSize: CGFloat = 20
     }
@@ -26,10 +26,10 @@ final class DetailViewController: UIViewController {
 
     private let imageSelectButton: UIButton = {
         let button = UIButton(type: .system)
-        button.backgroundColor = .white
-        button.imageView?.contentMode = .scaleAspectFit
-        button.layer.borderColor = UIColor.white.cgColor
-        button.layer.borderWidth = Constants.photoBorderWidth
+        button.backgroundColor = AppColor.surface
+        button.imageView?.contentMode = .scaleAspectFill
+        button.clipsToBounds = true
+        button.layer.cornerRadius = AppStyle.Radius.card
         button.setImage(UIImage(systemName: "photo"), for: .normal)
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
@@ -39,13 +39,7 @@ final class DetailViewController: UIViewController {
     private let productLabel = DetailViewController.makeLabel(text: "商品")
     private let payTypeLabel = DetailViewController.makeLabel(text: "付款方式")
 
-    private let productTextField: UITextField = {
-        let textField = UITextField()
-        textField.borderStyle = .roundedRect
-        textField.font = .systemFont(ofSize: 14)
-        textField.translatesAutoresizingMaskIntoConstraints = false
-        return textField
-    }()
+    private let productTextField = AppView.textField()
 
     private let payTypePicker: UIPickerView = {
         let picker = UIPickerView()
@@ -54,33 +48,20 @@ final class DetailViewController: UIViewController {
     }()
 
     private let cardsChooseButton: UIButton = {
-        var configuration = UIButton.Configuration.plain()
-        configuration.title = "請選擇信用卡"
-        let button = UIButton(configuration: configuration)
+        let button = AppView.secondaryButton(title: "請選擇信用卡")
         button.showsMenuAsPrimaryAction = true
-        button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
 
-    private let editCardsButton: UIButton = {
-        var configuration = UIButton.Configuration.plain()
-        configuration.title = "編輯信用卡"
-        let button = UIButton(configuration: configuration)
-        button.translatesAutoresizingMaskIntoConstraints = false
-        return button
-    }()
+    private let editCardsButton = AppView.secondaryButton(title: "編輯信用卡")
 
-    private let feedbackLabel: UILabel = {
-        let label = UILabel()
-        label.text = "信用卡回饋金額"
-        label.textAlignment = .center
-        label.font = .systemFont(ofSize: 17)
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
-    }()
+    private let feedbackLabel = AppView.label(
+        "信用卡回饋金額", font: AppStyle.Font.body, color: AppColor.textSecondary, alignment: .center
+    )
 
-    private let saveToListButton = DetailViewController.makeActionButton(title: "確認新增至 List")
-    private let showShoppingListButton = DetailViewController.makeActionButton(title: "確認清單")
+    private let saveToListButton = AppView.primaryButton(title: "加入購物清單")
+    private let showShoppingListButton = AppView.plainButton(title: "查看購物清單")
+    private let formCard = AppView.card()
 
     private let cardButtonsStackView: UIStackView = {
         let stackView = UIStackView()
@@ -125,6 +106,7 @@ final class DetailViewController: UIViewController {
     // MARK: - Setup
 
     private func setupViews() {
+        title = "購買明細"
         view.backgroundColor = AppColor.brand
         addTapToDismissKeyboard()
 
@@ -134,16 +116,17 @@ final class DetailViewController: UIViewController {
         cardButtonsStackView.addArrangedSubview(cardsChooseButton)
         cardButtonsStackView.addArrangedSubview(editCardsButton)
 
+        let cardStack = AppView.cardStack(in: formCard, spacing: AppStyle.Spacing.tight + 4)
         [
-            imageSelectButton,
             priceLabel,
             makeRow(label: productLabel, field: productTextField),
             makeRow(label: payTypeLabel, field: payTypePicker),
             cardButtonsStackView,
             feedbackLabel,
-            saveToListButton,
-            showShoppingListButton
-        ].forEach(contentStackView.addArrangedSubview)
+            saveToListButton
+        ].forEach(cardStack.addArrangedSubview)
+
+        [imageSelectButton, formCard, showShoppingListButton].forEach(contentStackView.addArrangedSubview)
 
         view.addSubview(contentStackView)
 
@@ -301,24 +284,14 @@ final class DetailViewController: UIViewController {
         let label = UILabel()
         label.text = text
         label.numberOfLines = 0
-        label.font = .boldSystemFont(ofSize: Constants.labelFontSize)
-        label.textColor = .white
+        label.font = AppStyle.Font.bodyEmphasis
+        label.textColor = AppColor.textPrimary
         label.setContentHuggingPriority(.required, for: .horizontal)
         label.setContentCompressionResistancePriority(.required, for: .horizontal)
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }
 
-    private static func makeActionButton(title: String) -> UIButton {
-        var configuration = UIButton.Configuration.plain()
-        configuration.title = title
-        configuration.background.backgroundColor = .white
-        configuration.background.strokeColor = UIColor(white: 0.667, alpha: 1)
-        configuration.background.strokeWidth = 3
-        let button = UIButton(configuration: configuration)
-        button.translatesAutoresizingMaskIntoConstraints = false
-        return button
-    }
 }
 
 // MARK: - UIPickerViewDataSource

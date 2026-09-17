@@ -50,6 +50,9 @@
 		BF0000022A00000100BF0001 /* PriceTextTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000012A00000100BF0001 /* PriceTextTests.swift */; };
 		CA0000022A00000100CA0001 /* PriceBreakdownTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA0000012A00000100CA0001 /* PriceBreakdownTests.swift */; };
 		CB0000022A00000100CB0001 /* Currency.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB0000012A00000100CB0001 /* Currency.swift */; };
+		CC0000022A00000100CC0001 /* AppStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0000012A00000100CC0001 /* AppStyle.swift */; };
+		CC0000042A00000100CC0001 /* AppView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0000032A00000100CC0001 /* AppView.swift */; };
+		CD0000022A00000100CD0001 /* AppAppearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD0000012A00000100CD0001 /* AppAppearance.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -99,6 +102,9 @@
 		BF0000012A00000100BF0001 /* PriceTextTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PriceTextTests.swift; sourceTree = "<group>"; };
 		CA0000012A00000100CA0001 /* PriceBreakdownTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PriceBreakdownTests.swift; sourceTree = "<group>"; };
 		CB0000012A00000100CB0001 /* Currency.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Currency.swift; sourceTree = "<group>"; };
+		CC0000012A00000100CC0001 /* AppStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStyle.swift; sourceTree = "<group>"; };
+		CC0000032A00000100CC0001 /* AppView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppView.swift; sourceTree = "<group>"; };
+		CD0000012A00000100CD0001 /* AppAppearance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppAppearance.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -147,6 +153,9 @@
 				BC0000052A00000100BC0001 /* ComputeViewModel.swift */,
 				BE0000012A00000100BE0001 /* ScreenFactory.swift */,
 				CB0000012A00000100CB0001 /* Currency.swift */,
+				CC0000012A00000100CC0001 /* AppStyle.swift */,
+				CC0000032A00000100CC0001 /* AppView.swift */,
+				CD0000012A00000100CD0001 /* AppAppearance.swift */,
 				CFF54D8D2A1A179800CEB598 /* japanShopping */,
 				AB0000062A00000100AB0001 /* japanShoppingTests */,
 				CFF54D8C2A1A179800CEB598 /* Products */,
@@ -306,6 +315,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				CFF54D8F2A1A179800CEB598 /* AppDelegate.swift in Sources */,
+				CD0000022A00000100CD0001 /* AppAppearance.swift in Sources */,
+				CC0000042A00000100CC0001 /* AppView.swift in Sources */,
+				CC0000022A00000100CC0001 /* AppStyle.swift in Sources */,
 				CB0000022A00000100CB0001 /* Currency.swift in Sources */,
 				BE0000022A00000100BE0001 /* ScreenFactory.swift in Sources */,
 				BC0000022A00000100BC0001 /* ExchangeRateService.swift in Sources */,

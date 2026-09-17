@@ -10,10 +10,10 @@ import UIKit
 final class CardListViewController: UIViewController {
 
     private enum Constants {
-        static let rowHeight: CGFloat = 119
+        static let rowHeight: CGFloat = 72
         static let footerHeight: CGFloat = 44
         static let cellReuseIdentifier = "CardListCell"
-        static let textColor = UIColor(displayP3Red: 0.7567, green: 0.7892, blue: 0.5646, alpha: 1)
+        static let textColor = AppColor.textPrimary
     }
 
     /// 編輯完成並返回前呼叫，讓上一頁知道資料已變更。
@@ -26,17 +26,13 @@ final class CardListViewController: UIViewController {
     private let tableView: UITableView = {
         let tableView = UITableView(frame: .zero, style: .plain)
         tableView.rowHeight = Constants.rowHeight
+        tableView.backgroundColor = .clear
+        tableView.separatorColor = AppColor.separator
         tableView.translatesAutoresizingMaskIntoConstraints = false
         return tableView
     }()
 
-    private let finishButton: UIButton = {
-        var configuration = UIButton.Configuration.plain()
-        configuration.title = "編輯完成"
-        let button = UIButton(configuration: configuration)
-        button.translatesAutoresizingMaskIntoConstraints = false
-        return button
-    }()
+    private let finishButton = AppView.primaryButton(title: "編輯完成")
 
     init(viewModel: CardListViewModelType) {
         self.viewModel = viewModel
@@ -62,7 +58,7 @@ final class CardListViewController: UIViewController {
 
     private func setupViews() {
         title = "編輯信用卡"
-        view.backgroundColor = .systemBackground
+        view.backgroundColor = AppColor.brand
 
         tableView.dataSource = self
         tableView.delegate = self
@@ -81,9 +77,11 @@ final class CardListViewController: UIViewController {
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             tableView.bottomAnchor.constraint(equalTo: finishButton.topAnchor),
 
-            finishButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            finishButton.heightAnchor.constraint(equalToConstant: Constants.footerHeight),
-            finishButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+            finishButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: AppStyle.Spacing.normal),
+            finishButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -AppStyle.Spacing.normal),
+            finishButton.bottomAnchor.constraint(
+                equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -AppStyle.Spacing.normal
+            )
         ])
     }
 
@@ -173,10 +171,10 @@ private final class CardListCell: UITableViewCell {
         var content = defaultContentConfiguration()
         content.text = item.name
         content.secondaryText = item.feedbackDescription
-        content.textProperties.font = .boldSystemFont(ofSize: 17)
+        content.textProperties.font = AppStyle.Font.bodyEmphasis
         content.textProperties.color = textColor
-        content.secondaryTextProperties.font = .boldSystemFont(ofSize: 15)
-        content.secondaryTextProperties.color = textColor
+        content.secondaryTextProperties.font = AppStyle.Font.caption
+        content.secondaryTextProperties.color = AppColor.textSecondary
         contentConfiguration = content
     }
 }

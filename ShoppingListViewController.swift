@@ -12,8 +12,8 @@ final class ShoppingListViewController: UIViewController {
 
     private enum Constants {
         static let rowHeight: CGFloat = 130
-        static let horizontalInset: CGFloat = 24
-        static let bottomBarHeight: CGFloat = 44
+        static let horizontalInset: CGFloat = AppStyle.Spacing.normal
+        static let bottomBarHeight: CGFloat = 56
     }
 
     private let viewModel: ShoppingListViewModelType
@@ -24,24 +24,14 @@ final class ShoppingListViewController: UIViewController {
         let tableView = UITableView(frame: .zero, style: .plain)
         tableView.rowHeight = Constants.rowHeight
         tableView.backgroundColor = .clear
+        tableView.separatorColor = AppColor.separator
         tableView.translatesAutoresizingMaskIntoConstraints = false
         return tableView
     }()
 
-    private let totalSpendLabel: UILabel = {
-        let label = UILabel()
-        label.font = .systemFont(ofSize: 17)
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
-    }()
+    private let totalSpendLabel = AppView.label(font: AppStyle.Font.bodyEmphasis)
 
-    private let doneButton: UIButton = {
-        var configuration = UIButton.Configuration.plain()
-        configuration.title = "Done"
-        let button = UIButton(configuration: configuration)
-        button.translatesAutoresizingMaskIntoConstraints = false
-        return button
-    }()
+    private let doneButton = AppView.primaryButton(title: "完成")
 
     init(viewModel: ShoppingListViewModelType) {
         self.viewModel = viewModel
@@ -92,6 +82,9 @@ final class ShoppingListViewController: UIViewController {
             totalSpendLabel.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
 
             doneButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalInset),
+            doneButton.leadingAnchor.constraint(
+                greaterThanOrEqualTo: totalSpendLabel.trailingAnchor, constant: AppStyle.Spacing.normal
+            ),
             doneButton.centerYAnchor.constraint(equalTo: totalSpendLabel.centerYAnchor)
         ])
     }

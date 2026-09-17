@@ -9,10 +9,10 @@ import UIKit
 final class CardSetViewController: UIViewController {
 
     private enum Constants {
-        static let spacing: CGFloat = 16
-        static let horizontalInset: CGFloat = 24
-        static let topInset: CGFloat = 32
-        static let fieldHeight: CGFloat = 44
+        static let spacing: CGFloat = AppStyle.Spacing.normal
+        static let horizontalInset: CGFloat = AppStyle.Spacing.normal
+        static let topInset: CGFloat = AppStyle.Spacing.loose
+        static let fieldHeight: CGFloat = 48
     }
 
     /// 新增成功並返回前呼叫，讓上一頁知道資料已變更。
@@ -21,17 +21,12 @@ final class CardSetViewController: UIViewController {
     private let viewModel: CardSetViewModelType
     private var cancellables = Set<AnyCancellable>()
 
+    private let formCard = AppView.card()
     private let cardNameTextField = CardSetViewController.makeTextField(placeholder: "信用卡名稱")
     private let moneyBackTextField = CardSetViewController.makeTextField(placeholder: "回饋趴數（例如 3.5）", keyboardType: .decimalPad)
     private let limitTextField = CardSetViewController.makeTextField(placeholder: "回饋上限金額", keyboardType: .decimalPad)
 
-    private let addButton: UIButton = {
-        var configuration = UIButton.Configuration.bordered()
-        configuration.title = "新增信用卡"
-        let button = UIButton(configuration: configuration)
-        button.translatesAutoresizingMaskIntoConstraints = false
-        return button
-    }()
+    private let addButton = AppView.primaryButton(title: "新增信用卡")
 
     private let stackView: UIStackView = {
         let stackView = UIStackView()
@@ -64,10 +59,12 @@ final class CardSetViewController: UIViewController {
 
     private func setupViews() {
         title = "新增信用卡"
-        view.backgroundColor = .systemBackground
+        view.backgroundColor = AppColor.brand
         addTapToDismissKeyboard()
 
-        [cardNameTextField, moneyBackTextField, limitTextField, addButton].forEach(stackView.addArrangedSubview)
+        let cardStack = AppView.cardStack(in: formCard)
+        [cardNameTextField, moneyBackTextField, limitTextField, addButton].forEach(cardStack.addArrangedSubview)
+        stackView.addArrangedSubview(formCard)
         view.addSubview(stackView)
 
         cardNameTextField.addTarget(self, action: #selector(nameChanged), for: .editingChanged)
@@ -141,11 +138,8 @@ final class CardSetViewController: UIViewController {
     }
 
     private static func makeTextField(placeholder: String, keyboardType: UIKeyboardType = .default) -> UITextField {
-        let textField = UITextField()
+        let textField = AppView.textField(keyboardType: keyboardType)
         textField.placeholder = placeholder
-        textField.borderStyle = .roundedRect
-        textField.keyboardType = keyboardType
-        textField.translatesAutoresizingMaskIntoConstraints = false
         return textField
     }
 }

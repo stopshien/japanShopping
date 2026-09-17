@@ -12,9 +12,9 @@ final class ShoppingListCell: UITableViewCell {
     static let reuseIdentifier = "ShoppingListCell"
 
     private enum Constants {
-        static let photoWidth: CGFloat = 164
-        static let photoInset: CGFloat = 20
-        static let verticalInset: CGFloat = 8
+        static let photoWidth: CGFloat = 100
+        static let photoInset: CGFloat = AppStyle.Spacing.normal
+        static let verticalInset: CGFloat = AppStyle.Spacing.tight + 4
         static let textLeading: CGFloat = 14
         static let nameFontSize: CGFloat = 25
         static let detailFontSize: CGFloat = 20
@@ -22,14 +22,17 @@ final class ShoppingListCell: UITableViewCell {
 
     private let shopPhoto: UIImageView = {
         let imageView = UIImageView()
-        imageView.contentMode = .scaleAspectFit
+        imageView.contentMode = .scaleAspectFill
+        imageView.clipsToBounds = true
+        imageView.layer.cornerRadius = AppStyle.Radius.control
+        imageView.backgroundColor = AppColor.accentSoft
         imageView.translatesAutoresizingMaskIntoConstraints = false
         return imageView
     }()
 
-    private let productNameLabel = ShoppingListCell.makeLabel(fontSize: Constants.nameFontSize)
-    private let priceLabel = ShoppingListCell.makeLabel(fontSize: Constants.detailFontSize)
-    private let payTypeLabel = ShoppingListCell.makeLabel(fontSize: Constants.detailFontSize)
+    private let productNameLabel = AppView.label(font: AppStyle.Font.title)
+    private let priceLabel = AppView.label(font: AppStyle.Font.bodyEmphasis)
+    private let payTypeLabel = AppView.label(font: AppStyle.Font.body, color: AppColor.textSecondary)
 
     private let textStackView: UIStackView = {
         let stackView = UIStackView()
@@ -88,11 +91,4 @@ final class ShoppingListCell: UITableViewCell {
 
     // MARK: - Private
 
-    private static func makeLabel(fontSize: CGFloat) -> UILabel {
-        let label = UILabel()
-        label.font = .boldSystemFont(ofSize: fontSize)
-        label.textColor = AppColor.brand
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
-    }
 }
