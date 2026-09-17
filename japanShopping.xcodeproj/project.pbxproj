@@ -53,6 +53,7 @@
 		CC0000022A00000100CC0001 /* AppStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0000012A00000100CC0001 /* AppStyle.swift */; };
 		CC0000042A00000100CC0001 /* AppView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0000032A00000100CC0001 /* AppView.swift */; };
 		CD0000022A00000100CD0001 /* AppAppearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD0000012A00000100CD0001 /* AppAppearance.swift */; };
+		CE0000022A00000100CE0001 /* CardListCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE0000012A00000100CE0001 /* CardListCell.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -105,6 +106,7 @@
 		CC0000012A00000100CC0001 /* AppStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStyle.swift; sourceTree = "<group>"; };
 		CC0000032A00000100CC0001 /* AppView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppView.swift; sourceTree = "<group>"; };
 		CD0000012A00000100CD0001 /* AppAppearance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppAppearance.swift; sourceTree = "<group>"; };
+		CE0000012A00000100CE0001 /* CardListCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardListCell.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -156,6 +158,7 @@
 				CC0000012A00000100CC0001 /* AppStyle.swift */,
 				CC0000032A00000100CC0001 /* AppView.swift */,
 				CD0000012A00000100CD0001 /* AppAppearance.swift */,
+				CE0000012A00000100CE0001 /* CardListCell.swift */,
 				CFF54D8D2A1A179800CEB598 /* japanShopping */,
 				AB0000062A00000100AB0001 /* japanShoppingTests */,
 				CFF54D8C2A1A179800CEB598 /* Products */,
@@ -315,6 +318,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				CFF54D8F2A1A179800CEB598 /* AppDelegate.swift in Sources */,
+				CE0000022A00000100CE0001 /* CardListCell.swift in Sources */,
 				CD0000022A00000100CD0001 /* AppAppearance.swift in Sources */,
 				CC0000042A00000100CC0001 /* AppView.swift in Sources */,
 				CC0000022A00000100CC0001 /* AppStyle.swift in Sources */,

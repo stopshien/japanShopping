@@ -10,10 +10,7 @@ import UIKit
 final class CardListViewController: UIViewController {
 
     private enum Constants {
-        static let rowHeight: CGFloat = 72
-        static let footerHeight: CGFloat = 44
-        static let cellReuseIdentifier = "CardListCell"
-        static let textColor = AppColor.textPrimary
+        static let estimatedRowHeight: CGFloat = 68
     }
 
     /// 編輯完成並返回前呼叫，讓上一頁知道資料已變更。
@@ -24,15 +21,26 @@ final class CardListViewController: UIViewController {
     private var items: [CardListItem] = []
 
     private let tableView: UITableView = {
-        let tableView = UITableView(frame: .zero, style: .plain)
-        tableView.rowHeight = Constants.rowHeight
+        let tableView = UITableView(frame: .zero, style: .insetGrouped)
+        tableView.rowHeight = UITableView.automaticDimension
+        tableView.estimatedRowHeight = Constants.estimatedRowHeight
         tableView.backgroundColor = .clear
         tableView.separatorColor = AppColor.separator
+        tableView.separatorInset = UIEdgeInsets(
+            top: 0, left: AppStyle.Spacing.normal, bottom: 0, right: AppStyle.Spacing.normal
+        )
         tableView.translatesAutoresizingMaskIntoConstraints = false
         return tableView
     }()
 
     private let finishButton = AppView.primaryButton(title: "編輯完成")
+
+    private let emptyStateLabel = AppView.label(
+        "尚未新增任何信用卡\n回到上一頁的下拉選單即可新增",
+        font: AppStyle.Font.body,
+        color: AppColor.textSecondary,
+        alignment: .center
+    )
 
     init(viewModel: CardListViewModelType) {
         self.viewModel = viewModel
@@ -62,11 +70,12 @@ final class CardListViewController: UIViewController {
 
         tableView.dataSource = self
         tableView.delegate = self
-        tableView.register(CardListCell.self, forCellReuseIdentifier: Constants.cellReuseIdentifier)
+        tableView.register(CardListCell.self, forCellReuseIdentifier: CardListCell.reuseIdentifier)
 
         finishButton.addTarget(self, action: #selector(finishTapped), for: .touchUpInside)
 
         view.addSubview(tableView)
+        view.addSubview(emptyStateLabel)
         view.addSubview(finishButton)
     }
 
@@ -76,6 +85,15 @@ final class CardListViewController: UIViewController {
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             tableView.bottomAnchor.constraint(equalTo: finishButton.topAnchor),
+
+            emptyStateLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            emptyStateLabel.centerYAnchor.constraint(equalTo: tableView.centerYAnchor),
+            emptyStateLabel.leadingAnchor.constraint(
+                equalTo: view.leadingAnchor, constant: AppStyle.Spacing.loose
+            ),
+            emptyStateLabel.trailingAnchor.constraint(
+                equalTo: view.trailingAnchor, constant: -AppStyle.Spacing.loose
+            ),
 
             finishButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: AppStyle.Spacing.normal),
             finishButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -AppStyle.Spacing.normal),
@@ -93,6 +111,8 @@ final class CardListViewController: UIViewController {
             .sink { [weak self] items in
                 self?.items = items
                 self?.tableView.reloadData()
+                self?.emptyStateLabel.isHidden = !items.isEmpty
+                self?.finishButton.isHidden = items.isEmpty
             }
             .store(in: &cancellables)
 
@@ -136,9 +156,9 @@ extension CardListViewController: UITableViewDataSource {
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: Constants.cellReuseIdentifier, for: indexPath)
+        let cell = tableView.dequeueReusableCell(withIdentifier: CardListCell.reuseIdentifier, for: indexPath)
         if let cardCell = cell as? CardListCell, items.indices.contains(indexPath.row) {
-            cardCell.configure(with: items[indexPath.row], textColor: Constants.textColor)
+            cardCell.configure(with: items[indexPath.row])
         }
         return cell
     }
@@ -154,27 +174,3 @@ extension CardListViewController: UITableViewDelegate {
     }
 }
 
-// MARK: - CardListCell
-
-private final class CardListCell: UITableViewCell {
-
-    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
-        super.init(style: .subtitle, reuseIdentifier: reuseIdentifier)
-    }
-
-    @available(*, unavailable)
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) is not supported")
-    }
-
-    func configure(with item: CardListItem, textColor: UIColor) {
-        var content = defaultContentConfiguration()
-        content.text = item.name
-        content.secondaryText = item.feedbackDescription
-        content.textProperties.font = AppStyle.Font.bodyEmphasis
-        content.textProperties.color = textColor
-        content.secondaryTextProperties.font = AppStyle.Font.caption
-        content.secondaryTextProperties.color = AppColor.textSecondary
-        contentConfiguration = content
-    }
-}

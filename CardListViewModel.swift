@@ -10,7 +10,10 @@ import Foundation
 
 struct CardListItem: Equatable {
     let name: String
-    let feedbackDescription: String
+    /// 回饋趴數，顯示為徽章（例如 "3.5%"）。
+    let percentBadge: String
+    /// 上限與剩餘額度，這頁最常被回頭查的資訊。
+    let limitDescription: String
 }
 
 protocol CardListViewModelType {
@@ -56,7 +59,8 @@ final class CardListViewModel: CardListViewModelType {
     private static func makeItem(from card: Card) -> CardListItem {
         CardListItem(
             name: card.name,
-            feedbackDescription: "回饋趴數：\(card.percent)％"
+            percentBadge: "\(PriceText.amount(card.percent))%",
+            limitDescription: "上限 \(PriceText.amount(card.limit))　剩餘 \(PriceText.amount(card.feedbackRemaining))"
         )
     }
 }

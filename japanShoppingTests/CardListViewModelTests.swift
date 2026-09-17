@@ -38,7 +38,22 @@ final class CardListViewModelTests: XCTestCase {
 
         XCTAssertEqual(items.count, 2)
         XCTAssertEqual(items.first?.name, "A卡")
-        XCTAssertEqual(items.first?.feedbackDescription, "回饋趴數：3.0％")
+        XCTAssertEqual(items.first?.percentBadge, "3%")
+        XCTAssertEqual(items.first?.limitDescription, "上限 1000　剩餘 1000")
+    }
+
+    /// 這頁最常被回頭查的是剩餘額度，因此必須顯示實際剩餘而非上限。
+    func testLimitDescriptionShowsTheRemainingBalance() {
+        repository.storedCards = [
+            Card(name: "A卡", percent: 3.5, limit: 5000, feedbackMoney: 4.12, feedbackRemaining: 4995.88)
+        ]
+        var items: [CardListItem] = []
+        viewModel.output.items.sink { items = $0 }.store(in: &cancellables)
+
+        viewModel.input.viewDidLoad()
+
+        XCTAssertEqual(items.first?.percentBadge, "3.5%")
+        XCTAssertEqual(items.first?.limitDescription, "上限 5000　剩餘 4995.88")
     }
 
     func testDeleteRemovesItemFromTheList() {
