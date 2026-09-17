@@ -5,8 +5,7 @@
 
 import Foundation
 
-/// 使用者的基本設定，於首次啟動的引導流程建立，之後可在設定頁修改。
+/// 使用者本身的設定。幣別屬於 Trip，不在這裡。
 struct UserProfile: Codable, Equatable {
     var name: String
-    var currency: Currency
 }

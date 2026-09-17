@@ -12,6 +12,7 @@ enum ComputeRoute: Equatable {
     case detail(ShoppingItem)
     case shoppingList
     case settings
+    case tripList
 }
 
 protocol ComputeViewModelType {
@@ -21,7 +22,7 @@ protocol ComputeViewModelType {
 
 protocol ComputeViewModelInput {
     func viewDidLoad()
-    /// 從設定頁返回後重新讀取幣別。
+    /// 從設定頁或專案清單返回後重新讀取幣別。
     func reloadSettings()
     func taxCategoryChanged(to category: TaxCategory)
     func amountTextChanged(_ text: String)
@@ -30,6 +31,7 @@ protocol ComputeViewModelInput {
     func usePrice(for mode: TaxMode)
     func showShoppingListTapped()
     func settingsTapped()
+    func tripListTapped()
 }
 
 protocol ComputeViewModelOutput {
@@ -53,7 +55,7 @@ final class ComputeViewModel: ComputeViewModelType {
     }
 
     private let service: ExchangeRateService
-    private let userProfileRepository: UserProfileRepository
+    private let tripRepository: TripRepository
     private let updatedAtFormatter: DateFormatter
 
     private var exchangeRate: ExchangeRate?
@@ -73,11 +75,11 @@ final class ComputeViewModel: ComputeViewModelType {
     private let routeSubject = PassthroughSubject<ComputeRoute, Never>()
     private let errorMessageSubject = PassthroughSubject<String, Never>()
 
-    init(service: ExchangeRateService, userProfileRepository: UserProfileRepository) {
+    init(service: ExchangeRateService, tripRepository: TripRepository) {
         self.service = service
-        self.userProfileRepository = userProfileRepository
+        self.tripRepository = tripRepository
         self.updatedAtFormatter = ComputeViewModel.makeUpdatedAtFormatter()
-        let initialCurrency = userProfileRepository.load()?.currency ?? .japaneseYen
+        let initialCurrency = ComputeViewModel.currentCurrency(from: tripRepository)
         self.currency = initialCurrency
         self.inputPlaceholderSubject = CurrentValueSubject(initialCurrency.inputPlaceholder)
         self.taxCategoryTitlesSubject = CurrentValueSubject(ComputeViewModel.taxCategoryTitles(for: initialCurrency))
@@ -120,6 +122,15 @@ final class ComputeViewModel: ComputeViewModelType {
 
         breakdown = nil
         resultTextSubject.send(Constants.resultPlaceholder)
+    }
+
+    /// 目前使用中專案的幣別。沒有選中時退回最新建立的一個。
+    private static func currentCurrency(from repository: TripRepository) -> Currency {
+        let trips = (try? repository.load()) ?? []
+        if let id = repository.loadCurrentTripID(), let trip = trips.first(where: { $0.id == id }) {
+            return trip.currency
+        }
+        return trips.sorted { $0.createdAt > $1.createdAt }.first?.currency ?? .japaneseYen
     }
 
     /// 標籤帶上實際稅率（例如「食品 8%」），稅率調整時標籤不會對不上。
@@ -165,7 +176,7 @@ extension ComputeViewModel: ComputeViewModelInput {
     }
 
     func reloadSettings() {
-        let updated = userProfileRepository.load()?.currency ?? .japaneseYen
+        let updated = Self.currentCurrency(from: tripRepository)
         guard updated != currency else { return }
         currency = updated
         refreshForCurrentCurrency()
@@ -220,6 +231,10 @@ extension ComputeViewModel: ComputeViewModelInput {
 
     func settingsTapped() {
         routeSubject.send(.settings)
+    }
+
+    func tripListTapped() {
+        routeSubject.send(.tripList)
     }
 }
 

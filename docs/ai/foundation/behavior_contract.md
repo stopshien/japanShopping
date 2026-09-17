@@ -24,9 +24,14 @@ Each entry names the test that locks it. If a change makes one of these tests fa
 - **The on-disk property list format of `ShoppingItem` and `Card`.** The stored keys are the property names, so renaming a property silently breaks every existing user's saved data. `PersistenceFormatTests`, `FileShoppingListRepositoryTests`, `FileCardRepositoryTests`.
 - **Photos are referenced by bare filename, never by absolute path.** The app container path changes between installs. `FileImageStoreTests`.
 
-- **Onboarding shows only when no `UserProfile` is stored.** There is no separate "has onboarded" flag: a stored profile *is* the flag. `UserDefaultsUserProfileRepositoryTests`.
-- **Onboarding writes nothing until its last step.** The welcome screen passes the name forward; `CurrencySelectionViewModel` saves the complete profile. Quitting midway leaves no half-written profile that would make the app think onboarding finished. `CurrencySelectionViewModelTests`.
-- **The currency is a setting, not a per-conversion choice.** It is picked during onboarding and changed in Settings; the compute screen has no currency selector. The tax *category* (一般／食品) stays on the compute screen because it varies per purchase. `ComputeViewModelTests`.
+- **Onboarding shows when there is no `UserProfile` *or* no trip.** Both are needed before the app is usable.
+There is no separate "has onboarded" flag: the stored data *is* the flag. `UserDefaultsUserProfileRepositoryTests`.
+- **The currency belongs to a `Trip`, not to the user.** Each trip has its own currency and its own shopping list, so the same person can have a Japan trip and a Korea trip. The compute screen reads the current trip's currency and has no selector. The tax *category* (一般／食品) stays on the compute screen because it varies per purchase. `ComputeViewModelTests`.
+- **Credit cards are shared across trips.** They are physical cards in the user's wallet and their feedback limits accumulate across trips, so they are not scoped to a trip.
+- **Deleting a trip deletes its shopping list and photos**, and is confirmed with an alert because it cannot be undone. If saving the trip list fails, the trip is restored and no content is deleted. `TripListViewModelTests`.
+- **Deleting the current trip selects the newest remaining one**, so the compute screen always has a currency. `TripListViewModelTests`.
+- **A newly created trip immediately becomes the current one**; editing an existing trip does not change which trip is current. `TripEditorViewModelTests`.
+- **A trip's default name follows the currency until the user types their own.** Once they type, changing the currency no longer overwrites it. `TripEditorViewModelTests`.
 
 ## Why The Code Looks Like This
 
@@ -56,6 +61,8 @@ Each entry is behavior that intentionally differs from the Storyboard/MVC versio
 - **An empty shopping list shows `你已經花了0.0$`.** The original skipped the calculation when the list was empty, leaving the storyboard's design-time placeholder `總花費` on screen.
 
 ## Open Debt
+
+- **The legacy single shopping list is migrated once by `TripMigration`.** It moves `Documents/list` to `Documents/list-<tripID>` and creates a trip from the currency stored in the old profile. If the move fails it leaves the old file untouched and retries on the next launch. Once no installs predate trips, this can be deleted.
 
 - **The exchange-rate API key is not a secret.** It moved out of Swift source into the `EXCHANGE_RATE_API_KEY` build setting, surfaced through `Info.plist`, which only made it configurable. It still ships inside the app bundle and is still present in this repository's git history. Rotating the key and proxying the request through a backend is the only real fix.
 - **Clearing the entry screen after tapping Done in the list** was a wish in the original code's header comment. It was never built.

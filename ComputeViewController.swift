@@ -78,12 +78,20 @@ final class ComputeViewController: UIViewController {
     private func setupViews() {
         title = "匯率換算"
         view.backgroundColor = AppColor.brand
-        navigationItem.leftBarButtonItem = AppView.barButton(
-            systemImage: "gearshape",
-            accessibilityLabel: "設定",
-            target: self,
-            action: #selector(settingsTapped)
-        )
+        navigationItem.leftBarButtonItems = [
+            AppView.barButton(
+                systemImage: "gearshape",
+                accessibilityLabel: "設定",
+                target: self,
+                action: #selector(settingsTapped)
+            ),
+            AppView.barButton(
+                systemImage: "rectangle.stack",
+                accessibilityLabel: "切換專案",
+                target: self,
+                action: #selector(tripListTapped)
+            )
+        ]
         navigationItem.rightBarButtonItem = AppView.barButton(
             systemImage: "cart",
             accessibilityLabel: "查看購物清單",
@@ -225,6 +233,12 @@ final class ComputeViewController: UIViewController {
                 self?.viewModel.input.reloadSettings()
             }
             navigationController?.pushViewController(controller, animated: true)
+
+        case .tripList:
+            let controller = factory.makeTripList { [weak self] in
+                self?.viewModel.input.reloadSettings()
+            }
+            navigationController?.pushViewController(controller, animated: true)
         }
     }
 
@@ -263,6 +277,10 @@ final class ComputeViewController: UIViewController {
 
     @objc private func settingsTapped() {
         viewModel.input.settingsTapped()
+    }
+
+    @objc private func tripListTapped() {
+        viewModel.input.tripListTapped()
     }
 
     // MARK: - Private

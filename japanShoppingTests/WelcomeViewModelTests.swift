@@ -7,6 +7,52 @@ import Combine
 import XCTest
 @testable import japanShopping
 
+final class TripRepositoryStub: TripRepository {
+
+    var trips: [Trip]
+    var currentTripID: UUID?
+    var loadError: Error?
+    var saveError: Error?
+    private(set) var saveCallCount = 0
+
+    init(trips: [Trip] = [], currentTripID: UUID? = nil) {
+        self.trips = trips
+        self.currentTripID = currentTripID
+    }
+
+    func load() throws -> [Trip] {
+        if let loadError { throw loadError }
+        return trips
+    }
+
+    func save(_ trips: [Trip]) throws {
+        saveCallCount += 1
+        if let saveError { throw saveError }
+        self.trips = trips
+    }
+
+    func loadCurrentTripID() -> UUID? { currentTripID }
+    func saveCurrentTripID(_ id: UUID?) { currentTripID = id }
+}
+
+final class TripContentStoreStub: TripContentStore {
+
+    var repositories: [UUID: ShoppingListRepositoryStub] = [:]
+    private(set) var removedTripIDs: [UUID] = []
+
+    func shoppingListRepository(for tripID: UUID) -> ShoppingListRepository {
+        if let existing = repositories[tripID] { return existing }
+        let created = ShoppingListRepositoryStub()
+        repositories[tripID] = created
+        return created
+    }
+
+    func removeContent(of tripID: UUID) {
+        removedTripIDs.append(tripID)
+        repositories[tripID] = nil
+    }
+}
+
 final class UserProfileRepositoryStub: UserProfileRepository {
 
     var storedProfile: UserProfile?
@@ -114,7 +160,7 @@ final class UserDefaultsUserProfileRepositoryTests: XCTestCase {
     }
 
     func testSaveThenLoadReturnsTheSameProfile() throws {
-        let profile = UserProfile(name: "Angus", currency: .koreanWon)
+        let profile = UserProfile(name: "Angus")
 
         try repository.save(profile)
 
@@ -122,8 +168,8 @@ final class UserDefaultsUserProfileRepositoryTests: XCTestCase {
     }
 
     func testSavingAgainReplacesThePreviousProfile() throws {
-        try repository.save(UserProfile(name: "Angus", currency: .japaneseYen))
-        try repository.save(UserProfile(name: "庭鋒", currency: .koreanWon))
+        try repository.save(UserProfile(name: "Angus"))
+        try repository.save(UserProfile(name: "庭鋒"))
 
         XCTAssertEqual(repository.load()?.name, "庭鋒")
     }

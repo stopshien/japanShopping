@@ -59,11 +59,19 @@
 		DA0000062A00000100DA0001 /* WelcomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA0000052A00000100DA0001 /* WelcomeViewModel.swift */; };
 		DA0000082A00000100DA0001 /* WelcomeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA0000072A00000100DA0001 /* WelcomeViewController.swift */; };
 		DB0000022A00000100DB0001 /* WelcomeViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB0000012A00000100DB0001 /* WelcomeViewModelTests.swift */; };
-		DC0000022A00000100DC0001 /* CurrencySelectionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC0000012A00000100DC0001 /* CurrencySelectionViewModel.swift */; };
-		DC0000042A00000100DC0001 /* CurrencySelectionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC0000032A00000100DC0001 /* CurrencySelectionViewController.swift */; };
 		DC0000062A00000100DC0001 /* SettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC0000052A00000100DC0001 /* SettingsViewModel.swift */; };
 		DC0000082A00000100DC0001 /* SettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC0000072A00000100DC0001 /* SettingsViewController.swift */; };
 		DD0000022A00000100DD0001 /* OnboardingAndSettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD0000012A00000100DD0001 /* OnboardingAndSettingsTests.swift */; };
+		EA0000022A00000100EA0001 /* Trip.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA0000012A00000100EA0001 /* Trip.swift */; };
+		EA0000042A00000100EA0001 /* TripRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA0000032A00000100EA0001 /* TripRepository.swift */; };
+		EA0000062A00000100EA0001 /* TripContentStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA0000052A00000100EA0001 /* TripContentStore.swift */; };
+		EA0000082A00000100EA0001 /* TripMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA0000072A00000100EA0001 /* TripMigration.swift */; };
+		EA00000A2A00000100EA0001 /* TripEditorViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA0000092A00000100EA0001 /* TripEditorViewModel.swift */; };
+		EA00000C2A00000100EA0001 /* TripEditorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA00000B2A00000100EA0001 /* TripEditorViewController.swift */; };
+		EA00000E2A00000100EA0001 /* TripListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA00000D2A00000100EA0001 /* TripListViewModel.swift */; };
+		EA0000102A00000100EA0001 /* TripListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA00000F2A00000100EA0001 /* TripListViewController.swift */; };
+		EA0000122A00000100EA0001 /* TripListCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA0000112A00000100EA0001 /* TripListCell.swift */; };
+		EB0000022A00000100EB0001 /* TripTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB0000012A00000100EB0001 /* TripTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -122,11 +130,19 @@
 		DA0000052A00000100DA0001 /* WelcomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeViewModel.swift; sourceTree = "<group>"; };
 		DA0000072A00000100DA0001 /* WelcomeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeViewController.swift; sourceTree = "<group>"; };
 		DB0000012A00000100DB0001 /* WelcomeViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeViewModelTests.swift; sourceTree = "<group>"; };
-		DC0000012A00000100DC0001 /* CurrencySelectionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrencySelectionViewModel.swift; sourceTree = "<group>"; };
-		DC0000032A00000100DC0001 /* CurrencySelectionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrencySelectionViewController.swift; sourceTree = "<group>"; };
 		DC0000052A00000100DC0001 /* SettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewModel.swift; sourceTree = "<group>"; };
 		DC0000072A00000100DC0001 /* SettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewController.swift; sourceTree = "<group>"; };
 		DD0000012A00000100DD0001 /* OnboardingAndSettingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingAndSettingsTests.swift; sourceTree = "<group>"; };
+		EA0000012A00000100EA0001 /* Trip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Trip.swift; sourceTree = "<group>"; };
+		EA0000032A00000100EA0001 /* TripRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripRepository.swift; sourceTree = "<group>"; };
+		EA0000052A00000100EA0001 /* TripContentStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripContentStore.swift; sourceTree = "<group>"; };
+		EA0000072A00000100EA0001 /* TripMigration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripMigration.swift; sourceTree = "<group>"; };
+		EA0000092A00000100EA0001 /* TripEditorViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripEditorViewModel.swift; sourceTree = "<group>"; };
+		EA00000B2A00000100EA0001 /* TripEditorViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripEditorViewController.swift; sourceTree = "<group>"; };
+		EA00000D2A00000100EA0001 /* TripListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripListViewModel.swift; sourceTree = "<group>"; };
+		EA00000F2A00000100EA0001 /* TripListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripListViewController.swift; sourceTree = "<group>"; };
+		EA0000112A00000100EA0001 /* TripListCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripListCell.swift; sourceTree = "<group>"; };
+		EB0000012A00000100EB0001 /* TripTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -183,10 +199,17 @@
 				DA0000032A00000100DA0001 /* UserProfileRepository.swift */,
 				DA0000052A00000100DA0001 /* WelcomeViewModel.swift */,
 				DA0000072A00000100DA0001 /* WelcomeViewController.swift */,
-				DC0000012A00000100DC0001 /* CurrencySelectionViewModel.swift */,
-				DC0000032A00000100DC0001 /* CurrencySelectionViewController.swift */,
 				DC0000052A00000100DC0001 /* SettingsViewModel.swift */,
 				DC0000072A00000100DC0001 /* SettingsViewController.swift */,
+				EA0000012A00000100EA0001 /* Trip.swift */,
+				EA0000032A00000100EA0001 /* TripRepository.swift */,
+				EA0000052A00000100EA0001 /* TripContentStore.swift */,
+				EA0000072A00000100EA0001 /* TripMigration.swift */,
+				EA0000092A00000100EA0001 /* TripEditorViewModel.swift */,
+				EA00000B2A00000100EA0001 /* TripEditorViewController.swift */,
+				EA00000D2A00000100EA0001 /* TripListViewModel.swift */,
+				EA00000F2A00000100EA0001 /* TripListViewController.swift */,
+				EA0000112A00000100EA0001 /* TripListCell.swift */,
 				CFF54D8D2A1A179800CEB598 /* japanShopping */,
 				AB0000062A00000100AB0001 /* japanShoppingTests */,
 				CFF54D8C2A1A179800CEB598 /* Products */,
@@ -219,6 +242,7 @@
 			children = (
 				AB0000022A00000100AB0001 /* PersistenceFormatTests.swift */,
 				AB0000032A00000100AB0001 /* ExchangeRateDecodingTests.swift */,
+				EB0000012A00000100EB0001 /* TripTests.swift */,
 				DD0000012A00000100DD0001 /* OnboardingAndSettingsTests.swift */,
 				DB0000012A00000100DB0001 /* WelcomeViewModelTests.swift */,
 				CA0000012A00000100CA0001 /* PriceBreakdownTests.swift */,
@@ -348,10 +372,17 @@
 			buildActionMask = 2147483647;
 			files = (
 				CFF54D8F2A1A179800CEB598 /* AppDelegate.swift in Sources */,
+				EA0000122A00000100EA0001 /* TripListCell.swift in Sources */,
+				EA0000102A00000100EA0001 /* TripListViewController.swift in Sources */,
+				EA00000E2A00000100EA0001 /* TripListViewModel.swift in Sources */,
+				EA00000C2A00000100EA0001 /* TripEditorViewController.swift in Sources */,
+				EA00000A2A00000100EA0001 /* TripEditorViewModel.swift in Sources */,
+				EA0000082A00000100EA0001 /* TripMigration.swift in Sources */,
+				EA0000062A00000100EA0001 /* TripContentStore.swift in Sources */,
+				EA0000042A00000100EA0001 /* TripRepository.swift in Sources */,
+				EA0000022A00000100EA0001 /* Trip.swift in Sources */,
 				DC0000082A00000100DC0001 /* SettingsViewController.swift in Sources */,
 				DC0000062A00000100DC0001 /* SettingsViewModel.swift in Sources */,
-				DC0000042A00000100DC0001 /* CurrencySelectionViewController.swift in Sources */,
-				DC0000022A00000100DC0001 /* CurrencySelectionViewModel.swift in Sources */,
 				DA0000082A00000100DA0001 /* WelcomeViewController.swift in Sources */,
 				DA0000062A00000100DA0001 /* WelcomeViewModel.swift in Sources */,
 				DA0000042A00000100DA0001 /* UserProfileRepository.swift in Sources */,
@@ -395,6 +426,7 @@
 			files = (
 				AB0000042A00000100AB0001 /* PersistenceFormatTests.swift in Sources */,
 				AB0000052A00000100AB0001 /* ExchangeRateDecodingTests.swift in Sources */,
+				EB0000022A00000100EB0001 /* TripTests.swift in Sources */,
 				DD0000022A00000100DD0001 /* OnboardingAndSettingsTests.swift in Sources */,
 				DB0000022A00000100DB0001 /* WelcomeViewModelTests.swift in Sources */,
 				CA0000022A00000100CA0001 /* PriceBreakdownTests.swift in Sources */,

@@ -12,9 +12,11 @@ import UIKit
 protocol ScreenFactory {
     /// 尚未完成引導流程時為 true。
     var needsOnboarding: Bool { get }
-    /// 引導流程：輸入稱呼 → 選擇幣別。完成後才寫入設定。
+    /// 引導流程：輸入稱呼 → 建立第一個專案。兩者齊備才算完成。
     func makeOnboarding(onFinish: @escaping () -> Void) -> UIViewController
     func makeSettings(onFinish: @escaping () -> Void) -> UIViewController
+    func makeTripList(onTripChanged: @escaping () -> Void) -> UIViewController
+    func makeTripEditor(editing trip: Trip?, onFinish: @escaping () -> Void) -> UIViewController
     func makeCompute() -> UIViewController
     func makeDetail(item: ShoppingItem) -> UIViewController
     func makeShoppingList() -> UIViewController
@@ -29,23 +31,46 @@ final class AppScreenFactory: ScreenFactory {
     private let imageStore: ImageStore
     private let exchangeRateService: ExchangeRateService
     private let userProfileRepository: UserProfileRepository
+    private let tripRepository: TripRepository
+    private let tripContentStore: TripContentStore
 
     init(
         cardRepository: CardRepository = FileCardRepository(),
         shoppingListRepository: ShoppingListRepository = FileShoppingListRepository(),
         imageStore: ImageStore = FileImageStore(),
         exchangeRateService: ExchangeRateService = RemoteExchangeRateService(),
-        userProfileRepository: UserProfileRepository = UserDefaultsUserProfileRepository()
+        userProfileRepository: UserProfileRepository = UserDefaultsUserProfileRepository(),
+        tripRepository: TripRepository = FileTripRepository(),
+        tripContentStore: TripContentStore = FileTripContentStore()
     ) {
         self.cardRepository = cardRepository
         self.shoppingListRepository = shoppingListRepository
         self.imageStore = imageStore
         self.exchangeRateService = exchangeRateService
         self.userProfileRepository = userProfileRepository
+        self.tripRepository = tripRepository
+        self.tripContentStore = tripContentStore
+
+        // 舊版的單一清單轉成第一個專案，只會執行一次。
+        TripMigration.run(tripRepository: tripRepository)
+    }
+
+    /// 目前使用中的專案。沒有選中時退回最新建立的一個。
+    private var currentTrip: Trip? {
+        let trips = (try? tripRepository.load()) ?? []
+        if let id = tripRepository.loadCurrentTripID(), let trip = trips.first(where: { $0.id == id }) {
+            return trip
+        }
+        return trips.sorted { $0.createdAt > $1.createdAt }.first
+    }
+
+    private var currentShoppingListRepository: ShoppingListRepository {
+        guard let currentTrip else { return shoppingListRepository }
+        return tripContentStore.shoppingListRepository(for: currentTrip.id)
     }
 
     var needsOnboarding: Bool {
-        userProfileRepository.load() == nil
+        userProfileRepository.load() == nil || currentTrip == nil
     }
 
     func makeOnboarding(onFinish: @escaping () -> Void) -> UIViewController {
@@ -54,10 +79,15 @@ final class AppScreenFactory: ScreenFactory {
 
         let welcome = WelcomeViewController(viewModel: WelcomeViewModel())
         welcome.bindFinish { [weak navigationController] name in
-            let viewModel = CurrencySelectionViewModel(name: name, repository: self.userProfileRepository)
-            let selection = CurrencySelectionViewController(viewModel: viewModel)
-            selection.bindFinish(onFinish)
-            navigationController?.pushViewController(selection, animated: true)
+            // 名字先寫入，專案由下一步建立；兩者齊備才算完成引導。
+            try? self.userProfileRepository.save(UserProfile(name: name))
+
+            let editor = TripEditorViewController(
+                viewModel: TripEditorViewModel(repository: self.tripRepository),
+                presentation: .onboarding
+            )
+            editor.bindFinish(onFinish)
+            navigationController?.pushViewController(editor, animated: true)
         }
         navigationController.setViewControllers([welcome], animated: false)
         return navigationController
@@ -74,7 +104,7 @@ final class AppScreenFactory: ScreenFactory {
     func makeCompute() -> UIViewController {
         let viewModel = ComputeViewModel(
             service: exchangeRateService,
-            userProfileRepository: userProfileRepository
+            tripRepository: tripRepository
         )
         return ComputeViewController(viewModel: viewModel, factory: self)
     }
@@ -83,15 +113,34 @@ final class AppScreenFactory: ScreenFactory {
         let viewModel = DetailViewModel(
             item: item,
             cardRepository: cardRepository,
-            shoppingListRepository: shoppingListRepository,
+            shoppingListRepository: currentShoppingListRepository,
             imageStore: imageStore
         )
         return DetailViewController(viewModel: viewModel, factory: self)
     }
 
+    func makeTripList(onTripChanged: @escaping () -> Void) -> UIViewController {
+        let viewModel = TripListViewModel(repository: tripRepository, contentStore: tripContentStore)
+        let controller = TripListViewController(viewModel: viewModel, factory: self)
+        controller.onTripChanged = onTripChanged
+        return controller
+    }
+
+    func makeTripEditor(editing trip: Trip?, onFinish: @escaping () -> Void) -> UIViewController {
+        let controller = TripEditorViewController(
+            viewModel: TripEditorViewModel(editingTrip: trip, repository: tripRepository),
+            presentation: trip == nil ? .create : .edit
+        )
+        controller.bindFinish { [weak controller] in
+            onFinish()
+            controller?.navigationController?.popViewController(animated: true)
+        }
+        return controller
+    }
+
     func makeShoppingList() -> UIViewController {
         let viewModel = ShoppingListViewModel(
-            repository: shoppingListRepository,
+            repository: currentShoppingListRepository,
             imageStore: imageStore,
             userProfileRepository: userProfileRepository
         )

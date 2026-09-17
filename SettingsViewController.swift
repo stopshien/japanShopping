@@ -10,7 +10,6 @@ final class SettingsViewController: UIViewController {
 
     private enum Constants {
         static let fieldHeight: CGFloat = 48
-        static let segmentHeight: CGFloat = 40
     }
 
     /// 儲存並返回前呼叫，讓上一頁重新載入設定。
@@ -23,7 +22,6 @@ final class SettingsViewController: UIViewController {
 
     private let card = AppView.card()
     private let nameTitleLabel = AppView.label("稱呼", font: AppStyle.Font.label, color: AppColor.textSecondary)
-    private let currencyTitleLabel = AppView.label("幣別", font: AppStyle.Font.label, color: AppColor.textSecondary)
 
     private let nameTextField: UITextField = {
         let textField = AppView.textField()
@@ -32,7 +30,6 @@ final class SettingsViewController: UIViewController {
         return textField
     }()
 
-    private let currencySegmentedControl = AppView.segmentedControl(items: Currency.allCases.map(\.title))
     private let saveButton = AppView.primaryButton(title: "儲存")
 
     private let contentStackView: UIStackView = {
@@ -73,16 +70,13 @@ final class SettingsViewController: UIViewController {
         addTapToDismissKeyboard()
 
         let cardStack = AppView.cardStack(in: card, spacing: AppStyle.Spacing.tight)
-        [nameTitleLabel, nameTextField, currencyTitleLabel, currencySegmentedControl, saveButton]
-            .forEach(cardStack.addArrangedSubview)
+        [nameTitleLabel, nameTextField, saveButton].forEach(cardStack.addArrangedSubview)
         cardStack.setCustomSpacing(AppStyle.Spacing.normal, after: nameTextField)
-        cardStack.setCustomSpacing(AppStyle.Spacing.normal, after: currencySegmentedControl)
 
         contentStackView.addArrangedSubview(card)
         view.addSubview(contentStackView)
 
         nameTextField.addTarget(self, action: #selector(nameChanged), for: .editingChanged)
-        currencySegmentedControl.addTarget(self, action: #selector(currencyChanged), for: .valueChanged)
         saveButton.addTarget(self, action: #selector(saveTapped), for: .touchUpInside)
     }
 
@@ -97,8 +91,7 @@ final class SettingsViewController: UIViewController {
             contentStackView.trailingAnchor.constraint(
                 equalTo: view.trailingAnchor, constant: -AppStyle.Spacing.normal
             ),
-            nameTextField.heightAnchor.constraint(equalToConstant: Constants.fieldHeight),
-            currencySegmentedControl.heightAnchor.constraint(equalToConstant: Constants.segmentHeight)
+            nameTextField.heightAnchor.constraint(equalToConstant: Constants.fieldHeight)
         ])
     }
 
@@ -109,13 +102,6 @@ final class SettingsViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] name in
                 self?.nameTextField.text = name
-            }
-            .store(in: &cancellables)
-
-        viewModel.output.selectedCurrency
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] currency in
-                self?.currencySegmentedControl.selectedSegmentIndex = currency.rawValue
             }
             .store(in: &cancellables)
 
@@ -146,11 +132,6 @@ final class SettingsViewController: UIViewController {
 
     @objc private func nameChanged() {
         viewModel.input.nameChanged(nameTextField.text ?? "")
-    }
-
-    @objc private func currencyChanged() {
-        guard let currency = Currency(rawValue: currencySegmentedControl.selectedSegmentIndex) else { return }
-        viewModel.input.currencySelected(currency)
     }
 
     @objc private func saveTapped() {

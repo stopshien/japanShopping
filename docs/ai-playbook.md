@@ -41,7 +41,7 @@ Tool-specific folders (`.claude/`, `.cursor/`) may hold thin adapters or command
 - Production Swift sources: repository root, flat, one primary type per file
   - screens: `<Screen>ViewController.swift` + `<Screen>ViewModel.swift`
   - services: `<Thing>Repository.swift`, `ImageStore.swift`, `ExchangeRateService.swift`
-  - models: `ShoppingItem.swift`, `Card.swift`, `ExchangeRate.swift`, `UserProfile.swift`
+  - models: `ShoppingItem.swift`, `Card.swift`, `ExchangeRate.swift`, `UserProfile.swift`, `Trip.swift`
   - composition root: `ScreenFactory.swift`
   - domain values: `Currency.swift`, `TaxMode.swift` (含 `PriceBreakdown`)
   - shared helpers: `AppColor.swift`, `AppStyle.swift`, `AppView.swift`, `AppAppearance.swift`, `PriceText.swift`, `DocumentsDirectory.swift`, `UIViewController+KeyboardDismiss.swift`
