@@ -85,7 +85,7 @@ extension CardListViewModel: CardListViewModelInput {
         publishItems()
     }
 
-    /// 刪除不會立即寫檔，只有按下「編輯完成」才儲存，
+    /// 刪除不會立即寫檔，只有按下「完成」才儲存，
     /// 這樣誤刪時可以直接返回而不套用變更。
     func finishTapped() {
         do {

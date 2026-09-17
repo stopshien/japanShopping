@@ -13,7 +13,7 @@ final class CardListViewController: UIViewController {
         static let estimatedRowHeight: CGFloat = 68
     }
 
-    /// 編輯完成並返回前呼叫，讓上一頁知道資料已變更。
+    /// 按下完成並返回前呼叫，讓上一頁知道資料已變更。
     var onFinish: (() -> Void)?
 
     private let viewModel: CardListViewModelType
@@ -33,7 +33,7 @@ final class CardListViewController: UIViewController {
         return tableView
     }()
 
-    private let finishButton = AppView.primaryButton(title: "編輯完成")
+    private let finishButton = AppView.primaryButton(title: "完成")
 
     private let emptyStateLabel = AppView.label(
         "尚未新增任何信用卡\n回到上一頁的下拉選單即可新增",

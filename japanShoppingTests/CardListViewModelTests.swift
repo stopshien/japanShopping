@@ -72,7 +72,7 @@ final class CardListViewModelTests: XCTestCase {
         viewModel.input.deleteCard(at: 0)
 
         XCTAssertEqual(repository.saveCallCount, 0)
-        XCTAssertEqual(repository.storedCards.count, 2, "尚未按下編輯完成，存檔不應變動")
+        XCTAssertEqual(repository.storedCards.count, 2, "尚未按下完成，存檔不應變動")
 
         viewModel.input.finishTapped()
 
