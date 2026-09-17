@@ -20,7 +20,8 @@ protocol ComputeViewModelType {
 
 protocol ComputeViewModelInput {
     func viewDidLoad()
-    func yenTextChanged(_ text: String)
+    func currencyChanged(to currency: Currency)
+    func amountTextChanged(_ text: String)
     func taxModeChanged(to mode: TaxMode)
     func computeTapped()
     func usePrice(for mode: TaxMode)
@@ -29,6 +30,7 @@ protocol ComputeViewModelInput {
 
 protocol ComputeViewModelOutput {
     var rateDescription: AnyPublisher<String, Never> { get }
+    var inputPlaceholder: AnyPublisher<String, Never> { get }
     var updatedAtDescription: AnyPublisher<String, Never> { get }
     var resultText: AnyPublisher<String, Never> { get }
     var route: AnyPublisher<ComputeRoute, Never> { get }
@@ -47,13 +49,15 @@ final class ComputeViewModel: ComputeViewModelType {
     private let service: ExchangeRateService
     private let updatedAtFormatter: DateFormatter
 
-    private var rate: Double?
-    private var yenText = ""
+    private var exchangeRate: ExchangeRate?
+    private var currency: Currency = .japaneseYen
+    private var amountText = ""
     private var taxMode: TaxMode = .excludingTax
     private var breakdown: PriceBreakdown?
     private var cancellables = Set<AnyCancellable>()
 
     private let rateDescriptionSubject = CurrentValueSubject<String, Never>("")
+    private let inputPlaceholderSubject: CurrentValueSubject<String, Never>
     private let updatedAtDescriptionSubject = CurrentValueSubject<String, Never>("")
     private let resultTextSubject = CurrentValueSubject<String, Never>(Constants.resultPlaceholder)
     private let routeSubject = PassthroughSubject<ComputeRoute, Never>()
@@ -62,6 +66,7 @@ final class ComputeViewModel: ComputeViewModelType {
     init(service: ExchangeRateService) {
         self.service = service
         self.updatedAtFormatter = ComputeViewModel.makeUpdatedAtFormatter()
+        self.inputPlaceholderSubject = CurrentValueSubject(Currency.japaneseYen.inputPlaceholder)
     }
 
     var input: ComputeViewModelInput { self }
@@ -88,6 +93,18 @@ final class ComputeViewModel: ComputeViewModelType {
         return displayFormatter.string(from: date)
     }
 
+    /// 幣別或匯率變動後，重新顯示匯率並清掉上一次的換算結果。
+    private func refreshForCurrentCurrency() {
+        inputPlaceholderSubject.send(currency.inputPlaceholder)
+
+        if let exchangeRate {
+            rateDescriptionSubject.send("\(currency.title)匯率：\(exchangeRate.rateToTaiwanDollar(for: currency))")
+        }
+
+        breakdown = nil
+        resultTextSubject.send(Constants.resultPlaceholder)
+    }
+
     private func makeItem(for mode: TaxMode) -> ShoppingItem? {
         guard let breakdown else { return nil }
         let price = mode == .excludingTax ? breakdown.untaxed : breakdown.taxed
@@ -109,8 +126,8 @@ extension ComputeViewModel: ComputeViewModelInput {
                 },
                 receiveValue: { [weak self] exchangeRate in
                     guard let self else { return }
-                    self.rate = exchangeRate.yenToTaiwanDollar
-                    self.rateDescriptionSubject.send("匯率：\(exchangeRate.yenToTaiwanDollar)")
+                    self.exchangeRate = exchangeRate
+                    self.refreshForCurrentCurrency()
                     if let updatedAt = self.describeUpdatedAt(exchangeRate.lastUpdatedUTC) {
                         self.updatedAtDescriptionSubject.send("匯率更新於：\(updatedAt)")
                     }
@@ -119,8 +136,14 @@ extension ComputeViewModel: ComputeViewModelInput {
             .store(in: &cancellables)
     }
 
-    func yenTextChanged(_ text: String) {
-        yenText = text.trimmingCharacters(in: .whitespaces)
+    func currencyChanged(to currency: Currency) {
+        guard currency != self.currency else { return }
+        self.currency = currency
+        refreshForCurrentCurrency()
+    }
+
+    func amountTextChanged(_ text: String) {
+        amountText = text.trimmingCharacters(in: .whitespaces)
     }
 
     func taxModeChanged(to mode: TaxMode) {
@@ -128,17 +151,22 @@ extension ComputeViewModel: ComputeViewModelInput {
     }
 
     func computeTapped() {
-        guard let rate else {
+        guard let exchangeRate else {
             errorMessageSubject.send(Constants.rateUnavailable)
             return
         }
-        guard let yen = Double(yenText) else {
+        guard let amount = Double(amountText) else {
             breakdown = nil
             resultTextSubject.send(Constants.resultPlaceholder)
             return
         }
 
-        let breakdown = PriceBreakdown(yen: yen, rate: rate, mode: taxMode)
+        let breakdown = PriceBreakdown(
+            amount: amount,
+            rate: exchangeRate.rateToTaiwanDollar(for: currency),
+            mode: taxMode,
+            taxMultiplier: currency.taxMultiplier
+        )
         self.breakdown = breakdown
         resultTextSubject.send(
             "台幣 \n未稅：\(PriceText.amount(breakdown.untaxed))\n含稅：\(PriceText.amount(breakdown.taxed))"
@@ -161,6 +189,7 @@ extension ComputeViewModel: ComputeViewModelInput {
 extension ComputeViewModel: ComputeViewModelOutput {
 
     var rateDescription: AnyPublisher<String, Never> { rateDescriptionSubject.eraseToAnyPublisher() }
+    var inputPlaceholder: AnyPublisher<String, Never> { inputPlaceholderSubject.eraseToAnyPublisher() }
     var updatedAtDescription: AnyPublisher<String, Never> { updatedAtDescriptionSubject.eraseToAnyPublisher() }
     var resultText: AnyPublisher<String, Never> { resultTextSubject.eraseToAnyPublisher() }
     var route: AnyPublisher<ComputeRoute, Never> { routeSubject.eraseToAnyPublisher() }

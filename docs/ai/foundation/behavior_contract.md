@@ -13,8 +13,9 @@ Each entry names the test that locks it. If a change makes one of these tests fa
 - **Deleting a shopping list row deletes its photo file**, but only after the list has been saved successfully, so a failed save never destroys an image. `ShoppingListViewModelTests`.
 - **The card feedback calculation subtracts 1.5 from the card percentage** before applying it: `(percent - 1.5) * price * 0.01`. Both the feedback amount and the remaining limit are rounded to cents before being stored, otherwise floating point error accumulates across purchases. `DetailViewModelTests`.
 - **A new card's `feedbackRemaining` starts equal to its `limit`**, and `feedbackMoney` starts at 0. `CardSetViewModelTests`.
-- **Tax conversion uses a 1.08 multiplier**, applied in both directions depending on the selected segment. `TaxMode.taxMultiplier`, `PriceBreakdownTests`.
-- **The exchange rate is derived as TWD / JPY** and rounded to four decimal places. `ExchangeRateDecodingTests`.
+- **The tax multiplier follows the currency, not the user.** Japanese yen uses 1.08, Korean won uses 1.1. There is no separate tax-rate picker; choosing a currency chooses its country's rate. `Currency.taxMultiplier`, `PriceBreakdownTests`.
+- **Japan's 1.08 is the reduced rate for food and drink.** Japan's standard consumption tax has been 10% since 2019. 8% was kept deliberately because this app is used mostly for groceries and snacks — it is a choice, not an oversight.
+- **The exchange rate is derived as TWD / foreign currency and kept to four significant digits**, not four decimal places. Korean won is an order of magnitude smaller than yen, so a fixed decimal place would leave it with three significant digits and a 0.2% error. `ExchangeRateDecodingTests`.
 - **The rate's update time is parsed with `en_US_POSIX`** and displayed in `Asia/Taipei`. Without the POSIX locale it fails to parse on non-English devices. `ComputeViewModelTests`.
 - **The on-disk property list format of `ShoppingItem` and `Card`.** The stored keys are the property names, so renaming a property silently breaks every existing user's saved data. `PersistenceFormatTests`, `FileShoppingListRepositoryTests`, `FileCardRepositoryTests`.
 - **Photos are referenced by bare filename, never by absolute path.** The app container path changes between installs. `FileImageStoreTests`.
@@ -27,8 +28,13 @@ Each entry names the test that locks it. If a change makes one of these tests fa
 
 ## Deliberate Departures From The Original App
 
+Currency support was added after the migration; entries below marked (幣別) describe that change.
+
+
 Each entry is behavior that intentionally differs from the Storyboard/MVC version. They are listed so nobody "restores" them as bugs.
 
+- **(幣別) The rate label names the currency**, e.g. `日幣匯率：0.2047` rather than `匯率：0.2047`, because two currencies are now selectable.
+- **(幣別) Switching currency clears the previous conversion result.** The old result belongs to the old rate and tax rate, so carrying it forward would let a yen price be saved as a won purchase.
 - **Card setup rejects non-numeric input instead of crashing.** The original used `Double(moneyBack)!` and `Double(limit)!`, so non-numeric input crashed the app.
 - **Choosing 信用卡 without picking a card no longer crashes.** `PayMethod.card(index:)` makes "credit card, none chosen" a representable state.
 - **Returning from a card screen resets the selected card.** The original kept the old index, which could point past the end of the array after a deletion.

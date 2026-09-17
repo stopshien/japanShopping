@@ -30,9 +30,8 @@ final class ComputeViewController: UIViewController {
         return label
     }()
 
-    private let yenTextField: UITextField = {
+    private let amountTextField: UITextField = {
         let textField = UITextField()
-        textField.placeholder = "請輸入日幣價格..."
         textField.borderStyle = .none
         textField.backgroundColor = .white
         textField.keyboardType = .decimalPad
@@ -41,6 +40,13 @@ final class ComputeViewController: UIViewController {
         textField.leftViewMode = .always
         textField.translatesAutoresizingMaskIntoConstraints = false
         return textField
+    }()
+
+    private let currencySegmentedControl: UISegmentedControl = {
+        let control = UISegmentedControl(items: Currency.allCases.map(\.title))
+        control.selectedSegmentIndex = Currency.japaneseYen.rawValue
+        control.translatesAutoresizingMaskIntoConstraints = false
+        return control
     }()
 
     private let taxSegmentedControl: UISegmentedControl = {
@@ -112,7 +118,8 @@ final class ComputeViewController: UIViewController {
 
         [
             rateLabel,
-            yenTextField,
+            currencySegmentedControl,
+            amountTextField,
             taxSegmentedControl,
             computeButton,
             resultLabel,
@@ -124,7 +131,8 @@ final class ComputeViewController: UIViewController {
         view.addSubview(contentStackView)
         view.addSubview(updatedAtLabel)
 
-        yenTextField.addTarget(self, action: #selector(yenTextChanged), for: .editingChanged)
+        currencySegmentedControl.addTarget(self, action: #selector(currencyChanged), for: .valueChanged)
+        amountTextField.addTarget(self, action: #selector(amountTextChanged), for: .editingChanged)
         taxSegmentedControl.addTarget(self, action: #selector(taxModeChanged), for: .valueChanged)
         computeButton.addTarget(self, action: #selector(computeTapped), for: .touchUpInside)
         useUntaxedButton.addTarget(self, action: #selector(useUntaxedTapped), for: .touchUpInside)
@@ -138,7 +146,7 @@ final class ComputeViewController: UIViewController {
             contentStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalInset),
             contentStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalInset),
 
-            yenTextField.heightAnchor.constraint(equalToConstant: Constants.fieldHeight),
+            amountTextField.heightAnchor.constraint(equalToConstant: Constants.fieldHeight),
 
             updatedAtLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalInset),
             updatedAtLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalInset),
@@ -153,6 +161,13 @@ final class ComputeViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] text in
                 self?.rateLabel.text = text
+            }
+            .store(in: &cancellables)
+
+        viewModel.output.inputPlaceholder
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] placeholder in
+                self?.amountTextField.placeholder = placeholder
             }
             .store(in: &cancellables)
 
@@ -198,8 +213,13 @@ final class ComputeViewController: UIViewController {
 
     // MARK: - Actions
 
-    @objc private func yenTextChanged() {
-        viewModel.input.yenTextChanged(yenTextField.text ?? "")
+    @objc private func currencyChanged() {
+        guard let currency = Currency(rawValue: currencySegmentedControl.selectedSegmentIndex) else { return }
+        viewModel.input.currencyChanged(to: currency)
+    }
+
+    @objc private func amountTextChanged() {
+        viewModel.input.amountTextChanged(amountTextField.text ?? "")
     }
 
     @objc private func taxModeChanged() {
@@ -208,7 +228,7 @@ final class ComputeViewController: UIViewController {
     }
 
     @objc private func computeTapped() {
-        yenTextField.resignFirstResponder()
+        amountTextField.resignFirstResponder()
         viewModel.input.computeTapped()
     }
 

@@ -49,6 +49,7 @@
 		BE0000022A00000100BE0001 /* ScreenFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE0000012A00000100BE0001 /* ScreenFactory.swift */; };
 		BF0000022A00000100BF0001 /* PriceTextTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000012A00000100BF0001 /* PriceTextTests.swift */; };
 		CA0000022A00000100CA0001 /* PriceBreakdownTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA0000012A00000100CA0001 /* PriceBreakdownTests.swift */; };
+		CB0000022A00000100CB0001 /* Currency.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB0000012A00000100CB0001 /* Currency.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -97,6 +98,7 @@
 		BE0000012A00000100BE0001 /* ScreenFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenFactory.swift; sourceTree = "<group>"; };
 		BF0000012A00000100BF0001 /* PriceTextTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PriceTextTests.swift; sourceTree = "<group>"; };
 		CA0000012A00000100CA0001 /* PriceBreakdownTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PriceBreakdownTests.swift; sourceTree = "<group>"; };
+		CB0000012A00000100CB0001 /* Currency.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Currency.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -144,6 +146,7 @@
 				BC0000032A00000100BC0001 /* TaxMode.swift */,
 				BC0000052A00000100BC0001 /* ComputeViewModel.swift */,
 				BE0000012A00000100BE0001 /* ScreenFactory.swift */,
+				CB0000012A00000100CB0001 /* Currency.swift */,
 				CFF54D8D2A1A179800CEB598 /* japanShopping */,
 				AB0000062A00000100AB0001 /* japanShoppingTests */,
 				CFF54D8C2A1A179800CEB598 /* Products */,
@@ -303,6 +306,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				CFF54D8F2A1A179800CEB598 /* AppDelegate.swift in Sources */,
+				CB0000022A00000100CB0001 /* Currency.swift in Sources */,
 				BE0000022A00000100BE0001 /* ScreenFactory.swift in Sources */,
 				BC0000022A00000100BC0001 /* ExchangeRateService.swift in Sources */,
 				BC0000042A00000100BC0001 /* TaxMode.swift in Sources */,

@@ -5,15 +5,13 @@
 
 import Foundation
 
-/// 日本消費稅的換算模式。
+/// 輸入的價格是未稅還是含稅。
 enum TaxMode: Int, CaseIterable {
 
     /// 輸入的是未稅價
     case excludingTax = 0
     /// 輸入的是含稅價
     case includingTax = 1
-
-    static let taxMultiplier = 1.08
 
     var title: String {
         switch self {
@@ -25,22 +23,23 @@ enum TaxMode: Int, CaseIterable {
     }
 }
 
-/// 一筆日圓價格換算後的台幣結果。
+/// 一筆外幣價格換算後的台幣結果。
 struct PriceBreakdown: Equatable {
 
     let untaxed: Double
     let taxed: Double
 
-    init(yen: Double, rate: Double, mode: TaxMode) {
+    /// - Parameter taxMultiplier: 由 `Currency.taxMultiplier` 提供，隨幣別對應的國別稅率。
+    init(amount: Double, rate: Double, mode: TaxMode, taxMultiplier: Double) {
         switch mode {
         case .excludingTax:
-            let untaxed = (yen * rate).rounded()
+            let untaxed = (amount * rate).rounded()
             self.untaxed = untaxed
-            self.taxed = (untaxed * TaxMode.taxMultiplier).rounded()
+            self.taxed = (untaxed * taxMultiplier).rounded()
         case .includingTax:
-            let taxed = (yen * rate).rounded()
+            let taxed = (amount * rate).rounded()
             self.taxed = taxed
-            self.untaxed = (taxed / TaxMode.taxMultiplier).rounded()
+            self.untaxed = (taxed / taxMultiplier).rounded()
         }
     }
 }

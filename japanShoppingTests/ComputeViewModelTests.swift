@@ -11,12 +11,12 @@ private final class ExchangeRateServiceStub: ExchangeRateService {
 
     var result: Result<ExchangeRate, Error>
 
-    init(rate: Double = 0.2) {
-        // TWD / JPY 即為日圓兌台幣匯率。
+    /// jpy / krw 都設為 1，讓 TWD 的值直接等於該幣別的匯率，測試好讀。
+    init(yenRate: Double = 0.2, wonRate: Double = 0.2) {
         self.result = .success(
             ExchangeRate(
                 lastUpdatedUTC: "Fri, 13 Jun 2025 00:00:01 +0000",
-                conversionRates: ConversionRates(usd: 1, jpy: 1, twd: rate)
+                conversionRates: ConversionRates(usd: 1, jpy: 1 / yenRate, twd: 1, krw: 1 / wonRate)
             )
         )
     }
@@ -34,7 +34,7 @@ final class ComputeViewModelTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        service = ExchangeRateServiceStub(rate: 0.2)
+        service = ExchangeRateServiceStub(yenRate: 0.2, wonRate: 0.025)
         viewModel = ComputeViewModel(service: service)
         cancellables = []
     }
@@ -63,7 +63,7 @@ final class ComputeViewModelTests: XCTestCase {
         viewModel.input.viewDidLoad()
         waitForMainQueue()
 
-        XCTAssertEqual(text, "匯率：0.2")
+        XCTAssertEqual(text, "日幣匯率：0.2")
     }
 
     func testViewDidLoadPublishesTheUpdateTimeInTaipeiTime() {
@@ -97,7 +97,7 @@ final class ComputeViewModelTests: XCTestCase {
         viewModel.input.viewDidLoad()
         waitForMainQueue()
         viewModel.input.taxModeChanged(to: .excludingTax)
-        viewModel.input.yenTextChanged("1000")
+        viewModel.input.amountTextChanged("1000")
         viewModel.input.computeTapped()
 
         // 1000 * 0.2 = 200，含稅 200 * 1.08 = 216
@@ -111,7 +111,7 @@ final class ComputeViewModelTests: XCTestCase {
         viewModel.input.viewDidLoad()
         waitForMainQueue()
         viewModel.input.taxModeChanged(to: .includingTax)
-        viewModel.input.yenTextChanged("1080")
+        viewModel.input.amountTextChanged("1080")
         viewModel.input.computeTapped()
 
         // 1080 * 0.2 = 216（含稅），未稅 216 / 1.08 = 200
@@ -124,7 +124,7 @@ final class ComputeViewModelTests: XCTestCase {
 
         viewModel.input.viewDidLoad()
         waitForMainQueue()
-        viewModel.input.yenTextChanged("一千")
+        viewModel.input.amountTextChanged("一千")
         viewModel.input.computeTapped()
 
         XCTAssertEqual(text, "換算結果")
@@ -137,7 +137,7 @@ final class ComputeViewModelTests: XCTestCase {
         viewModel.output.errorMessage.sink { message = $0 }.store(in: &cancellables)
         viewModel.output.resultText.sink { text = $0 }.store(in: &cancellables)
 
-        viewModel.input.yenTextChanged("1000")
+        viewModel.input.amountTextChanged("1000")
         viewModel.input.computeTapped()
 
         XCTAssertEqual(message, "匯率尚未取得，請稍候再試")
@@ -152,7 +152,7 @@ final class ComputeViewModelTests: XCTestCase {
 
         viewModel.input.viewDidLoad()
         waitForMainQueue()
-        viewModel.input.yenTextChanged("1000")
+        viewModel.input.amountTextChanged("1000")
         viewModel.input.computeTapped()
         viewModel.input.usePrice(for: .excludingTax)
 
@@ -168,7 +168,7 @@ final class ComputeViewModelTests: XCTestCase {
 
         viewModel.input.viewDidLoad()
         waitForMainQueue()
-        viewModel.input.yenTextChanged("1000")
+        viewModel.input.amountTextChanged("1000")
         viewModel.input.computeTapped()
         viewModel.input.usePrice(for: .includingTax)
 
@@ -187,6 +187,73 @@ final class ComputeViewModelTests: XCTestCase {
         viewModel.input.usePrice(for: .excludingTax)
 
         XCTAssertTrue(routes.isEmpty)
+    }
+
+    // MARK: - 幣別
+
+    func testSwitchingCurrencyUpdatesTheRateAndPlaceholder() {
+        var rateText: String?
+        var placeholder: String?
+        viewModel.output.rateDescription.sink { rateText = $0 }.store(in: &cancellables)
+        viewModel.output.inputPlaceholder.sink { placeholder = $0 }.store(in: &cancellables)
+
+        viewModel.input.viewDidLoad()
+        waitForMainQueue()
+        XCTAssertEqual(rateText, "日幣匯率：0.2")
+        XCTAssertEqual(placeholder, "請輸入日幣價格...")
+
+        viewModel.input.currencyChanged(to: .koreanWon)
+
+        XCTAssertEqual(rateText, "韓幣匯率：0.025")
+        XCTAssertEqual(placeholder, "請輸入韓幣價格...")
+    }
+
+    func testKoreanWonUsesTenPercentTax() {
+        var text: String?
+        viewModel.output.resultText.sink { text = $0 }.store(in: &cancellables)
+
+        viewModel.input.viewDidLoad()
+        waitForMainQueue()
+        viewModel.input.currencyChanged(to: .koreanWon)
+        viewModel.input.amountTextChanged("10000")
+        viewModel.input.computeTapped()
+
+        // 10000 * 0.025 = 250，含稅 250 * 1.1 = 275
+        XCTAssertEqual(text, "台幣 \n未稅：250\n含稅：275")
+    }
+
+    /// 換幣別後上一次的結果已經無效，不能還留在畫面上被帶去下一頁。
+    func testSwitchingCurrencyClearsThePreviousResult() {
+        var text: String?
+        var routes: [ComputeRoute] = []
+        viewModel.output.resultText.sink { text = $0 }.store(in: &cancellables)
+        viewModel.output.route.sink { routes.append($0) }.store(in: &cancellables)
+
+        viewModel.input.viewDidLoad()
+        waitForMainQueue()
+        viewModel.input.amountTextChanged("1000")
+        viewModel.input.computeTapped()
+        XCTAssertEqual(text, "台幣 \n未稅：200\n含稅：216")
+
+        viewModel.input.currencyChanged(to: .koreanWon)
+
+        XCTAssertEqual(text, "換算結果")
+        viewModel.input.usePrice(for: .excludingTax)
+        XCTAssertTrue(routes.isEmpty, "結果已清空，不該還能帶價格前往下一頁")
+    }
+
+    func testSelectingTheSameCurrencyDoesNotClearTheResult() {
+        var text: String?
+        viewModel.output.resultText.sink { text = $0 }.store(in: &cancellables)
+
+        viewModel.input.viewDidLoad()
+        waitForMainQueue()
+        viewModel.input.amountTextChanged("1000")
+        viewModel.input.computeTapped()
+
+        viewModel.input.currencyChanged(to: .japaneseYen)
+
+        XCTAssertEqual(text, "台幣 \n未稅：200\n含稅：216")
     }
 
     func testShowShoppingListRoutes() {
