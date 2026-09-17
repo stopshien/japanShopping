@@ -11,6 +11,7 @@ final class ShoppingListViewModelTests: XCTestCase {
 
     private var repository: ShoppingListRepositoryStub!
     private var imageStore: ImageStoreStub!
+    private var profileRepository: UserProfileRepositoryStub!
     private var viewModel: ShoppingListViewModel!
     private var cancellables: Set<AnyCancellable>!
 
@@ -23,16 +24,26 @@ final class ShoppingListViewModelTests: XCTestCase {
             ShoppingItem(productName: "咖啡", price: 250, payType: "信用卡", taxState: "未稅")
         ])
         imageStore = ImageStoreStub(storedImages: ["photo-1": photoData])
-        viewModel = ShoppingListViewModel(repository: repository, imageStore: imageStore)
+        profileRepository = UserProfileRepositoryStub(storedProfile: UserProfile(name: "Angus"))
+        viewModel = makeViewModel()
         cancellables = []
     }
 
     override func tearDown() {
         cancellables = nil
         viewModel = nil
+        profileRepository = nil
         imageStore = nil
         repository = nil
         super.tearDown()
+    }
+
+    private func makeViewModel() -> ShoppingListViewModel {
+        ShoppingListViewModel(
+            repository: repository,
+            imageStore: imageStore,
+            userProfileRepository: profileRepository
+        )
     }
 
     // MARK: - 顯示
@@ -79,7 +90,7 @@ final class ShoppingListViewModelTests: XCTestCase {
 
         viewModel.input.viewDidLoad()
 
-        XCTAssertEqual(text, "你已經花了350$")
+        XCTAssertEqual(text, "Angus，你已經花了350$")
     }
 
     func testTotalSpendTextIsRecalculatedAfterDeletion() {
@@ -89,7 +100,7 @@ final class ShoppingListViewModelTests: XCTestCase {
         viewModel.input.viewDidLoad()
         viewModel.input.deleteItem(at: 0)
 
-        XCTAssertEqual(text, "你已經花了250$", "刪除後要重算，不能累加")
+        XCTAssertEqual(text, "Angus，你已經花了250$", "刪除後要重算，不能累加")
     }
 
     func testTotalSpendTextIsZeroWhenEveryItemIsDeleted() {
@@ -100,7 +111,7 @@ final class ShoppingListViewModelTests: XCTestCase {
         viewModel.input.deleteItem(at: 0)
         viewModel.input.deleteItem(at: 0)
 
-        XCTAssertEqual(text, "你已經花了0$")
+        XCTAssertEqual(text, "Angus，你已經花了0$")
     }
 
     /// 遷移前這裡是 for i in 0...lists.count-1，空陣列會直接崩潰。
@@ -111,7 +122,20 @@ final class ShoppingListViewModelTests: XCTestCase {
 
         viewModel.input.viewDidLoad()
 
-        XCTAssertEqual(text, "你已經花了0$")
+        XCTAssertEqual(text, "Angus，你已經花了0$")
+    }
+
+    /// 理論上歡迎頁會確保有稱呼，但 repository 回傳的是 optional，
+    /// 沒有稱呼時句子仍須完整。
+    func testTotalSpendTextOmitsTheNameWhenNoProfileIsStored() {
+        profileRepository.storedProfile = nil
+        viewModel = makeViewModel()
+        var text: String?
+        viewModel.output.totalSpendText.sink { text = $0 }.store(in: &cancellables)
+
+        viewModel.input.viewDidLoad()
+
+        XCTAssertEqual(text, "你已經花了350$")
     }
 
     // MARK: - 刪除與存檔時機

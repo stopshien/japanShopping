@@ -39,6 +39,8 @@ final class ShoppingListViewModel: ShoppingListViewModelType {
 
     private let repository: ShoppingListRepository
     private let imageStore: ImageStore
+    /// 歡迎頁設定的稱呼。沒有設定時總金額就用不帶稱呼的句子。
+    private let userName: String?
 
     private var shoppingItems: [ShoppingItem] = []
     /// 已從清單移除、待按下 Done 時一併刪除的圖片檔名。
@@ -49,9 +51,14 @@ final class ShoppingListViewModel: ShoppingListViewModelType {
     private let errorMessageSubject = PassthroughSubject<String, Never>()
     private let didFinishSubject = PassthroughSubject<Void, Never>()
 
-    init(repository: ShoppingListRepository, imageStore: ImageStore) {
+    init(
+        repository: ShoppingListRepository,
+        imageStore: ImageStore,
+        userProfileRepository: UserProfileRepository
+    ) {
         self.repository = repository
         self.imageStore = imageStore
+        self.userName = userProfileRepository.load()?.name
     }
 
     var input: ShoppingListViewModelInput { self }
@@ -80,7 +87,9 @@ final class ShoppingListViewModel: ShoppingListViewModelType {
 
     private func makeTotalSpendText() -> String {
         let total = shoppingItems.reduce(0) { $0 + $1.price }
-        return "你已經花了\(PriceText.amount(total))$"
+        let amount = "你已經花了\(PriceText.amount(total))$"
+        guard let userName, !userName.isEmpty else { return amount }
+        return "\(userName)，\(amount)"
     }
 }
 

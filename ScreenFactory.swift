@@ -71,7 +71,8 @@ final class AppScreenFactory: ScreenFactory {
     func makeShoppingList() -> UIViewController {
         let viewModel = ShoppingListViewModel(
             repository: shoppingListRepository,
-            imageStore: imageStore
+            imageStore: imageStore,
+            userProfileRepository: userProfileRepository
         )
         return ShoppingListViewController(viewModel: viewModel)
     }

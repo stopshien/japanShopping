@@ -10,6 +10,7 @@ Each entry names the test that locks it. If a change makes one of these tests fa
 
 - **Deleting is only persisted on an explicit confirm.** Card list deletions save on 編輯完成; shopping list deletions save on Done. Leaving with the back button discards them, so a mis-tapped delete can be abandoned. `CardListViewModelTests`, `ShoppingListViewModelTests`.
 - **The shopping list total is recalculated from scratch after every deletion**, never accumulated. `ShoppingListViewModelTests`.
+- **The total line is prefixed with the user's name** (`Angus，你已經花了205$`) when a profile exists, and falls back to the plain sentence when it does not. The welcome screen makes a missing name unlikely, but the repository returns an optional, so the sentence must read correctly either way. `ShoppingListViewModelTests`.
 - **Deleting a shopping list row deletes its photo file**, but only after the list has been saved successfully, so a failed save never destroys an image. `ShoppingListViewModelTests`.
 - **The card feedback calculation subtracts 1.5 from the card percentage** before applying it: `(percent - 1.5) * price * 0.01`. Both the feedback amount and the remaining limit are rounded to cents before being stored, otherwise floating point error accumulates across purchases. `DetailViewModelTests`.
 - **A new card's `feedbackRemaining` starts equal to its `limit`**, and `feedbackMoney` starts at 0. `CardSetViewModelTests`.
