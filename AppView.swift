@@ -57,6 +57,25 @@ enum AppView {
         return make(configuration)
     }
 
+    /// 導航列上的圖示按鈕。一定要給 accessibilityLabel，
+    /// 否則 VoiceOver 只會唸出符號名稱。
+    static func barButton(
+        systemImage: String,
+        accessibilityLabel: String,
+        target: Any?,
+        action: Selector
+    ) -> UIBarButtonItem {
+        let item = UIBarButtonItem(
+            image: UIImage(systemName: systemImage),
+            style: .plain,
+            target: target,
+            action: action
+        )
+        item.accessibilityLabel = accessibilityLabel
+        item.tintColor = AppColor.accent
+        return item
+    }
+
     /// 白色圓角卡片，用來把相關的控制項框在一起。
     static func card() -> UIView {
         let view = UIView()

@@ -60,7 +60,6 @@ final class DetailViewController: UIViewController {
     )
 
     private let saveToListButton = AppView.primaryButton(title: "加入購物清單")
-    private let showShoppingListButton = AppView.plainButton(title: "查看購物清單")
     private let formCard = AppView.card()
 
     private let cardButtonsStackView: UIStackView = {
@@ -108,6 +107,12 @@ final class DetailViewController: UIViewController {
     private func setupViews() {
         title = "購買明細"
         view.backgroundColor = AppColor.brand
+        navigationItem.rightBarButtonItem = AppView.barButton(
+            systemImage: "cart",
+            accessibilityLabel: "查看購物清單",
+            target: self,
+            action: #selector(showShoppingListTapped)
+        )
         addTapToDismissKeyboard()
 
         payTypePicker.delegate = self
@@ -126,14 +131,13 @@ final class DetailViewController: UIViewController {
             saveToListButton
         ].forEach(cardStack.addArrangedSubview)
 
-        [imageSelectButton, formCard, showShoppingListButton].forEach(contentStackView.addArrangedSubview)
+        [imageSelectButton, formCard].forEach(contentStackView.addArrangedSubview)
 
         view.addSubview(contentStackView)
 
         imageSelectButton.addTarget(self, action: #selector(imagePickerTapped), for: .touchUpInside)
         editCardsButton.addTarget(self, action: #selector(editCardsTapped), for: .touchUpInside)
         saveToListButton.addTarget(self, action: #selector(saveTapped), for: .touchUpInside)
-        showShoppingListButton.addTarget(self, action: #selector(showShoppingListTapped), for: .touchUpInside)
         productTextField.addTarget(self, action: #selector(productNameChanged), for: .editingChanged)
     }
 

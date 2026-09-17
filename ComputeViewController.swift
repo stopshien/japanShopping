@@ -35,7 +35,6 @@ final class ComputeViewController: UIViewController {
     private let computeButton = AppView.primaryButton(title: "換算")
     private let useUntaxedButton = AppView.secondaryButton(title: "使用未稅價格")
     private let useTaxedButton = AppView.secondaryButton(title: "使用含稅價格")
-    private let showShoppingListButton = AppView.plainButton(title: "查看購物清單")
 
     private let resultTitleLabel = AppView.label(
         "換算結果", font: AppStyle.Font.label, color: AppColor.textSecondary, alignment: .center
@@ -80,6 +79,12 @@ final class ComputeViewController: UIViewController {
     private func setupViews() {
         title = "匯率換算"
         view.backgroundColor = AppColor.brand
+        navigationItem.rightBarButtonItem = AppView.barButton(
+            systemImage: "cart",
+            accessibilityLabel: "查看購物清單",
+            target: self,
+            action: #selector(showShoppingListTapped)
+        )
         addTapToDismissKeyboard()
 
         // 輸入卡：幣別、稅率類別、金額、未稅／含稅
@@ -98,7 +103,7 @@ final class ComputeViewController: UIViewController {
         [resultTitleLabel, resultLabel, useUntaxedButton, useTaxedButton].forEach(resultStack.addArrangedSubview)
         resultStack.setCustomSpacing(AppStyle.Spacing.normal, after: resultLabel)
 
-        [rateLabel, inputCard, resultCard, showShoppingListButton].forEach(contentStackView.addArrangedSubview)
+        [rateLabel, inputCard, resultCard].forEach(contentStackView.addArrangedSubview)
         contentStackView.setCustomSpacing(AppStyle.Spacing.loose, after: rateLabel)
 
         view.addSubview(contentStackView)
@@ -111,7 +116,6 @@ final class ComputeViewController: UIViewController {
         computeButton.addTarget(self, action: #selector(computeTapped), for: .touchUpInside)
         useUntaxedButton.addTarget(self, action: #selector(useUntaxedTapped), for: .touchUpInside)
         useTaxedButton.addTarget(self, action: #selector(useTaxedTapped), for: .touchUpInside)
-        showShoppingListButton.addTarget(self, action: #selector(showShoppingListTapped), for: .touchUpInside)
 
         currencySegmentedControl.selectedSegmentIndex = Currency.japaneseYen.rawValue
         taxSegmentedControl.selectedSegmentIndex = TaxMode.excludingTax.rawValue
