@@ -11,14 +11,38 @@ import XCTest
 
 final class SettingsViewModelTests: XCTestCase {
 
+    func testRowsAreProfileThenCards() {
+        let viewModel = SettingsViewModel()
+
+        XCTAssertEqual(viewModel.output.rows.map(\.title), ["個人資料", "管理信用卡"])
+    }
+
+    func testSelectingARowRoutesToIt() {
+        let viewModel = SettingsViewModel()
+        var routes: [SettingsRow] = []
+        let cancellable = viewModel.output.route.sink { routes.append($0) }
+
+        viewModel.input.rowSelected(at: 0)
+        viewModel.input.rowSelected(at: 1)
+        viewModel.input.rowSelected(at: 99)
+
+        XCTAssertEqual(routes, [.profile, .cards])
+        cancellable.cancel()
+    }
+}
+
+// MARK: - 稱呼
+
+final class ProfileViewModelTests: XCTestCase {
+
     private var repository: UserProfileRepositoryStub!
-    private var viewModel: SettingsViewModel!
+    private var viewModel: ProfileViewModel!
     private var cancellables: Set<AnyCancellable>!
 
     override func setUp() {
         super.setUp()
         repository = UserProfileRepositoryStub(storedProfile: UserProfile(name: "Angus"))
-        viewModel = SettingsViewModel(repository: repository)
+        viewModel = ProfileViewModel(repository: repository)
         cancellables = []
     }
 

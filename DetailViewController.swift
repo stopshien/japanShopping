@@ -47,7 +47,6 @@ final class DetailViewController: UIViewController {
         return button
     }()
 
-    private let editCardsButton = AppView.secondaryButton(title: "管理信用卡")
 
     private let feedbackLabel = AppView.label(
         "信用卡回饋金額", font: AppStyle.Font.body, color: AppColor.textSecondary, alignment: .center
@@ -55,15 +54,6 @@ final class DetailViewController: UIViewController {
 
     private let saveToListButton = AppView.primaryButton(title: "加入消費紀錄")
     private let formCard = AppView.card()
-
-    private let cardButtonsStackView: UIStackView = {
-        let stackView = UIStackView()
-        stackView.axis = .horizontal
-        stackView.distribution = .fillEqually
-        stackView.spacing = Constants.spacing
-        stackView.translatesAutoresizingMaskIntoConstraints = false
-        return stackView
-    }()
 
     private let contentStackView: UIStackView = {
         let stackView = UIStackView()
@@ -112,15 +102,12 @@ final class DetailViewController: UIViewController {
         payTypePicker.delegate = self
         payTypePicker.dataSource = self
 
-        cardButtonsStackView.addArrangedSubview(cardsChooseButton)
-        cardButtonsStackView.addArrangedSubview(editCardsButton)
-
         let cardStack = AppView.cardStack(in: formCard, spacing: AppStyle.Spacing.tight + 4)
         [
             priceLabel,
             makeRow(label: productLabel, field: productTextField),
             makeRow(label: payTypeLabel, field: payTypePicker),
-            cardButtonsStackView,
+            cardsChooseButton,
             feedbackLabel,
             saveToListButton
         ].forEach(cardStack.addArrangedSubview)
@@ -130,7 +117,6 @@ final class DetailViewController: UIViewController {
         view.addSubview(contentStackView)
 
         imageSelectButton.addTarget(self, action: #selector(imagePickerTapped), for: .touchUpInside)
-        editCardsButton.addTarget(self, action: #selector(editCardsTapped), for: .touchUpInside)
         saveToListButton.addTarget(self, action: #selector(saveTapped), for: .touchUpInside)
         productTextField.addTarget(self, action: #selector(productNameChanged), for: .editingChanged)
     }
@@ -160,7 +146,7 @@ final class DetailViewController: UIViewController {
         viewModel.output.isCardSectionVisible
             .receive(on: DispatchQueue.main)
             .sink { [weak self] isVisible in
-                self?.cardButtonsStackView.isHidden = !isVisible
+                self?.cardsChooseButton.isHidden = !isVisible
                 self?.feedbackLabel.isHidden = !isVisible
             }
             .store(in: &cancellables)
@@ -211,12 +197,6 @@ final class DetailViewController: UIViewController {
             }
             navigationController?.pushViewController(controller, animated: true)
 
-        case .editCards:
-            let controller = factory.makeCardList { [weak self] in
-                self?.viewModel.input.reloadCards()
-            }
-            navigationController?.pushViewController(controller, animated: true)
-
         case .shoppingList:
             navigationController?.pushViewController(factory.makeShoppingList(allowsBack: true), animated: true)
 
@@ -233,10 +213,6 @@ final class DetailViewController: UIViewController {
         imagePickerController.sourceType = .photoLibrary
         imagePickerController.delegate = self
         present(imagePickerController, animated: true)
-    }
-
-    @objc private func editCardsTapped() {
-        viewModel.input.editCardsTapped()
     }
 
     @objc private func saveTapped() {

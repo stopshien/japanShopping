@@ -332,15 +332,14 @@ final class DetailViewModelTests: XCTestCase {
 
     // MARK: - 導航與卡片重載
 
-    func testAddCardAndEditCardsEmitRoutes() {
+    func testAddCardAndShoppingListEmitRoutes() {
         var routes: [DetailRoute] = []
         viewModel.output.route.sink { routes.append($0) }.store(in: &cancellables)
 
         viewModel.input.addCardTapped()
-        viewModel.input.editCardsTapped()
         viewModel.input.showShoppingListTapped()
 
-        XCTAssertEqual(routes, [.addCard, .editCards, .shoppingList])
+        XCTAssertEqual(routes, [.addCard, .shoppingList])
     }
 
     /// 從信用卡畫面返回後，先前選到的索引可能已經失效，必須回到未選取狀態。

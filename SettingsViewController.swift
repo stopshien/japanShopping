@@ -6,44 +6,30 @@
 import Combine
 import UIKit
 
+/// 設定選項的列表。每一列只顯示名稱，點選後進入對應的功能頁。
 final class SettingsViewController: UIViewController {
 
     private enum Constants {
-        static let fieldHeight: CGFloat = 48
+        static let cellIdentifier = "SettingsCell"
     }
 
-    /// 儲存並返回前呼叫，讓上一頁重新載入設定。
-    var onFinish: (() -> Void)?
-
     private let viewModel: SettingsViewModelType
+    private let factory: ScreenFactory
     private var cancellables = Set<AnyCancellable>()
 
-    // MARK: - Views
-
-    private let card = AppView.card()
-    private let nameTitleLabel = AppView.label("稱呼", font: AppStyle.Font.label, color: AppColor.textSecondary)
-
-    private let nameTextField: UITextField = {
-        let textField = AppView.textField()
-        textField.placeholder = "你的名字"
-        textField.returnKeyType = .done
-        return textField
-    }()
-
-    private let saveButton = AppView.primaryButton(title: "儲存")
-
-    private let contentStackView: UIStackView = {
-        let stackView = UIStackView()
-        stackView.axis = .vertical
-        stackView.spacing = AppStyle.Spacing.normal
-        stackView.translatesAutoresizingMaskIntoConstraints = false
-        return stackView
+    private let tableView: UITableView = {
+        let tableView = UITableView(frame: .zero, style: .insetGrouped)
+        tableView.backgroundColor = .clear
+        tableView.separatorColor = AppColor.separator
+        tableView.translatesAutoresizingMaskIntoConstraints = false
+        return tableView
     }()
 
     // MARK: - Init
 
-    init(viewModel: SettingsViewModelType) {
+    init(viewModel: SettingsViewModelType, factory: ScreenFactory) {
         self.viewModel = viewModel
+        self.factory = factory
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -59,7 +45,6 @@ final class SettingsViewController: UIViewController {
         setupViews()
         setupConstraints()
         bindViewModel()
-        viewModel.input.viewDidLoad()
     }
 
     // MARK: - Setup
@@ -67,83 +52,80 @@ final class SettingsViewController: UIViewController {
     private func setupViews() {
         title = "設定"
         view.backgroundColor = AppColor.brand
-        addTapToDismissKeyboard()
 
-        let cardStack = AppView.cardStack(in: card, spacing: AppStyle.Spacing.tight)
-        [nameTitleLabel, nameTextField, saveButton].forEach(cardStack.addArrangedSubview)
-        cardStack.setCustomSpacing(AppStyle.Spacing.normal, after: nameTextField)
+        tableView.dataSource = self
+        tableView.delegate = self
+        tableView.register(UITableViewCell.self, forCellReuseIdentifier: Constants.cellIdentifier)
 
-        contentStackView.addArrangedSubview(card)
-        view.addSubview(contentStackView)
-
-        nameTextField.addTarget(self, action: #selector(nameChanged), for: .editingChanged)
-        saveButton.addTarget(self, action: #selector(saveTapped), for: .touchUpInside)
+        view.addSubview(tableView)
     }
 
     private func setupConstraints() {
         NSLayoutConstraint.activate([
-            contentStackView.topAnchor.constraint(
-                equalTo: view.safeAreaLayoutGuide.topAnchor, constant: AppStyle.Spacing.loose
-            ),
-            contentStackView.leadingAnchor.constraint(
-                equalTo: view.leadingAnchor, constant: AppStyle.Spacing.normal
-            ),
-            contentStackView.trailingAnchor.constraint(
-                equalTo: view.trailingAnchor, constant: -AppStyle.Spacing.normal
-            ),
-            nameTextField.heightAnchor.constraint(equalToConstant: Constants.fieldHeight)
+            tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
     }
 
     // MARK: - Binding
 
     private func bindViewModel() {
-        viewModel.output.name
+        viewModel.output.route
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] name in
-                self?.nameTextField.text = name
-            }
-            .store(in: &cancellables)
-
-        viewModel.output.isSaveEnabled
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] isEnabled in
-                self?.saveButton.isEnabled = isEnabled
-            }
-            .store(in: &cancellables)
-
-        viewModel.output.errorMessage
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] message in
-                self?.presentError(message)
-            }
-            .store(in: &cancellables)
-
-        viewModel.output.didFinish
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] in
-                self?.onFinish?()
-                self?.navigationController?.popViewController(animated: true)
+            .sink { [weak self] row in
+                self?.navigate(to: row)
             }
             .store(in: &cancellables)
     }
 
-    // MARK: - Actions
+    // MARK: - Navigation
 
-    @objc private func nameChanged() {
-        viewModel.input.nameChanged(nameTextField.text ?? "")
+    private func navigate(to row: SettingsRow) {
+        let controller: UIViewController
+        switch row {
+        case .profile:
+            controller = factory.makeProfile()
+        case .cards:
+            controller = factory.makeCardList()
+        }
+        navigationController?.pushViewController(controller, animated: true)
+    }
+}
+
+// MARK: - UITableViewDataSource
+
+extension SettingsViewController: UITableViewDataSource {
+
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        viewModel.output.rows.count
     }
 
-    @objc private func saveTapped() {
-        view.endEditing(true)
-        viewModel.input.saveTapped()
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: Constants.cellIdentifier, for: indexPath)
+        guard viewModel.output.rows.indices.contains(indexPath.row) else { return cell }
+        let row = viewModel.output.rows[indexPath.row]
+
+        var content = cell.defaultContentConfiguration()
+        content.text = row.title
+        content.textProperties.font = AppStyle.Font.body
+        content.textProperties.color = AppColor.textPrimary
+        content.image = UIImage(systemName: row.systemImage)
+        content.imageProperties.tintColor = AppColor.accent
+        cell.contentConfiguration = content
+        cell.backgroundColor = AppColor.surface
+        cell.accessoryType = .disclosureIndicator
+        return cell
     }
+}
 
-    // MARK: - Private
+// MARK: - UITableViewDelegate
 
-    private func presentError(_ message: String) {
-        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "好", style: .default))
-        present(alert, animated: true)
+extension SettingsViewController: UITableViewDelegate {
+
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        viewModel.input.rowSelected(at: indexPath.row)
     }
 }

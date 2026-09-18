@@ -13,9 +13,6 @@ final class CardListViewController: UIViewController {
         static let estimatedRowHeight: CGFloat = 68
     }
 
-    /// 按下完成並返回前呼叫，讓上一頁知道資料已變更。
-    var onFinish: (() -> Void)?
-
     private let viewModel: CardListViewModelType
     private let factory: ScreenFactory
     private var cancellables = Set<AnyCancellable>()
@@ -145,7 +142,6 @@ final class CardListViewController: UIViewController {
         viewModel.output.didFinish
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
-                self?.onFinish?()
                 self?.navigationController?.popViewController(animated: true)
             }
             .store(in: &cancellables)

@@ -8,39 +8,51 @@ import Foundation
 
 // MARK: - Contract
 
+/// 設定頁的每一列。點選後進入對應的功能頁。
+enum SettingsRow: CaseIterable, Equatable {
+    case profile
+    case cards
+
+    var title: String {
+        switch self {
+        case .profile:
+            return "個人資料"
+        case .cards:
+            return "管理信用卡"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .profile:
+            return "person"
+        case .cards:
+            return "creditcard"
+        }
+    }
+}
+
 protocol SettingsViewModelType {
     var input: SettingsViewModelInput { get }
     var output: SettingsViewModelOutput { get }
 }
 
 protocol SettingsViewModelInput {
-    func viewDidLoad()
-    func nameChanged(_ text: String)
-    func saveTapped()
+    func rowSelected(at index: Int)
 }
 
 protocol SettingsViewModelOutput {
-    var name: AnyPublisher<String, Never> { get }
-    var isSaveEnabled: AnyPublisher<Bool, Never> { get }
-    var errorMessage: AnyPublisher<String, Never> { get }
-    var didFinish: AnyPublisher<Void, Never> { get }
+    var rows: [SettingsRow] { get }
+    var route: AnyPublisher<SettingsRow, Never> { get }
 }
 
 // MARK: - ViewModel
 
 final class SettingsViewModel: SettingsViewModelType {
 
-    private let repository: UserProfileRepository
-    private var currentName = ""
+    let rows = SettingsRow.allCases
 
-    private let nameSubject = CurrentValueSubject<String, Never>("")
-    private let isSaveEnabledSubject = CurrentValueSubject<Bool, Never>(false)
-    private let errorMessageSubject = PassthroughSubject<String, Never>()
-    private let didFinishSubject = PassthroughSubject<Void, Never>()
-
-    init(repository: UserProfileRepository) {
-        self.repository = repository
-    }
+    private let routeSubject = PassthroughSubject<SettingsRow, Never>()
 
     var input: SettingsViewModelInput { self }
     var output: SettingsViewModelOutput { self }
@@ -50,28 +62,9 @@ final class SettingsViewModel: SettingsViewModelType {
 
 extension SettingsViewModel: SettingsViewModelInput {
 
-    func viewDidLoad() {
-        guard let profile = repository.load() else { return }
-        currentName = profile.name
-        nameSubject.send(profile.name)
-        isSaveEnabledSubject.send(!profile.name.isEmpty)
-    }
-
-    func nameChanged(_ text: String) {
-        currentName = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        isSaveEnabledSubject.send(!currentName.isEmpty)
-    }
-
-    func saveTapped() {
-        guard !currentName.isEmpty else { return }
-
-        do {
-            try repository.save(UserProfile(name: currentName))
-        } catch {
-            errorMessageSubject.send("設定儲存失敗，請再試一次")
-            return
-        }
-        didFinishSubject.send(())
+    func rowSelected(at index: Int) {
+        guard rows.indices.contains(index) else { return }
+        routeSubject.send(rows[index])
     }
 }
 
@@ -79,8 +72,5 @@ extension SettingsViewModel: SettingsViewModelInput {
 
 extension SettingsViewModel: SettingsViewModelOutput {
 
-    var name: AnyPublisher<String, Never> { nameSubject.eraseToAnyPublisher() }
-    var isSaveEnabled: AnyPublisher<Bool, Never> { isSaveEnabledSubject.eraseToAnyPublisher() }
-    var errorMessage: AnyPublisher<String, Never> { errorMessageSubject.eraseToAnyPublisher() }
-    var didFinish: AnyPublisher<Void, Never> { didFinishSubject.eraseToAnyPublisher() }
+    var route: AnyPublisher<SettingsRow, Never> { routeSubject.eraseToAnyPublisher() }
 }

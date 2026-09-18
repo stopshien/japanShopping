@@ -35,7 +35,6 @@ struct CardMenuItem: Equatable {
 
 enum DetailRoute: Equatable {
     case addCard
-    case editCards
     case shoppingList
     /// 商品已加入清單。清單頁不能返回，只能按「完成」回到首頁。
     case savedToShoppingList
@@ -53,7 +52,6 @@ protocol DetailViewModelInput {
     func payMethodSelected(row: Int)
     func cardSelected(at index: Int)
     func addCardTapped()
-    func editCardsTapped()
     func photoSelected(_ data: Data?)
     func saveTapped()
     func showShoppingListTapped()
@@ -199,10 +197,6 @@ extension DetailViewModel: DetailViewModelInput {
 
     func addCardTapped() {
         routeSubject.send(.addCard)
-    }
-
-    func editCardsTapped() {
-        routeSubject.send(.editCards)
     }
 
     func photoSelected(_ data: Data?) {

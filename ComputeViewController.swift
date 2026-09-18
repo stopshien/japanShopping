@@ -235,10 +235,7 @@ final class ComputeViewController: UIViewController {
             navigationController?.pushViewController(factory.makeShoppingList(allowsBack: true), animated: true)
 
         case .settings:
-            let controller = factory.makeSettings { [weak self] in
-                self?.viewModel.input.reloadSettings()
-            }
-            navigationController?.pushViewController(controller, animated: true)
+            navigationController?.pushViewController(factory.makeSettings(), animated: true)
 
         case .tripList:
             let controller = factory.makeTripList { [weak self] in

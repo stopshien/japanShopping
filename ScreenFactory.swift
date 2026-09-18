@@ -14,7 +14,10 @@ protocol ScreenFactory {
     var needsOnboarding: Bool { get }
     /// 引導流程：輸入稱呼 → 建立第一個專案。兩者齊備才算完成。
     func makeOnboarding(onFinish: @escaping () -> Void) -> UIViewController
-    func makeSettings(onFinish: @escaping () -> Void) -> UIViewController
+    /// 設定選項列表。
+    func makeSettings() -> UIViewController
+    /// 個人資料（稱呼）。
+    func makeProfile() -> UIViewController
     func makeTripList(onTripChanged: @escaping () -> Void) -> UIViewController
     func makeTripEditor(editing trip: Trip?, onFinish: @escaping () -> Void) -> UIViewController
     func makeCompute() -> UIViewController
@@ -23,7 +26,7 @@ protocol ScreenFactory {
     func makeShoppingList(allowsBack: Bool) -> UIViewController
     func makeItemEditor(item: ShoppingItem, photoData: Data?, onSave: @escaping (ItemEdit) -> Void) -> UIViewController
     func makeCardSet(onFinish: @escaping () -> Void) -> UIViewController
-    func makeCardList(onFinish: @escaping () -> Void) -> UIViewController
+    func makeCardList() -> UIViewController
 }
 
 final class AppScreenFactory: ScreenFactory {
@@ -95,12 +98,12 @@ final class AppScreenFactory: ScreenFactory {
         return navigationController
     }
 
-    func makeSettings(onFinish: @escaping () -> Void) -> UIViewController {
-        let controller = SettingsViewController(
-            viewModel: SettingsViewModel(repository: userProfileRepository)
-        )
-        controller.onFinish = onFinish
-        return controller
+    func makeSettings() -> UIViewController {
+        SettingsViewController(viewModel: SettingsViewModel(), factory: self)
+    }
+
+    func makeProfile() -> UIViewController {
+        ProfileViewController(viewModel: ProfileViewModel(repository: userProfileRepository))
     }
 
     func makeCompute() -> UIViewController {
@@ -164,12 +167,10 @@ final class AppScreenFactory: ScreenFactory {
         return controller
     }
 
-    func makeCardList(onFinish: @escaping () -> Void) -> UIViewController {
-        let controller = CardListViewController(
+    func makeCardList() -> UIViewController {
+        CardListViewController(
             viewModel: CardListViewModel(repository: cardRepository),
             factory: self
         )
-        controller.onFinish = onFinish
-        return controller
     }
 }
