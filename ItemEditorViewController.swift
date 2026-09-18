@@ -76,7 +76,7 @@ final class ItemEditorViewController: UIViewController {
     // MARK: - Setup
 
     private func setupViews() {
-        title = "編輯商品"
+        title = "編輯明細"
         view.backgroundColor = AppColor.brand
         addTapToDismissKeyboard()
 

@@ -68,7 +68,7 @@ final class TripListViewController: UIViewController {
     // MARK: - Setup
 
     private func setupViews() {
-        title = "專案"
+        title = "我的旅程"
         view.backgroundColor = AppColor.brand
 
         navigationItem.rightBarButtonItem = AppView.barButton(

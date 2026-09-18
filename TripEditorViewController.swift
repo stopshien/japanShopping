@@ -11,27 +11,23 @@ import UIKit
 final class TripEditorViewController: UIViewController {
 
     struct Presentation {
-        let navigationTitle: String?
         let heading: String
         let subheading: String
         let confirmTitle: String
 
         static let onboarding = Presentation(
-            navigationTitle: nil,
             heading: "這趟要去哪裡？",
             subheading: "建立第一個專案，之後可以再新增",
             confirmTitle: "開始使用"
         )
 
         static let create = Presentation(
-            navigationTitle: "新增專案",
             heading: "新的旅行",
             subheading: "選擇這趟要換算的幣別",
             confirmTitle: "建立專案"
         )
 
         static let edit = Presentation(
-            navigationTitle: "編輯專案",
             heading: "編輯專案",
             subheading: "更改名稱或幣別",
             confirmTitle: "儲存"
@@ -118,7 +114,6 @@ final class TripEditorViewController: UIViewController {
     // MARK: - Setup
 
     private func setupViews() {
-        title = presentation.navigationTitle
         headingLabel.text = presentation.heading
         subheadingLabel.text = presentation.subheading
 

@@ -73,7 +73,7 @@ final class ShoppingListViewController: UIViewController {
     // MARK: - Setup
 
     private func setupViews() {
-        title = "購物清單"
+        title = "消費紀錄"
         navigationItem.hidesBackButton = !allowsBack
         view.backgroundColor = AppColor.brand
 

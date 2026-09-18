@@ -75,7 +75,6 @@ final class ComputeViewController: UIViewController {
     // MARK: - Setup
 
     private func setupViews() {
-        title = "匯率換算"
         view.backgroundColor = AppColor.brand
         navigationItem.leftBarButtonItems = [
             AppView.barButton(
