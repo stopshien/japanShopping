@@ -139,9 +139,12 @@ final class DetailViewModel: DetailViewModelType {
         Self.roundedToCents((card.percent - Constants.baseFeedbackPercent) * item.price * 0.01)
     }
 
+    /// 從目前的剩餘額度扣掉這一筆的回饋，而不是從上限扣：每一筆消費都要累積扣減。
+    /// 額度用完後停在 0，不會變成負數。
     private func persistSelectedCardFeedback() {
         guard let index = payMethod.selectedCardIndex, cards.indices.contains(index) else { return }
-        cards[index].feedbackRemaining = Self.roundedToCents(cards[index].limit - cards[index].feedbackMoney)
+        let remaining = cards[index].feedbackRemaining - cards[index].feedbackMoney
+        cards[index].feedbackRemaining = Self.roundedToCents(max(0, remaining))
         try? cardRepository.save(cards)
     }
 
@@ -207,11 +210,6 @@ extension DetailViewModel: DetailViewModelInput {
     }
 
     func saveTapped() {
-        // 先結算選到的那張卡的回饋上限剩餘額度。
-        if payMethod.isCard {
-            persistSelectedCardFeedback()
-        }
-
         guard !item.productName.isEmpty else { return }
 
         if let photoData {
@@ -225,6 +223,12 @@ extension DetailViewModel: DetailViewModelInput {
         } catch {
             errorMessageSubject.send("消費紀錄儲存失敗，請再試一次")
             return
+        }
+
+        // 紀錄確定存進去才扣回饋額度。剩餘額度是累積扣減的，
+        // 沒存成功或沒填名稱就先扣，重按一次就會再扣一次。
+        if payMethod.isCard {
+            persistSelectedCardFeedback()
         }
 
         routeSubject.send(.savedToShoppingList)

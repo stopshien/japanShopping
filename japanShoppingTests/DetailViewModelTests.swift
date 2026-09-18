@@ -155,6 +155,57 @@ final class DetailViewModelTests: XCTestCase {
         XCTAssertEqual(cardRepository.storedCards.first?.feedbackMoney, 20)
     }
 
+    /// 剩餘額度要從目前的剩餘扣，不是從上限扣。遷移前每一筆都從上限重算，
+    /// 刷第二次以後剩餘額度就只反映最新一筆。
+    func testRemainingFeedbackAccumulatesAcrossPurchases() {
+        cardRepository.storedCards = [Card(name: "A卡", percent: 3.5, limit: 5000, feedbackRemaining: 4980)]
+
+        viewModel.input.viewDidLoad()
+        viewModel.input.payMethodSelected(row: 1)
+        viewModel.input.cardSelected(at: 0)
+        viewModel.input.productNameChanged("抹茶")
+        viewModel.input.saveTapped()
+
+        // 已剩 4980，這筆 1000 元回饋 20，應剩 4960（舊算法會存成 5000 - 20 = 4980）
+        XCTAssertEqual(cardRepository.storedCards.first?.feedbackRemaining, 4960)
+    }
+
+    func testRemainingFeedbackStopsAtZero() {
+        cardRepository.storedCards = [Card(name: "A卡", percent: 3.5, limit: 5000, feedbackRemaining: 5)]
+
+        viewModel.input.viewDidLoad()
+        viewModel.input.payMethodSelected(row: 1)
+        viewModel.input.cardSelected(at: 0)
+        viewModel.input.productNameChanged("抹茶")
+        viewModel.input.saveTapped()
+
+        XCTAssertEqual(cardRepository.storedCards.first?.feedbackRemaining, 0)
+    }
+
+    /// 沒填名稱時不會存入紀錄，也就不能扣回饋，否則每按一次就多扣一次。
+    func testSaveWithoutANameDoesNotDeductFeedback() {
+        viewModel.input.viewDidLoad()
+        viewModel.input.payMethodSelected(row: 1)
+        viewModel.input.cardSelected(at: 0)
+        viewModel.input.saveTapped()
+        viewModel.input.saveTapped()
+
+        XCTAssertEqual(cardRepository.saveCallCount, 0)
+        XCTAssertEqual(cardRepository.storedCards.first?.feedbackRemaining, 5000)
+    }
+
+    func testFailedSaveDoesNotDeductFeedback() {
+        listRepository.saveError = StubError.failure
+
+        viewModel.input.viewDidLoad()
+        viewModel.input.payMethodSelected(row: 1)
+        viewModel.input.cardSelected(at: 0)
+        viewModel.input.productNameChanged("抹茶")
+        viewModel.input.saveTapped()
+
+        XCTAssertEqual(cardRepository.saveCallCount, 0, "紀錄沒存成功，不該扣回饋")
+    }
+
     /// 0.1% * 637 元會算出 0.6370000000000006，不取到分位就會存進檔案並持續累積。
     func testFeedbackIsRoundedToCents() {
         cardRepository.storedCards = [Card(name: "C卡", percent: 1.6, limit: 1000, feedbackRemaining: 1000)]
