@@ -237,7 +237,7 @@ final class ComputeViewController: UIViewController {
             navigationController?.pushViewController(controller, animated: true)
 
         case .shoppingList:
-            navigationController?.pushViewController(factory.makeShoppingList(), animated: true)
+            navigationController?.pushViewController(factory.makeShoppingList(allowsBack: true), animated: true)
 
         case .settings:
             let controller = factory.makeSettings { [weak self] in

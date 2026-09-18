@@ -202,13 +202,6 @@ final class DetailViewController: UIViewController {
             }
             .store(in: &cancellables)
 
-        viewModel.output.didSave
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] in
-                self?.onSaved?()
-            }
-            .store(in: &cancellables)
-
         viewModel.output.route
             .receive(on: DispatchQueue.main)
             .sink { [weak self] route in
@@ -234,7 +227,11 @@ final class DetailViewController: UIViewController {
             navigationController?.pushViewController(controller, animated: true)
 
         case .shoppingList:
-            navigationController?.pushViewController(factory.makeShoppingList(), animated: true)
+            navigationController?.pushViewController(factory.makeShoppingList(allowsBack: true), animated: true)
+
+        case .savedToShoppingList:
+            onSaved?()
+            navigationController?.pushViewController(factory.makeShoppingList(allowsBack: false), animated: true)
         }
     }
 

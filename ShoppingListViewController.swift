@@ -17,6 +17,7 @@ final class ShoppingListViewController: UIViewController {
     }
 
     private let viewModel: ShoppingListViewModelType
+    private let allowsBack: Bool
     private var cancellables = Set<AnyCancellable>()
     private var items: [ShoppingListItem] = []
 
@@ -33,8 +34,9 @@ final class ShoppingListViewController: UIViewController {
 
     private let doneButton = AppView.primaryButton(title: "完成")
 
-    init(viewModel: ShoppingListViewModelType) {
+    init(viewModel: ShoppingListViewModelType, allowsBack: Bool) {
         self.viewModel = viewModel
+        self.allowsBack = allowsBack
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -53,10 +55,24 @@ final class ShoppingListViewController: UIViewController {
         viewModel.input.viewDidLoad()
     }
 
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        if !allowsBack {
+            navigationController?.interactivePopGestureRecognizer?.isEnabled = false
+        }
+    }
+
+    /// 滑動返回手勢是整個 navigation controller 共用的，離開時要還原，否則其他頁也無法滑動返回。
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        navigationController?.interactivePopGestureRecognizer?.isEnabled = true
+    }
+
     // MARK: - Setup
 
     private func setupViews() {
         title = "購物清單"
+        navigationItem.hidesBackButton = !allowsBack
         view.backgroundColor = AppColor.brand
 
         tableView.dataSource = self

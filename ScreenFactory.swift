@@ -19,7 +19,8 @@ protocol ScreenFactory {
     func makeTripEditor(editing trip: Trip?, onFinish: @escaping () -> Void) -> UIViewController
     func makeCompute() -> UIViewController
     func makeDetail(item: ShoppingItem, onSaved: @escaping () -> Void) -> UIViewController
-    func makeShoppingList() -> UIViewController
+    /// `allowsBack` 為 false 時隱藏返回鍵並停用滑動返回，只能按「完成」回到首頁。
+    func makeShoppingList(allowsBack: Bool) -> UIViewController
     func makeCardSet(onFinish: @escaping () -> Void) -> UIViewController
     func makeCardList(onFinish: @escaping () -> Void) -> UIViewController
 }
@@ -140,13 +141,13 @@ final class AppScreenFactory: ScreenFactory {
         return controller
     }
 
-    func makeShoppingList() -> UIViewController {
+    func makeShoppingList(allowsBack: Bool) -> UIViewController {
         let viewModel = ShoppingListViewModel(
             repository: currentShoppingListRepository,
             imageStore: imageStore,
             userProfileRepository: userProfileRepository
         )
-        return ShoppingListViewController(viewModel: viewModel)
+        return ShoppingListViewController(viewModel: viewModel, allowsBack: allowsBack)
     }
 
     func makeCardSet(onFinish: @escaping () -> Void) -> UIViewController {

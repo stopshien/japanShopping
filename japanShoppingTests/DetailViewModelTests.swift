@@ -238,20 +238,7 @@ final class DetailViewModelTests: XCTestCase {
         viewModel.input.productNameChanged("抹茶")
         viewModel.input.saveTapped()
 
-        XCTAssertEqual(routes, [.shoppingList])
-    }
-
-    func testSaveNotifiesThatTheItemWasSaved() {
-        var saveCount = 0
-        viewModel.output.didSave.sink { saveCount += 1 }.store(in: &cancellables)
-
-        viewModel.input.viewDidLoad()
-        viewModel.input.saveTapped()
-        XCTAssertEqual(saveCount, 0, "沒有商品名稱不算儲存")
-
-        viewModel.input.productNameChanged("抹茶")
-        viewModel.input.saveTapped()
-        XCTAssertEqual(saveCount, 1)
+        XCTAssertEqual(routes, [.savedToShoppingList])
     }
 
     func testSaveFailureReportsErrorAndDoesNotNavigate() {
