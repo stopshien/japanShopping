@@ -76,7 +76,14 @@ final class ComputeViewController: UIViewController {
 
     private func setupViews() {
         view.backgroundColor = AppColor.brand
-        navigationItem.leftBarButtonItems = [
+        navigationItem.leftBarButtonItem = AppView.barButton(
+            systemImage: "rectangle.stack",
+            accessibilityLabel: "切換旅程",
+            target: self,
+            action: #selector(tripListTapped)
+        )
+        // rightBarButtonItems 由右往左排，設定放在最右邊。
+        navigationItem.rightBarButtonItems = [
             AppView.barButton(
                 systemImage: "gearshape",
                 accessibilityLabel: "設定",
@@ -84,18 +91,12 @@ final class ComputeViewController: UIViewController {
                 action: #selector(settingsTapped)
             ),
             AppView.barButton(
-                systemImage: "rectangle.stack",
-                accessibilityLabel: "切換旅程",
+                systemImage: "cart",
+                accessibilityLabel: "查看消費紀錄",
                 target: self,
-                action: #selector(tripListTapped)
+                action: #selector(showShoppingListTapped)
             )
         ]
-        navigationItem.rightBarButtonItem = AppView.barButton(
-            systemImage: "cart",
-            accessibilityLabel: "查看消費紀錄",
-            target: self,
-            action: #selector(showShoppingListTapped)
-        )
         addTapToDismissKeyboard()
 
         // 輸入卡：幣別、稅率類別、金額、未稅／含稅
