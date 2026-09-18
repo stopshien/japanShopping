@@ -22,6 +22,9 @@ final class DetailViewController: UIViewController {
     private let factory: ScreenFactory
     private var cancellables = Set<AnyCancellable>()
 
+    /// 商品成功加入購物清單時呼叫。
+    var onSaved: (() -> Void)?
+
     // MARK: - Views
 
     private let imageSelectButton: UIButton = {
@@ -196,6 +199,13 @@ final class DetailViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] message in
                 self?.presentError(message)
+            }
+            .store(in: &cancellables)
+
+        viewModel.output.didSave
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                self?.onSaved?()
             }
             .store(in: &cancellables)
 

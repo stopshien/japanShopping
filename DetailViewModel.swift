@@ -64,6 +64,8 @@ protocol DetailViewModelOutput {
     var cardMenuItems: AnyPublisher<[CardMenuItem], Never> { get }
     var feedbackText: AnyPublisher<String, Never> { get }
     var route: AnyPublisher<DetailRoute, Never> { get }
+    /// 商品成功加入購物清單時送出，讓換算頁清掉已用掉的價格。
+    var didSave: AnyPublisher<Void, Never> { get }
     var errorMessage: AnyPublisher<String, Never> { get }
 }
 
@@ -93,6 +95,7 @@ final class DetailViewModel: DetailViewModelType {
     private let cardMenuItemsSubject = CurrentValueSubject<[CardMenuItem], Never>([])
     private let feedbackTextSubject = CurrentValueSubject<String, Never>(Constants.feedbackPlaceholder)
     private let routeSubject = PassthroughSubject<DetailRoute, Never>()
+    private let didSaveSubject = PassthroughSubject<Void, Never>()
     private let errorMessageSubject = PassthroughSubject<String, Never>()
 
     init(
@@ -225,6 +228,7 @@ extension DetailViewModel: DetailViewModelInput {
             return
         }
 
+        didSaveSubject.send()
         routeSubject.send(.shoppingList)
     }
 
@@ -243,5 +247,6 @@ extension DetailViewModel: DetailViewModelOutput {
     var cardMenuItems: AnyPublisher<[CardMenuItem], Never> { cardMenuItemsSubject.eraseToAnyPublisher() }
     var feedbackText: AnyPublisher<String, Never> { feedbackTextSubject.eraseToAnyPublisher() }
     var route: AnyPublisher<DetailRoute, Never> { routeSubject.eraseToAnyPublisher() }
+    var didSave: AnyPublisher<Void, Never> { didSaveSubject.eraseToAnyPublisher() }
     var errorMessage: AnyPublisher<String, Never> { errorMessageSubject.eraseToAnyPublisher() }
 }

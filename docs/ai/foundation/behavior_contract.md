@@ -55,6 +55,7 @@ Each entry is behavior that intentionally differs from the Storyboard/MVC versio
 - **(幣別) The rate label names the currency**, e.g. `日幣匯率：0.2047` rather than `匯率：0.2047`, because two currencies are now selectable.
 - **(幣別) Switching the goods category clears the previous conversion result**, for the same reason as switching currency: the old result was computed at a different tax rate.
 - **(幣別) Switching currency clears the previous conversion result.** The old result belongs to the old rate and tax rate, so carrying it forward would let a yen price be saved as a won purchase.
+- **Saving an item clears the compute screen's amount and result.** This was a wish in the original code's header comment (clear after tapping Done in the list). It triggers on a successful 加入購物清單 instead, so the price is gone however the user returns, and the old conversion cannot be reused for the next item. `ComputeViewModelTests`, `DetailViewModelTests`.
 - **Card setup rejects non-numeric input instead of crashing.** The original used `Double(moneyBack)!` and `Double(limit)!`, so non-numeric input crashed the app.
 - **Choosing 信用卡 without picking a card no longer crashes.** `PayMethod.card(index:)` makes "credit card, none chosen" a representable state.
 - **Returning from a card screen resets the selected card.** The original kept the old index, which could point past the end of the array after a deletion.
@@ -68,7 +69,6 @@ Each entry is behavior that intentionally differs from the Storyboard/MVC versio
 - **The legacy single shopping list is migrated once by `TripMigration`.** It moves `Documents/list` to `Documents/list-<tripID>` and creates a trip from the currency stored in the old profile. If the move fails it leaves the old file untouched and retries on the next launch. Once no installs predate trips, this can be deleted.
 
 - **The exchange-rate API key is not a secret.** It moved out of Swift source into the `EXCHANGE_RATE_API_KEY` build setting, surfaced through `Info.plist`, which only made it configurable. It still ships inside the app bundle and is still present in this repository's git history. Rotating the key and proxying the request through a backend is the only real fix.
-- **Clearing the entry screen after tapping Done in the list** was a wish in the original code's header comment. It was never built.
 
 ## Update Discipline
 

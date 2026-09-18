@@ -18,7 +18,7 @@ protocol ScreenFactory {
     func makeTripList(onTripChanged: @escaping () -> Void) -> UIViewController
     func makeTripEditor(editing trip: Trip?, onFinish: @escaping () -> Void) -> UIViewController
     func makeCompute() -> UIViewController
-    func makeDetail(item: ShoppingItem) -> UIViewController
+    func makeDetail(item: ShoppingItem, onSaved: @escaping () -> Void) -> UIViewController
     func makeShoppingList() -> UIViewController
     func makeCardSet(onFinish: @escaping () -> Void) -> UIViewController
     func makeCardList(onFinish: @escaping () -> Void) -> UIViewController
@@ -109,14 +109,16 @@ final class AppScreenFactory: ScreenFactory {
         return ComputeViewController(viewModel: viewModel, factory: self)
     }
 
-    func makeDetail(item: ShoppingItem) -> UIViewController {
+    func makeDetail(item: ShoppingItem, onSaved: @escaping () -> Void) -> UIViewController {
         let viewModel = DetailViewModel(
             item: item,
             cardRepository: cardRepository,
             shoppingListRepository: currentShoppingListRepository,
             imageStore: imageStore
         )
-        return DetailViewController(viewModel: viewModel, factory: self)
+        let controller = DetailViewController(viewModel: viewModel, factory: self)
+        controller.onSaved = onSaved
+        return controller
     }
 
     func makeTripList(onTripChanged: @escaping () -> Void) -> UIViewController {

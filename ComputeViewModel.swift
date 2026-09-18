@@ -29,6 +29,8 @@ protocol ComputeViewModelInput {
     func taxModeChanged(to mode: TaxMode)
     func computeTapped()
     func usePrice(for mode: TaxMode)
+    /// 商品已加入購物清單，清掉輸入的價格與換算結果，準備輸入下一件。
+    func itemSaved()
     func showShoppingListTapped()
     func settingsTapped()
     func tripListTapped()
@@ -41,6 +43,8 @@ protocol ComputeViewModelOutput {
     var isTaxCategoryVisible: AnyPublisher<Bool, Never> { get }
     var updatedAtDescription: AnyPublisher<String, Never> { get }
     var resultText: AnyPublisher<String, Never> { get }
+    /// 需要改寫輸入框內容時送出。
+    var amountFieldText: AnyPublisher<String, Never> { get }
     var route: AnyPublisher<ComputeRoute, Never> { get }
     var errorMessage: AnyPublisher<String, Never> { get }
 }
@@ -72,6 +76,7 @@ final class ComputeViewModel: ComputeViewModelType {
     private let isTaxCategoryVisibleSubject: CurrentValueSubject<Bool, Never>
     private let updatedAtDescriptionSubject = CurrentValueSubject<String, Never>("")
     private let resultTextSubject = CurrentValueSubject<String, Never>(Constants.resultPlaceholder)
+    private let amountFieldTextSubject = PassthroughSubject<String, Never>()
     private let routeSubject = PassthroughSubject<ComputeRoute, Never>()
     private let errorMessageSubject = PassthroughSubject<String, Never>()
 
@@ -225,6 +230,12 @@ extension ComputeViewModel: ComputeViewModelInput {
         routeSubject.send(.detail(item))
     }
 
+    func itemSaved() {
+        amountText = ""
+        amountFieldTextSubject.send("")
+        clearResult()
+    }
+
     func showShoppingListTapped() {
         routeSubject.send(.shoppingList)
     }
@@ -248,6 +259,7 @@ extension ComputeViewModel: ComputeViewModelOutput {
     var isTaxCategoryVisible: AnyPublisher<Bool, Never> { isTaxCategoryVisibleSubject.eraseToAnyPublisher() }
     var updatedAtDescription: AnyPublisher<String, Never> { updatedAtDescriptionSubject.eraseToAnyPublisher() }
     var resultText: AnyPublisher<String, Never> { resultTextSubject.eraseToAnyPublisher() }
+    var amountFieldText: AnyPublisher<String, Never> { amountFieldTextSubject.eraseToAnyPublisher() }
     var route: AnyPublisher<ComputeRoute, Never> { routeSubject.eraseToAnyPublisher() }
     var errorMessage: AnyPublisher<String, Never> { errorMessageSubject.eraseToAnyPublisher() }
 }

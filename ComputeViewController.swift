@@ -204,6 +204,13 @@ final class ComputeViewController: UIViewController {
             }
             .store(in: &cancellables)
 
+        viewModel.output.amountFieldText
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] text in
+                self?.amountTextField.text = text
+            }
+            .store(in: &cancellables)
+
         viewModel.output.errorMessage
             .receive(on: DispatchQueue.main)
             .sink { [weak self] message in
@@ -224,7 +231,11 @@ final class ComputeViewController: UIViewController {
     private func navigate(to route: ComputeRoute) {
         switch route {
         case .detail(let item):
-            navigationController?.pushViewController(factory.makeDetail(item: item), animated: true)
+            let controller = factory.makeDetail(item: item) { [weak self] in
+                self?.viewModel.input.itemSaved()
+            }
+            navigationController?.pushViewController(controller, animated: true)
+
         case .shoppingList:
             navigationController?.pushViewController(factory.makeShoppingList(), animated: true)
 

@@ -205,6 +205,31 @@ final class ComputeViewModelTests: XCTestCase {
         XCTAssertTrue(routes.isEmpty)
     }
 
+    /// 商品加入購物清單後，輸入框與換算結果都要清空，才能直接輸入下一件。
+    func testSavingAnItemClearsTheAmountAndResult() {
+        var text: String?
+        var fieldTexts: [String] = []
+        var routes: [ComputeRoute] = []
+        viewModel.output.resultText.sink { text = $0 }.store(in: &cancellables)
+        viewModel.output.amountFieldText.sink { fieldTexts.append($0) }.store(in: &cancellables)
+        viewModel.output.route.sink { routes.append($0) }.store(in: &cancellables)
+
+        viewModel.input.viewDidLoad()
+        waitForMainQueue()
+        viewModel.input.amountTextChanged("1000")
+        viewModel.input.computeTapped()
+        viewModel.input.itemSaved()
+
+        XCTAssertEqual(text, "換算結果")
+        XCTAssertEqual(fieldTexts, [""])
+
+        // 舊的價格不能再被帶到下一件商品。
+        viewModel.input.usePrice(for: .excludingTax)
+        viewModel.input.computeTapped()
+        XCTAssertTrue(routes.isEmpty)
+        XCTAssertEqual(text, "換算結果")
+    }
+
     // MARK: - 商品稅率類別
 
     func testTaxCategorySegmentsCarryTheActualRates() {
