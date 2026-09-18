@@ -27,7 +27,6 @@ protocol ComputeViewModelInput {
     func taxCategoryChanged(to category: TaxCategory)
     func amountTextChanged(_ text: String)
     func taxModeChanged(to mode: TaxMode)
-    func computeTapped()
     func usePrice(for mode: TaxMode)
     /// 商品已加入購物清單，清掉輸入的價格與換算結果，準備輸入下一件。
     func itemSaved()
@@ -55,7 +54,6 @@ final class ComputeViewModel: ComputeViewModelType {
 
     private enum Constants {
         static let resultPlaceholder = "換算結果"
-        static let rateUnavailable = "匯率尚未取得，請稍候再試"
     }
 
     private let service: ExchangeRateService
@@ -115,7 +113,7 @@ final class ComputeViewModel: ComputeViewModelType {
         return displayFormatter.string(from: date)
     }
 
-    /// 幣別或匯率變動後，重新顯示匯率並清掉上一次的換算結果。
+    /// 幣別或匯率變動後，重新顯示匯率並以新的匯率重算。
     private func refreshForCurrentCurrency() {
         inputPlaceholderSubject.send(currency.inputPlaceholder)
         taxCategoryTitlesSubject.send(Self.taxCategoryTitles(for: currency))
@@ -125,8 +123,7 @@ final class ComputeViewModel: ComputeViewModelType {
             rateDescriptionSubject.send("\(currency.title)匯率：\(exchangeRate.rateToTaiwanDollar(for: currency))")
         }
 
-        breakdown = nil
-        resultTextSubject.send(Constants.resultPlaceholder)
+        recompute()
     }
 
     /// 目前使用中專案的幣別。沒有選中時退回最新建立的一個。
@@ -143,10 +140,34 @@ final class ComputeViewModel: ComputeViewModelType {
         TaxCategory.allCases.map { "\($0.title) \(currency.taxPercent(for: $0))%" }
     }
 
-    /// 換算結果會隨稅率改變，因此稅率相關的選擇變動時要一併清掉。
+    private func clearAmount() {
+        amountText = ""
+        amountFieldTextSubject.send("")
+    }
+
     private func clearResult() {
         breakdown = nil
         resultTextSubject.send(Constants.resultPlaceholder)
+    }
+
+    /// 任何會影響結果的輸入變動時都重算。
+    /// 匯率還沒到或金額不是數字時只顯示提示，不會產生 0 元的結果。
+    private func recompute() {
+        guard let exchangeRate, let amount = Double(amountText) else {
+            clearResult()
+            return
+        }
+
+        let breakdown = PriceBreakdown(
+            amount: amount,
+            rate: exchangeRate.rateToTaiwanDollar(for: currency),
+            mode: taxMode,
+            taxMultiplier: currency.taxMultiplier(for: taxCategory)
+        )
+        self.breakdown = breakdown
+        resultTextSubject.send(
+            "台幣 \n未稅：\(PriceText.amount(breakdown.untaxed))\n含稅：\(PriceText.amount(breakdown.taxed))"
+        )
     }
 
     private func makeItem(for mode: TaxMode) -> ShoppingItem? {
@@ -184,44 +205,25 @@ extension ComputeViewModel: ComputeViewModelInput {
         let updated = Self.currentCurrency(from: tripRepository)
         guard updated != currency else { return }
         currency = updated
+        // 輸入的數字是舊幣別的價格，不能直接當成新幣別重算。
+        clearAmount()
         refreshForCurrentCurrency()
     }
 
     func taxCategoryChanged(to category: TaxCategory) {
         guard category != taxCategory else { return }
         taxCategory = category
-        clearResult()
+        recompute()
     }
 
     func amountTextChanged(_ text: String) {
         amountText = text.trimmingCharacters(in: .whitespaces)
+        recompute()
     }
 
     func taxModeChanged(to mode: TaxMode) {
         taxMode = mode
-    }
-
-    func computeTapped() {
-        guard let exchangeRate else {
-            errorMessageSubject.send(Constants.rateUnavailable)
-            return
-        }
-        guard let amount = Double(amountText) else {
-            breakdown = nil
-            resultTextSubject.send(Constants.resultPlaceholder)
-            return
-        }
-
-        let breakdown = PriceBreakdown(
-            amount: amount,
-            rate: exchangeRate.rateToTaiwanDollar(for: currency),
-            mode: taxMode,
-            taxMultiplier: currency.taxMultiplier(for: taxCategory)
-        )
-        self.breakdown = breakdown
-        resultTextSubject.send(
-            "台幣 \n未稅：\(PriceText.amount(breakdown.untaxed))\n含稅：\(PriceText.amount(breakdown.taxed))"
-        )
+        recompute()
     }
 
     /// 尚未換算出結果前不會前往下一頁，避免帶著 0 元的價格建立項目。
@@ -231,8 +233,7 @@ extension ComputeViewModel: ComputeViewModelInput {
     }
 
     func itemSaved() {
-        amountText = ""
-        amountFieldTextSubject.send("")
+        clearAmount()
         clearResult()
     }
 

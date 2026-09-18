@@ -31,7 +31,6 @@ final class ComputeViewController: UIViewController {
     private let taxSegmentedControl = AppView.segmentedControl(items: TaxMode.allCases.map(\.title))
     private let amountTextField = AppView.textField(keyboardType: .decimalPad)
 
-    private let computeButton = AppView.primaryButton(title: "換算")
     private let useUntaxedButton = AppView.secondaryButton(title: "使用未稅價格")
     private let useTaxedButton = AppView.secondaryButton(title: "使用含稅價格")
 
@@ -105,10 +104,8 @@ final class ComputeViewController: UIViewController {
         [
             taxCategorySegmentedControl,
             amountTextField,
-            taxSegmentedControl,
-            computeButton
+            taxSegmentedControl
         ].forEach(inputStack.addArrangedSubview)
-        inputStack.setCustomSpacing(AppStyle.Spacing.normal, after: taxSegmentedControl)
 
         // 結果卡：標題 + 數字 + 兩顆帶價前往的按鈕
         let resultStack = AppView.cardStack(in: resultCard, spacing: AppStyle.Spacing.tight)
@@ -124,7 +121,6 @@ final class ComputeViewController: UIViewController {
         taxCategorySegmentedControl.addTarget(self, action: #selector(taxCategoryChanged), for: .valueChanged)
         taxSegmentedControl.addTarget(self, action: #selector(taxModeChanged), for: .valueChanged)
         amountTextField.addTarget(self, action: #selector(amountTextChanged), for: .editingChanged)
-        computeButton.addTarget(self, action: #selector(computeTapped), for: .touchUpInside)
         useUntaxedButton.addTarget(self, action: #selector(useUntaxedTapped), for: .touchUpInside)
         useTaxedButton.addTarget(self, action: #selector(useTaxedTapped), for: .touchUpInside)
 
@@ -267,11 +263,6 @@ final class ComputeViewController: UIViewController {
 
     @objc private func amountTextChanged() {
         viewModel.input.amountTextChanged(amountTextField.text ?? "")
-    }
-
-    @objc private func computeTapped() {
-        amountTextField.resignFirstResponder()
-        viewModel.input.computeTapped()
     }
 
     @objc private func useUntaxedTapped() {
