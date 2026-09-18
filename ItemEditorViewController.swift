@@ -24,17 +24,7 @@ final class ItemEditorViewController: UIViewController {
 
     // MARK: - Views
 
-    private let photoButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.backgroundColor = AppColor.surface
-        button.imageView?.contentMode = .scaleAspectFill
-        button.clipsToBounds = true
-        button.layer.cornerRadius = AppStyle.Radius.card
-        button.setImage(UIImage(systemName: "photo"), for: .normal)
-        button.accessibilityLabel = "更換照片"
-        button.translatesAutoresizingMaskIntoConstraints = false
-        return button
-    }()
+    private let photoButton = PhotoButton(accessibilityLabel: "更換照片")
 
     private let formCard = AppView.card()
 
@@ -176,7 +166,7 @@ final class ItemEditorViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] data in
                 guard let data, let image = UIImage(data: data) else { return }
-                self?.photoButton.setImage(image, for: .normal)
+                self?.photoButton.setPhoto(image)
             }
             .store(in: &cancellables)
 

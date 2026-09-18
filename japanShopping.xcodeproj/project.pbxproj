@@ -69,6 +69,7 @@
 		EC0000022A00000100EC0001 /* ItemEditorViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC0000012A00000100EC0001 /* ItemEditorViewModel.swift */; };
 		EC0000042A00000100EC0001 /* ItemEditorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC0000032A00000100EC0001 /* ItemEditorViewController.swift */; };
 		EC0000062A00000100EC0001 /* ItemEditorViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC0000052A00000100EC0001 /* ItemEditorViewModelTests.swift */; };
+		EC0000082A00000100EC0001 /* PhotoButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC0000072A00000100EC0001 /* PhotoButton.swift */; };
 		EA00000A2A00000100EA0001 /* TripEditorViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA0000092A00000100EA0001 /* TripEditorViewModel.swift */; };
 		EA00000C2A00000100EA0001 /* TripEditorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA00000B2A00000100EA0001 /* TripEditorViewController.swift */; };
 		EA00000E2A00000100EA0001 /* TripListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA00000D2A00000100EA0001 /* TripListViewModel.swift */; };
@@ -154,6 +155,7 @@
 		EC0000012A00000100EC0001 /* ItemEditorViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemEditorViewModel.swift; sourceTree = "<group>"; };
 		EC0000032A00000100EC0001 /* ItemEditorViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemEditorViewController.swift; sourceTree = "<group>"; };
 		EC0000052A00000100EC0001 /* ItemEditorViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemEditorViewModelTests.swift; sourceTree = "<group>"; };
+		EC0000072A00000100EC0001 /* PhotoButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoButton.swift; sourceTree = "<group>"; };
 		EA0000092A00000100EA0001 /* TripEditorViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripEditorViewModel.swift; sourceTree = "<group>"; };
 		EA00000B2A00000100EA0001 /* TripEditorViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripEditorViewController.swift; sourceTree = "<group>"; };
 		EA00000D2A00000100EA0001 /* TripListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripListViewModel.swift; sourceTree = "<group>"; };
@@ -249,6 +251,7 @@
 				EA0000052A00000100EA0001 /* TripContentStore.swift */,
 				EA0000072A00000100EA0001 /* TripMigration.swift */,
 				EA0000092A00000100EA0001 /* TripEditorViewModel.swift */,
+				EC0000072A00000100EC0001 /* PhotoButton.swift */,
 				EC0000032A00000100EC0001 /* ItemEditorViewController.swift */,
 				EC0000012A00000100EC0001 /* ItemEditorViewModel.swift */,
 				EA00000B2A00000100EA0001 /* TripEditorViewController.swift */,
@@ -415,6 +418,7 @@
 				EA00000E2A00000100EA0001 /* TripListViewModel.swift in Sources */,
 				EA00000C2A00000100EA0001 /* TripEditorViewController.swift in Sources */,
 				EA00000A2A00000100EA0001 /* TripEditorViewModel.swift in Sources */,
+				EC0000082A00000100EC0001 /* PhotoButton.swift in Sources */,
 				EC0000042A00000100EC0001 /* ItemEditorViewController.swift in Sources */,
 				EC0000022A00000100EC0001 /* ItemEditorViewModel.swift in Sources */,
 				EA0000082A00000100EA0001 /* TripMigration.swift in Sources */,

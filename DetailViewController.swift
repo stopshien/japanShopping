@@ -27,16 +27,7 @@ final class DetailViewController: UIViewController {
 
     // MARK: - Views
 
-    private let imageSelectButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.backgroundColor = AppColor.surface
-        button.imageView?.contentMode = .scaleAspectFill
-        button.clipsToBounds = true
-        button.layer.cornerRadius = AppStyle.Radius.card
-        button.setImage(UIImage(systemName: "photo"), for: .normal)
-        button.translatesAutoresizingMaskIntoConstraints = false
-        return button
-    }()
+    private let imageSelectButton = PhotoButton(accessibilityLabel: "選擇照片")
 
     private let priceLabel = DetailViewController.makeLabel()
     private let productLabel = DetailViewController.makeLabel(text: "商品")
@@ -340,7 +331,7 @@ extension DetailViewController: UIImagePickerControllerDelegate, UINavigationCon
         didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]
     ) {
         if let image = info[.originalImage] as? UIImage {
-            imageSelectButton.setImage(image, for: .normal)
+            imageSelectButton.setPhoto(image)
             viewModel.input.photoSelected(image.jpegData(compressionQuality: 0.9))
         }
         dismiss(animated: true)

@@ -68,6 +68,7 @@ final class ShoppingListViewController: UIViewController {
 - `AppColor` is the only place colours are defined. Every foreground/background pair in it passes WCAG AA (contrast ≥ 4.5); this app is used outdoors, so low contrast is a defect, not a style choice. Verify the ratio before changing any colour.
 - `AppStyle` owns spacing (8pt scale), corner radii and fonts. Do not write raw numbers for these in a view controller.
 - `AppView` builds the shared components: `primaryButton`, `secondaryButton`, `plainButton`, `card`, `cardStack`, `label`, `textField`, `segmentedControl`.
+- Use `PhotoButton` for any tap-to-pick photo area. Never `setImage` a photo onto a system `UIButton`: it renders the image as a template and the photo becomes a solid tint-coloured block.
 - **One primary button per screen.** It is the action the screen exists for. Everything else is secondary or plain.
 - Secondary buttons use a tinted background, never white — they usually sit on a white card, where a white fill makes them look like plain text.
 - Group related controls into a `card`. A screen should read as a few blocks, not a flat list of controls.
