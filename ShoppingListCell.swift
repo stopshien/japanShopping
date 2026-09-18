@@ -56,6 +56,8 @@ final class ShoppingListCell: UITableViewCell {
     // MARK: - Setup
 
     private func setupViews() {
+        // 點選一筆可以編輯。
+        accessoryType = .disclosureIndicator
         [productNameLabel, priceLabel, payTypeLabel].forEach(textStackView.addArrangedSubview)
         contentView.addSubview(shopPhoto)
         contentView.addSubview(textStackView)

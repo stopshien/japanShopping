@@ -8,11 +8,13 @@ Read this before changing anything that looks like an oddity. Several entries be
 
 Each entry names the test that locks it. If a change makes one of these tests fail, the change is wrong until proven otherwise — do not edit the test to match the new behavior.
 
-- **Deleting is only persisted on an explicit confirm.** Card list deletions save on 完成; shopping list deletions save on 完成. Leaving with the back button discards them, so a mis-tapped delete can be abandoned. `CardListViewModelTests`, `ShoppingListViewModelTests`.
+- **Deleting is only persisted on an explicit confirm.** Card list deletions save on 完成; shopping list deletions and item edits save on 完成. Leaving with the back button discards them, so a mis-tapped delete can be abandoned. `CardListViewModelTests`, `ShoppingListViewModelTests`.
 - **Adding a card from the card list merges rather than reloads.** Returning from the add-card screen appends only the cards that were not there before, so deletions that are still pending on that screen survive. A plain reload would silently undo them. `CardListViewModelTests`.
-- **The shopping list total is recalculated from scratch after every deletion**, never accumulated. `ShoppingListViewModelTests`.
+- **The shopping list total is recalculated from scratch after every deletion or edit**, never accumulated. `ShoppingListViewModelTests`.
 - **The total line is prefixed with the user's name** (`Angus，你已經花了205$`) when a profile exists, and falls back to the plain sentence when it does not. The welcome screen makes a missing name unlikely, but the repository returns an optional, so the sentence must read correctly either way. `ShoppingListViewModelTests`.
 - **Deleting a shopping list row deletes its photo file**, but only after the list has been saved successfully, so a failed save never destroys an image. `ShoppingListViewModelTests`.
+- **Editing a shopping list item is a correction, not a new purchase.** Tapping a row opens 編輯商品, which edits the name, the TWD price, 未稅／含稅, the pay type and the photo. Changing the pay type never touches a card's feedback limit. A pay type that is no longer a card (deleted card, legacy `信用卡`) stays selectable so an untouched field is not silently rewritten. `ItemEditorViewModelTests`.
+- **A replacement photo is only written on 完成.** Until then it lives in memory, so leaving the list with the back button leaves no orphan file. On a successful save the old file is removed; if the save fails the new file is removed and the old one kept. `ShoppingListViewModelTests`.
 - **The card feedback calculation subtracts 1.5 from the card percentage** before applying it: `(percent - 1.5) * price * 0.01`. Both the feedback amount and the remaining limit are rounded to cents before being stored, otherwise floating point error accumulates across purchases. `DetailViewModelTests`.
 - **A new card's `feedbackRemaining` starts equal to its `limit`**, and `feedbackMoney` starts at 0. `CardSetViewModelTests`.
 - **The tax multiplier is a function of currency and goods category**, `Currency.taxMultiplier(for:)`. Japan: 10% standard, 8% for food and drink. Korea: 10% for everything. `PriceBreakdownTests`.

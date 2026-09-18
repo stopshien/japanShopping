@@ -17,6 +17,7 @@ final class ShoppingListViewController: UIViewController {
     }
 
     private let viewModel: ShoppingListViewModelType
+    private let factory: ScreenFactory
     private let allowsBack: Bool
     private var cancellables = Set<AnyCancellable>()
     private var items: [ShoppingListItem] = []
@@ -34,8 +35,9 @@ final class ShoppingListViewController: UIViewController {
 
     private let doneButton = AppView.primaryButton(title: "完成")
 
-    init(viewModel: ShoppingListViewModelType, allowsBack: Bool) {
+    init(viewModel: ShoppingListViewModelType, factory: ScreenFactory, allowsBack: Bool) {
         self.viewModel = viewModel
+        self.factory = factory
         self.allowsBack = allowsBack
         super.init(nibName: nil, bundle: nil)
     }
@@ -136,12 +138,28 @@ final class ShoppingListViewController: UIViewController {
                 self?.navigationController?.popToRootViewController(animated: true)
             }
             .store(in: &cancellables)
+
+        viewModel.output.editRequest
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] request in
+                self?.showEditor(for: request)
+            }
+            .store(in: &cancellables)
     }
 
     // MARK: - Actions
 
     @objc private func doneTapped() {
         viewModel.input.doneTapped()
+    }
+
+    // MARK: - Navigation
+
+    private func showEditor(for request: ShoppingListEditRequest) {
+        let controller = factory.makeItemEditor(item: request.item, photoData: request.photoData) { [weak self] edit in
+            self?.viewModel.input.itemEdited(at: request.index, edit)
+        }
+        navigationController?.pushViewController(controller, animated: true)
     }
 
     // MARK: - Private
@@ -177,5 +195,10 @@ extension ShoppingListViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
         guard editingStyle == .delete else { return }
         viewModel.input.deleteItem(at: indexPath.row)
+    }
+
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        viewModel.input.itemSelected(at: indexPath.row)
     }
 }

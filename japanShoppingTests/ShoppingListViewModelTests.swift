@@ -190,7 +190,96 @@ final class ShoppingListViewModelTests: XCTestCase {
         XCTAssertTrue(imageStore.removedNames.isEmpty, "存檔失敗時不該刪掉圖片")
     }
 
-    // MARK: - 錯誤
+    // MARK: - 編輯
+
+    private func edit(_ name: String, price: Double, photo: Data? = nil) -> ItemEdit {
+        ItemEdit(
+            item: ShoppingItem(productName: name, price: price, payType: "玉山", taxState: "未稅"),
+            newPhotoData: photo
+        )
+    }
+
+    func testSelectingAnItemRequestsTheEditorWithItsPhoto() {
+        var request: ShoppingListEditRequest?
+        viewModel.output.editRequest.sink { request = $0 }.store(in: &cancellables)
+
+        viewModel.input.viewDidLoad()
+        viewModel.input.itemSelected(at: 0)
+
+        XCTAssertEqual(request?.index, 0)
+        XCTAssertEqual(request?.item.productName, "抹茶")
+        XCTAssertEqual(request?.photoData, photoData)
+    }
+
+    func testSelectingAnOutOfRangeIndexIsIgnored() {
+        var request: ShoppingListEditRequest?
+        viewModel.output.editRequest.sink { request = $0 }.store(in: &cancellables)
+
+        viewModel.input.viewDidLoad()
+        viewModel.input.itemSelected(at: 99)
+
+        XCTAssertNil(request)
+    }
+
+    func testEditUpdatesTheListAndTotalButPersistsOnlyOnDone() {
+        var items: [ShoppingListItem] = []
+        var total: String?
+        viewModel.output.items.sink { items = $0 }.store(in: &cancellables)
+        viewModel.output.totalSpendText.sink { total = $0 }.store(in: &cancellables)
+
+        viewModel.input.viewDidLoad()
+        viewModel.input.itemEdited(at: 0, edit("焙茶", price: 150))
+
+        XCTAssertEqual(items.first?.productName, "焙茶")
+        XCTAssertEqual(items.first?.priceDescription, "150$(未稅)")
+        XCTAssertEqual(items.first?.payType, "玉山")
+        XCTAssertEqual(total, "Angus，你已經花了400$")
+        XCTAssertEqual(repository.saveCallCount, 0, "尚未按下 Done，存檔不應變動")
+
+        viewModel.input.doneTapped()
+
+        XCTAssertEqual(repository.storedItems.first?.productName, "焙茶")
+        XCTAssertEqual(repository.storedItems.first?.photoURL, "photo-1", "沒換照片就保留原本的檔名")
+    }
+
+    func testNewPhotoIsWrittenOnDoneAndReplacesTheOldFile() {
+        let newPhoto = Data("new".utf8)
+
+        viewModel.input.viewDidLoad()
+        viewModel.input.itemEdited(at: 0, edit("抹茶", price: 100, photo: newPhoto))
+        XCTAssertEqual(imageStore.storedImages.count, 1, "按下 Done 前不寫檔")
+
+        viewModel.input.doneTapped()
+
+        let newName = repository.storedItems.first?.photoURL
+        XCTAssertNotNil(newName)
+        XCTAssertNotEqual(newName, "photo-1")
+        XCTAssertEqual(newName.flatMap { imageStore.storedImages[$0] }, newPhoto)
+        XCTAssertEqual(imageStore.removedNames, ["photo-1"])
+    }
+
+    func testNewPhotoIsShownBeforeDone() {
+        var items: [ShoppingListItem] = []
+        viewModel.output.items.sink { items = $0 }.store(in: &cancellables)
+        let newPhoto = Data("new".utf8)
+
+        viewModel.input.viewDidLoad()
+        viewModel.input.itemEdited(at: 1, edit("咖啡", price: 250, photo: newPhoto))
+
+        XCTAssertEqual(items.last?.imageData, newPhoto)
+    }
+
+    func testNewPhotoIsRemovedWhenSaveFails() {
+        repository.saveError = StubError.failure
+
+        viewModel.input.viewDidLoad()
+        viewModel.input.itemEdited(at: 0, edit("抹茶", price: 100, photo: Data("new".utf8)))
+        viewModel.input.doneTapped()
+
+        XCTAssertEqual(Array(imageStore.storedImages.keys), ["photo-1"], "存檔失敗時新照片不留、舊照片不刪")
+    }
+
+        // MARK: - 錯誤
 
     func testLoadFailureReportsErrorAndShowsEmptyList() {
         repository.loadError = StubError.failure
