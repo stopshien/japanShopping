@@ -6,13 +6,12 @@
 import Combine
 import UIKit
 
-/// 從購物清單點選一筆消費後開啟，修改商品細節。
+/// 從消費紀錄點選一筆後開啟。可改商品名稱與照片，價格與付款方式只顯示。
 final class ItemEditorViewController: UIViewController {
 
     private enum Constants {
         static let photoHeight: CGFloat = 180
         static let fieldHeight: CGFloat = 48
-        static let segmentHeight: CGFloat = 36
         static let jpegQuality: CGFloat = 0.9
     }
 
@@ -30,16 +29,15 @@ final class ItemEditorViewController: UIViewController {
 
     private let productNameLabel = AppView.label("商品", font: AppStyle.Font.label, color: AppColor.textSecondary)
     private let productNameTextField = AppView.textField()
-    private let priceLabel = AppView.label("台幣價格", font: AppStyle.Font.label, color: AppColor.textSecondary)
-    private let priceTextField = AppView.textField(keyboardType: .decimalPad)
-    private let taxSegmentedControl = AppView.segmentedControl(items: TaxMode.allCases.map(\.title))
-    private let payTypeLabel = AppView.label("付款方式", font: AppStyle.Font.label, color: AppColor.textSecondary)
 
-    private let payTypeButton: UIButton = {
-        let button = AppView.secondaryButton(title: "")
-        button.showsMenuAsPrimaryAction = true
-        return button
-    }()
+    // 唯讀欄位刻意只用文字呈現，不用輸入框或選單，避免看起來可以修改。
+    private let priceValueLabel = AppView.label(font: AppStyle.Font.bodyEmphasis, alignment: .right)
+    private let payTypeValueLabel = AppView.label(font: AppStyle.Font.bodyEmphasis, alignment: .right)
+    private let lockedNoteLabel = AppView.label(
+        "價格與付款方式已用於計算信用卡回饋，無法修改",
+        font: AppStyle.Font.caption,
+        color: AppColor.textSecondary
+    )
 
     private let saveButton = AppView.primaryButton(title: "儲存")
 
@@ -70,7 +68,6 @@ final class ItemEditorViewController: UIViewController {
         setupViews()
         setupConstraints()
         bindViewModel()
-        viewModel.input.viewDidLoad()
     }
 
     // MARK: - Setup
@@ -84,24 +81,19 @@ final class ItemEditorViewController: UIViewController {
         [
             productNameLabel,
             productNameTextField,
-            priceLabel,
-            priceTextField,
-            taxSegmentedControl,
-            payTypeLabel,
-            payTypeButton,
+            makeReadOnlyRow(title: "價格", valueLabel: priceValueLabel),
+            makeReadOnlyRow(title: "付款方式", valueLabel: payTypeValueLabel),
+            lockedNoteLabel,
             saveButton
         ].forEach(formStack.addArrangedSubview)
         formStack.setCustomSpacing(AppStyle.Spacing.normal, after: productNameTextField)
-        formStack.setCustomSpacing(AppStyle.Spacing.normal, after: taxSegmentedControl)
-        formStack.setCustomSpacing(AppStyle.Spacing.normal, after: payTypeButton)
+        formStack.setCustomSpacing(AppStyle.Spacing.normal, after: lockedNoteLabel)
 
         [photoButton, formCard].forEach(contentStackView.addArrangedSubview)
         view.addSubview(contentStackView)
 
         photoButton.addTarget(self, action: #selector(photoTapped), for: .touchUpInside)
         productNameTextField.addTarget(self, action: #selector(productNameChanged), for: .editingChanged)
-        priceTextField.addTarget(self, action: #selector(priceChanged), for: .editingChanged)
-        taxSegmentedControl.addTarget(self, action: #selector(taxModeChanged), for: .valueChanged)
         saveButton.addTarget(self, action: #selector(saveTapped), for: .touchUpInside)
     }
 
@@ -118,9 +110,7 @@ final class ItemEditorViewController: UIViewController {
             ),
 
             photoButton.heightAnchor.constraint(equalToConstant: Constants.photoHeight),
-            productNameTextField.heightAnchor.constraint(equalToConstant: Constants.fieldHeight),
-            priceTextField.heightAnchor.constraint(equalToConstant: Constants.fieldHeight),
-            taxSegmentedControl.heightAnchor.constraint(equalToConstant: Constants.segmentHeight)
+            productNameTextField.heightAnchor.constraint(equalToConstant: Constants.fieldHeight)
         ])
     }
 
@@ -134,31 +124,17 @@ final class ItemEditorViewController: UIViewController {
             }
             .store(in: &cancellables)
 
-        viewModel.output.priceText
+        viewModel.output.priceDescription
             .receive(on: DispatchQueue.main)
             .sink { [weak self] text in
-                self?.priceTextField.text = text
+                self?.priceValueLabel.text = text
             }
             .store(in: &cancellables)
 
-        viewModel.output.selectedTaxMode
+        viewModel.output.payTypeDescription
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] mode in
-                self?.taxSegmentedControl.selectedSegmentIndex = mode?.rawValue ?? UISegmentedControl.noSegment
-            }
-            .store(in: &cancellables)
-
-        viewModel.output.payTypeTitle
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] title in
-                self?.payTypeButton.setTitle(title, for: .normal)
-            }
-            .store(in: &cancellables)
-
-        viewModel.output.payTypeOptions
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] options in
-                self?.rebuildPayTypeMenu(with: options)
+            .sink { [weak self] text in
+                self?.payTypeValueLabel.text = text
             }
             .store(in: &cancellables)
 
@@ -174,13 +150,6 @@ final class ItemEditorViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] isEnabled in
                 self?.saveButton.isEnabled = isEnabled
-            }
-            .store(in: &cancellables)
-
-        viewModel.output.errorMessage
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] message in
-                self?.presentError(message)
             }
             .store(in: &cancellables)
 
@@ -206,15 +175,6 @@ final class ItemEditorViewController: UIViewController {
         viewModel.input.productNameChanged(productNameTextField.text ?? "")
     }
 
-    @objc private func priceChanged() {
-        viewModel.input.priceTextChanged(priceTextField.text ?? "")
-    }
-
-    @objc private func taxModeChanged() {
-        guard let mode = TaxMode(rawValue: taxSegmentedControl.selectedSegmentIndex) else { return }
-        viewModel.input.taxModeChanged(to: mode)
-    }
-
     @objc private func saveTapped() {
         view.endEditing(true)
         viewModel.input.saveTapped()
@@ -222,19 +182,16 @@ final class ItemEditorViewController: UIViewController {
 
     // MARK: - Private
 
-    private func rebuildPayTypeMenu(with options: [String]) {
-        let actions = options.enumerated().map { index, title in
-            UIAction(title: title) { [weak self] _ in
-                self?.viewModel.input.payTypeSelected(at: index)
-            }
-        }
-        payTypeButton.menu = UIMenu(children: actions)
-    }
+    private func makeReadOnlyRow(title: String, valueLabel: UILabel) -> UIStackView {
+        let titleLabel = AppView.label(title, font: AppStyle.Font.label, color: AppColor.textSecondary)
+        titleLabel.setContentHuggingPriority(.required, for: .horizontal)
+        titleLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
 
-    private func presentError(_ message: String) {
-        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "好", style: .default))
-        present(alert, animated: true)
+        let row = UIStackView(arrangedSubviews: [titleLabel, valueLabel])
+        row.axis = .horizontal
+        row.spacing = AppStyle.Spacing.normal
+        row.alignment = .firstBaseline
+        return row
     }
 }
 

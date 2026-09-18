@@ -152,7 +152,7 @@ final class AppScreenFactory: ScreenFactory {
     }
 
     func makeItemEditor(item: ShoppingItem, photoData: Data?, onSave: @escaping (ItemEdit) -> Void) -> UIViewController {
-        let viewModel = ItemEditorViewModel(item: item, photoData: photoData, cardRepository: cardRepository)
+        let viewModel = ItemEditorViewModel(item: item, photoData: photoData)
         let controller = ItemEditorViewController(viewModel: viewModel)
         controller.onSave = onSave
         return controller
