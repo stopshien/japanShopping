@@ -290,7 +290,7 @@ final class ShoppingListViewModelTests: XCTestCase {
 
         viewModel.input.viewDidLoad()
 
-        XCTAssertEqual(message, "購物清單讀取失敗")
+        XCTAssertEqual(message, "消費紀錄讀取失敗")
         XCTAssertTrue(items.isEmpty)
     }
 
@@ -305,7 +305,7 @@ final class ShoppingListViewModelTests: XCTestCase {
         viewModel.input.doneTapped()
 
         XCTAssertFalse(didFinish)
-        XCTAssertEqual(message, "購物清單儲存失敗，請再試一次")
+        XCTAssertEqual(message, "消費紀錄儲存失敗，請再試一次")
     }
 
     func testDonePublishesDidFinish() {

@@ -53,7 +53,7 @@ final class DetailViewController: UIViewController {
         "信用卡回饋金額", font: AppStyle.Font.body, color: AppColor.textSecondary, alignment: .center
     )
 
-    private let saveToListButton = AppView.primaryButton(title: "加入購物清單")
+    private let saveToListButton = AppView.primaryButton(title: "加入消費紀錄")
     private let formCard = AppView.card()
 
     private let cardButtonsStackView: UIStackView = {
@@ -103,7 +103,7 @@ final class DetailViewController: UIViewController {
         view.backgroundColor = AppColor.brand
         navigationItem.rightBarButtonItem = AppView.barButton(
             systemImage: "cart",
-            accessibilityLabel: "查看購物清單",
+            accessibilityLabel: "查看消費紀錄",
             target: self,
             action: #selector(showShoppingListTapped)
         )

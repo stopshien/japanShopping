@@ -85,14 +85,14 @@ final class ComputeViewController: UIViewController {
             ),
             AppView.barButton(
                 systemImage: "rectangle.stack",
-                accessibilityLabel: "切換專案",
+                accessibilityLabel: "切換旅程",
                 target: self,
                 action: #selector(tripListTapped)
             )
         ]
         navigationItem.rightBarButtonItem = AppView.barButton(
             systemImage: "cart",
-            accessibilityLabel: "查看購物清單",
+            accessibilityLabel: "查看消費紀錄",
             target: self,
             action: #selector(showShoppingListTapped)
         )

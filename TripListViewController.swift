@@ -32,7 +32,7 @@ final class TripListViewController: UIViewController {
     }()
 
     private let emptyStateLabel = AppView.label(
-        "還沒有任何專案\n點右上角的加號建立一個",
+        "還沒有任何旅程\n點右上角的加號建立一個",
         font: AppStyle.Font.body,
         color: AppColor.textSecondary,
         alignment: .center
@@ -73,7 +73,7 @@ final class TripListViewController: UIViewController {
 
         navigationItem.rightBarButtonItem = AppView.barButton(
             systemImage: "plus",
-            accessibilityLabel: "新增專案",
+            accessibilityLabel: "新增旅程",
             target: self,
             action: #selector(createTapped)
         )
@@ -213,7 +213,7 @@ extension TripListViewController: UITableViewDelegate {
         let name = items[index].name
         let alert = UIAlertController(
             title: "刪除「\(name)」？",
-            message: "這個專案的購物清單與照片會一併刪除，無法復原。",
+            message: "這個旅程的消費紀錄與照片會一併刪除，無法復原。",
             preferredStyle: .alert
         )
         alert.addAction(UIAlertAction(title: "取消", style: .cancel) { [weak self] _ in

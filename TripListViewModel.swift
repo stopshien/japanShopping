@@ -94,7 +94,7 @@ extension TripListViewModel: TripListViewModelInput {
             trips = try repository.load().sorted { $0.createdAt > $1.createdAt }
         } catch {
             trips = []
-            errorMessageSubject.send("專案讀取失敗")
+            errorMessageSubject.send("旅程讀取失敗")
         }
         publish()
     }
@@ -121,7 +121,7 @@ extension TripListViewModel: TripListViewModelInput {
             try repository.save(trips)
         } catch {
             trips.insert(removed, at: index)
-            errorMessageSubject.send("專案刪除失敗，請再試一次")
+            errorMessageSubject.send("旅程刪除失敗，請再試一次")
             publish()
             return
         }

@@ -77,6 +77,7 @@ final class ShoppingListViewController: UIViewController {
 
 ## Text And Formatting
 - User-facing strings are Traditional Chinese.
+- User-facing terms: a `Trip` is **旅程** and the shopping list is **消費紀錄**. Do not show 專案 or 購物清單 to the user; the type names in code stay as they are.
 - Formatting belongs in the ViewModel, not the view. Never interpolate a raw `Double` into a user-facing label.
 - Avoid magic numbers. Put spacing, sizes, tax rates, and limits in a private `enum Constants` next to the type that uses them.
 

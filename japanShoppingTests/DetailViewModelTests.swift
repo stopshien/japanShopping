@@ -253,7 +253,7 @@ final class DetailViewModelTests: XCTestCase {
         viewModel.input.saveTapped()
 
         XCTAssertTrue(routes.isEmpty)
-        XCTAssertEqual(message, "購物清單儲存失敗，請再試一次")
+        XCTAssertEqual(message, "消費紀錄儲存失敗，請再試一次")
     }
 
     // MARK: - 照片

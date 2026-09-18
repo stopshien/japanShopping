@@ -95,7 +95,7 @@ final class TripEditorViewModelTests: XCTestCase {
         XCTAssertEqual(repository.trips.count, 1)
         XCTAssertEqual(repository.trips.first?.name, "東京賞櫻")
         XCTAssertEqual(repository.trips.first?.currency, .koreanWon)
-        XCTAssertEqual(repository.currentTripID, repository.trips.first?.id, "新建的專案要立即成為使用中")
+        XCTAssertEqual(repository.currentTripID, repository.trips.first?.id, "新建的旅程要立即成為使用中")
     }
 
     func testCreatingKeepsExistingTrips() {
@@ -126,8 +126,8 @@ final class TripEditorViewModelTests: XCTestCase {
 
         XCTAssertEqual(repository.trips.first?.name, "新名稱")
         XCTAssertEqual(repository.trips.first?.currency, .koreanWon)
-        XCTAssertEqual(repository.trips.count, 2, "編輯不該新增專案")
-        XCTAssertEqual(repository.currentTripID, other.id, "編輯不該改變使用中的專案")
+        XCTAssertEqual(repository.trips.count, 2, "編輯不該新增旅程")
+        XCTAssertEqual(repository.currentTripID, other.id, "編輯不該改變使用中的旅程")
     }
 
     func testEditingPrefillsTheExistingValues() {
@@ -158,7 +158,7 @@ final class TripEditorViewModelTests: XCTestCase {
         viewModel.input.confirmTapped()
 
         XCTAssertFalse(didFinish)
-        XCTAssertEqual(message, "專案儲存失敗，請再試一次")
+        XCTAssertEqual(message, "旅程儲存失敗，請再試一次")
     }
 }
 

@@ -123,7 +123,7 @@ extension ShoppingListViewModel: ShoppingListViewModelInput {
             rows = try repository.load().map { Row(item: $0) }
         } catch {
             rows = []
-            errorMessageSubject.send("購物清單讀取失敗")
+            errorMessageSubject.send("消費紀錄讀取失敗")
         }
         publish()
     }
@@ -189,7 +189,7 @@ extension ShoppingListViewModel: ShoppingListViewModelInput {
         } catch {
             // 清單沒存成功，剛寫入的新照片沒有人引用，一併移除。
             savedPhotoNames.forEach { try? imageStore.remove(named: $0) }
-            errorMessageSubject.send("購物清單儲存失敗，請再試一次")
+            errorMessageSubject.send("消費紀錄儲存失敗，請再試一次")
             return
         }
         rows = items.map { Row(item: $0) }

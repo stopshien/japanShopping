@@ -223,7 +223,7 @@ extension DetailViewModel: DetailViewModelInput {
             items.append(item)
             try shoppingListRepository.save(items)
         } catch {
-            errorMessageSubject.send("購物清單儲存失敗，請再試一次")
+            errorMessageSubject.send("消費紀錄儲存失敗，請再試一次")
             return
         }
 

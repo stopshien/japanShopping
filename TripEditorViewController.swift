@@ -17,18 +17,18 @@ final class TripEditorViewController: UIViewController {
 
         static let onboarding = Presentation(
             heading: "這趟要去哪裡？",
-            subheading: "建立第一個專案，之後可以再新增",
+            subheading: "建立第一個旅程，之後可以再新增",
             confirmTitle: "開始使用"
         )
 
         static let create = Presentation(
-            heading: "新的旅行",
+            heading: "新的旅程",
             subheading: "選擇這趟要換算的幣別",
-            confirmTitle: "建立專案"
+            confirmTitle: "建立旅程"
         )
 
         static let edit = Presentation(
-            heading: "編輯專案",
+            heading: "編輯旅程",
             subheading: "更改名稱或幣別",
             confirmTitle: "儲存"
         )
@@ -63,7 +63,7 @@ final class TripEditorViewController: UIViewController {
     )
 
     private let card = AppView.card()
-    private let nameTitleLabel = AppView.label("專案名稱", font: AppStyle.Font.label, color: AppColor.textSecondary)
+    private let nameTitleLabel = AppView.label("旅程名稱", font: AppStyle.Font.label, color: AppColor.textSecondary)
     private let currencyTitleLabel = AppView.label("幣別", font: AppStyle.Font.label, color: AppColor.textSecondary)
 
     private let nameTextField: UITextField = {

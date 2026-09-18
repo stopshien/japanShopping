@@ -128,7 +128,7 @@ extension TripEditorViewModel: TripEditorViewModelInput {
                 repository.saveCurrentTripID(trip.id)
             }
         } catch {
-            errorMessageSubject.send("專案儲存失敗，請再試一次")
+            errorMessageSubject.send("旅程儲存失敗，請再試一次")
             return
         }
         didFinishSubject.send(())
