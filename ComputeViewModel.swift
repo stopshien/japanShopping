@@ -16,24 +16,31 @@ struct ComputeResultDisplay: Equatable {
     let secondaryDescription: String
     let regularPurchaseTitle: String
     let taxFreePurchaseTitle: String
-    /// 有換算結果才能帶著價格前往下一頁。
+    /// 有換算結果才能帶著價格前往下一頁，按鈕也才會出現。
     let isActionable: Bool
+    /// 沒有結果時取代金額與按鈕的提示，說明現在缺什麼。有結果時為空字串。
+    let hint: String
 
-    static let empty = ComputeResultDisplay(
-        primaryAmount: "—",
-        secondaryDescription: "",
-        regularPurchaseTitle: "一般購買",
-        taxFreePurchaseTitle: "免稅購買",
-        isActionable: false
-    )
+    /// 沒有結果時只顯示提示，不放灰掉的按鈕佔位。
+    static func placeholder(_ hint: String) -> ComputeResultDisplay {
+        ComputeResultDisplay(
+            primaryAmount: "",
+            secondaryDescription: "",
+            regularPurchaseTitle: "",
+            taxFreePurchaseTitle: "",
+            isActionable: false,
+            hint: hint
+        )
+    }
 
     init(primaryAmount: String, secondaryDescription: String,
-         regularPurchaseTitle: String, taxFreePurchaseTitle: String, isActionable: Bool) {
+         regularPurchaseTitle: String, taxFreePurchaseTitle: String, isActionable: Bool, hint: String) {
         self.primaryAmount = primaryAmount
         self.secondaryDescription = secondaryDescription
         self.regularPurchaseTitle = regularPurchaseTitle
         self.taxFreePurchaseTitle = taxFreePurchaseTitle
         self.isActionable = isActionable
+        self.hint = hint
     }
 
     init(breakdown: PriceBreakdown) {
@@ -44,7 +51,8 @@ struct ComputeResultDisplay: Equatable {
             secondaryDescription: "未稅 \(untaxed)",
             regularPurchaseTitle: "一般購買　\(taxed)",
             taxFreePurchaseTitle: "免稅購買　\(untaxed)",
-            isActionable: true
+            isActionable: true,
+            hint: ""
         )
     }
 }
@@ -113,6 +121,9 @@ final class ComputeViewModel: ComputeViewModelType {
         static let rateSignificantDigits = 4
         static let rateLoading = "匯率下載中…"
         static let rateFailed = "匯率更新失敗・點此重試"
+        static let hintEnterPrice = "輸入價格即可換算"
+        static let hintRateLoading = "匯率下載中，稍後自動換算"
+        static let hintRateFailed = "匯率無法取得，暫時無法換算"
     }
 
     private let service: ExchangeRateService
@@ -141,7 +152,7 @@ final class ComputeViewModel: ComputeViewModelType {
     private let priceTagLabelSubject = CurrentValueSubject<String, Never>(TaxMode.includingTax.priceTagLabel)
     private let isTaxExcludedSubject = CurrentValueSubject<Bool, Never>(false)
     private let isTaxExcludedToggleVisibleSubject: CurrentValueSubject<Bool, Never>
-    private let resultSubject = CurrentValueSubject<ComputeResultDisplay, Never>(.empty)
+    private let resultSubject = CurrentValueSubject<ComputeResultDisplay, Never>(.placeholder(Constants.hintEnterPrice))
     private let amountFieldTextSubject = PassthroughSubject<String, Never>()
     private let routeSubject = PassthroughSubject<ComputeRoute, Never>()
 
@@ -253,7 +264,13 @@ final class ComputeViewModel: ComputeViewModelType {
 
     private func clearResult() {
         breakdown = nil
-        resultSubject.send(.empty)
+        resultSubject.send(.placeholder(currentHint))
+    }
+
+    /// 沒有結果時告訴使用者缺的是什麼：價格，還是匯率。
+    private var currentHint: String {
+        guard Double(amountText) != nil else { return Constants.hintEnterPrice }
+        return rateLoadFailed ? Constants.hintRateFailed : Constants.hintRateLoading
     }
 
     /// 任何會影響結果的輸入變動時都重算。
@@ -274,7 +291,7 @@ final class ComputeViewModel: ComputeViewModelType {
         resultSubject.send(ComputeResultDisplay(breakdown: breakdown))
     }
 
-    /// 失敗時不跳提示框：匯率那一行改成可點的重試。
+    /// 失敗時不跳提示框：匯率那一行改成可點的重試，結果區說明暫時無法換算。
     private func loadRate() {
         rateLoadFailed = false
         isRateRetryableSubject.send(false)

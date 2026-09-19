@@ -98,6 +98,10 @@ final class ComputeViewController: UIViewController {
         "台幣", font: AppStyle.Font.label, color: AppColor.textSecondary, alignment: .center
     )
     private let primaryAmountLabel = AppView.label(font: AppStyle.Font.resultNumber, alignment: .center)
+    /// 沒有結果時取代金額與按鈕，說明現在缺價格還是缺匯率。
+    private let hintLabel = AppView.label(
+        font: AppStyle.Font.body, color: AppColor.textSecondary, alignment: .center
+    )
     private let secondaryAmountLabel = AppView.label(
         font: AppStyle.Font.body, color: AppColor.textSecondary, alignment: .center
     )
@@ -197,6 +201,7 @@ final class ComputeViewController: UIViewController {
         let resultStack = AppView.cardStack(in: resultCard, spacing: AppStyle.Spacing.tight)
         [
             resultTitleLabel,
+            hintLabel,
             primaryAmountLabel,
             secondaryAmountLabel,
             regularPurchaseButton,
@@ -414,14 +419,16 @@ final class ComputeViewController: UIViewController {
 
     // MARK: - Private
 
+    /// 沒有結果時只留提示，不放灰掉的按鈕佔位。
     private func render(_ result: ComputeResultDisplay) {
+        hintLabel.text = result.hint
+        hintLabel.isHidden = result.isActionable
         primaryAmountLabel.text = result.primaryAmount
         secondaryAmountLabel.text = result.secondaryDescription
-        secondaryAmountLabel.isHidden = result.secondaryDescription.isEmpty
         regularPurchaseButton.setTitle(result.regularPurchaseTitle, for: .normal)
         taxFreePurchaseButton.setTitle(result.taxFreePurchaseTitle, for: .normal)
-        regularPurchaseButton.isEnabled = result.isActionable
-        taxFreePurchaseButton.isEnabled = result.isActionable
+        [primaryAmountLabel, secondaryAmountLabel, regularPurchaseButton, taxFreePurchaseButton]
+            .forEach { $0.isHidden = !result.isActionable }
     }
 
     private func rebuildTaxCategorySegments(with titles: [String]) {

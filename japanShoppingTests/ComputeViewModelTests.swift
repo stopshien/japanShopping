@@ -27,9 +27,9 @@ private final class ExchangeRateServiceStub: ExchangeRateService {
 }
 
 private extension ComputeResultDisplay {
-    /// 測試用：把大字與補充合成一行比對，沒有結果時就是大字的「—」。
+    /// 測試用：把大字與補充合成一行比對，沒有結果時就是提示文字。
     var summary: String {
-        isActionable ? "\(secondaryDescription)｜\(primaryAmount)" : primaryAmount
+        isActionable ? "\(secondaryDescription)｜\(primaryAmount)" : hint
     }
 }
 
@@ -105,6 +105,19 @@ final class ComputeViewModelTests: XCTestCase {
         XCTAssertEqual(isRetryable, true)
     }
 
+    func testRateFailureExplainsWhyThereIsNoResult() {
+        service.result = .failure(StubError.failure)
+        var text: String?
+        viewModel.output.result.sink { text = $0.summary }.store(in: &cancellables)
+
+        viewModel.input.viewDidLoad()
+        waitForMainQueue()
+        XCTAssertEqual(text, "輸入價格即可換算", "還沒輸入價格時，先請使用者輸入")
+
+        viewModel.input.amountTextChanged("1000")
+        XCTAssertEqual(text, "匯率無法取得，暫時無法換算")
+    }
+
     func testRetryLoadsTheRateAndComputesTheTypedPrice() {
         service.result = .failure(StubError.failure)
         var rateText: String?
@@ -175,7 +188,7 @@ final class ComputeViewModelTests: XCTestCase {
         waitForMainQueue()
         viewModel.input.amountTextChanged("一千")
 
-        XCTAssertEqual(text, "—")
+        XCTAssertEqual(text, "輸入價格即可換算")
     }
 
     /// 匯率還沒下載回來時，遷移前會用匯率 0 算出 0 元。現在先顯示提示，匯率到了再自動算出結果。
@@ -184,7 +197,7 @@ final class ComputeViewModelTests: XCTestCase {
         viewModel.output.result.sink { text = $0.summary }.store(in: &cancellables)
 
         viewModel.input.amountTextChanged("1000")
-        XCTAssertEqual(text, "—")
+        XCTAssertEqual(text, "匯率下載中，稍後自動換算", "有價格但還沒有匯率，說明缺的是匯率")
 
         viewModel.input.viewDidLoad()
         waitForMainQueue()
@@ -213,7 +226,7 @@ final class ComputeViewModelTests: XCTestCase {
         viewModel.input.amountTextChanged("1000")
         viewModel.input.amountTextChanged("")
 
-        XCTAssertEqual(text, "—")
+        XCTAssertEqual(text, "輸入價格即可換算")
     }
 
     // MARK: - 帶價格前往下一頁
@@ -273,13 +286,13 @@ final class ComputeViewModelTests: XCTestCase {
         viewModel.input.amountTextChanged("1000")
         viewModel.input.itemSaved()
 
-        XCTAssertEqual(text, "—")
+        XCTAssertEqual(text, "輸入價格即可換算")
         XCTAssertEqual(fieldTexts.last, "")
 
         // 舊的價格不能再被帶到下一件商品。
         viewModel.input.usePrice(for: .excludingTax)
         XCTAssertTrue(routes.isEmpty)
-        XCTAssertEqual(text, "—")
+        XCTAssertEqual(text, "輸入價格即可換算")
     }
 
     // MARK: - 商品稅率類別
@@ -449,7 +462,7 @@ final class ComputeViewModelTests: XCTestCase {
         switchToWonTrip()
         viewModel.input.reloadSettings()
 
-        XCTAssertEqual(text, "—")
+        XCTAssertEqual(text, "輸入價格即可換算")
         XCTAssertEqual(fieldTexts.last, "", "日幣的金額不能被當成韓幣重算")
         viewModel.input.usePrice(for: .excludingTax)
         XCTAssertTrue(routes.isEmpty, "結果已清空，不該還能帶價格前往下一頁")
@@ -515,7 +528,8 @@ final class ComputeViewModelTests: XCTestCase {
     func testResultOffersRegularAndTaxFreePurchaseWithAmounts() {
         var result: ComputeResultDisplay?
         viewModel.output.result.sink { result = $0 }.store(in: &cancellables)
-        XCTAssertEqual(result, .empty)
+        XCTAssertEqual(result, .placeholder("輸入價格即可換算"))
+        XCTAssertEqual(result?.isActionable, false, "沒有結果時不顯示按鈕")
 
         viewModel.input.viewDidLoad()
         waitForMainQueue()
