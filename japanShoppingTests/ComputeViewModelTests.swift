@@ -149,7 +149,7 @@ final class ComputeViewModelTests: XCTestCase {
 
         viewModel.input.viewDidLoad()
         waitForMainQueue()
-        XCTAssertEqual(text, "未稅 NT$ 200｜NT$ 220")
+        XCTAssertEqual(text, "未稅 NT$ 182｜NT$ 200")
     }
 
     func testChangingTaxModeRecomputes() {
@@ -159,10 +159,10 @@ final class ComputeViewModelTests: XCTestCase {
         viewModel.input.viewDidLoad()
         waitForMainQueue()
         viewModel.input.amountTextChanged("1100")
-        XCTAssertEqual(text, "未稅 NT$ 220｜NT$ 242")
+        XCTAssertEqual(text, "未稅 NT$ 200｜NT$ 220", "預設是含稅標價")
 
-        viewModel.input.taxModeChanged(to: .includingTax)
-        XCTAssertEqual(text, "未稅 NT$ 200｜NT$ 220")
+        viewModel.input.taxModeChanged(to: .excludingTax)
+        XCTAssertEqual(text, "未稅 NT$ 220｜NT$ 242")
     }
 
     func testClearingTheAmountClearsTheResult() {
@@ -190,7 +190,7 @@ final class ComputeViewModelTests: XCTestCase {
 
         XCTAssertEqual(routes.count, 1)
         guard case .detail(let item) = routes.first else { return XCTFail("應導向明細頁") }
-        XCTAssertEqual(item.price, 200)
+        XCTAssertEqual(item.price, 182)
         XCTAssertEqual(item.taxState, "未稅")
     }
 
@@ -204,7 +204,7 @@ final class ComputeViewModelTests: XCTestCase {
         viewModel.input.usePrice(for: .includingTax)
 
         guard case .detail(let item) = routes.first else { return XCTFail("應導向明細頁") }
-        XCTAssertEqual(item.price, 220)
+        XCTAssertEqual(item.price, 200)
         XCTAssertEqual(item.taxState, "含稅")
     }
 
@@ -278,7 +278,7 @@ final class ComputeViewModelTests: XCTestCase {
         viewModel.input.amountTextChanged("1000")
 
         // 1000 * 0.2 = 200，含稅 200 * 1.08 = 216
-        XCTAssertEqual(text, "未稅 NT$ 200｜NT$ 216")
+        XCTAssertEqual(text, "未稅 NT$ 185｜NT$ 200")
     }
 
     /// 以含稅價反推未稅價時，稅率類別直接決定退稅基準。
@@ -303,11 +303,11 @@ final class ComputeViewModelTests: XCTestCase {
         viewModel.input.viewDidLoad()
         waitForMainQueue()
         viewModel.input.amountTextChanged("1000")
-        XCTAssertEqual(text, "未稅 NT$ 200｜NT$ 220")
+        XCTAssertEqual(text, "未稅 NT$ 182｜NT$ 200")
 
         viewModel.input.taxCategoryChanged(to: .reducedFood)
 
-        XCTAssertEqual(text, "未稅 NT$ 200｜NT$ 216")
+        XCTAssertEqual(text, "未稅 NT$ 185｜NT$ 200")
     }
 
     // MARK: - 幣別
@@ -355,7 +355,7 @@ final class ComputeViewModelTests: XCTestCase {
 
         viewModel.input.reloadSettings()
 
-        XCTAssertEqual(text, "未稅 NT$ 200｜NT$ 220", "幣別沒變就不該清掉結果")
+        XCTAssertEqual(text, "未稅 NT$ 182｜NT$ 200", "幣別沒變就不該清掉結果")
     }
 
     func testSettingsAndTripListRoutes() {
@@ -390,7 +390,7 @@ final class ComputeViewModelTests: XCTestCase {
         viewModel.input.amountTextChanged("10000")
 
         // 10000 * 0.025 = 250，含稅 250 * 1.1 = 275
-        XCTAssertEqual(text, "未稅 NT$ 250｜NT$ 275")
+        XCTAssertEqual(text, "未稅 NT$ 227｜NT$ 250")
     }
 
     /// 換幣別後上一次的結果已經無效，不能還留在畫面上被帶去下一頁。
@@ -405,7 +405,7 @@ final class ComputeViewModelTests: XCTestCase {
         viewModel.input.viewDidLoad()
         waitForMainQueue()
         viewModel.input.amountTextChanged("1000")
-        XCTAssertEqual(text, "未稅 NT$ 200｜NT$ 220")
+        XCTAssertEqual(text, "未稅 NT$ 182｜NT$ 200")
 
         switchToWonTrip()
         viewModel.input.reloadSettings()
@@ -470,7 +470,7 @@ final class ComputeViewModelTests: XCTestCase {
         viewModel.input.amountTextChanged("1,0005")
 
         XCTAssertEqual(fieldTexts, ["1,000", "10,005"])
-        XCTAssertEqual(text, "未稅 NT$ 2,001｜NT$ 2,201")
+        XCTAssertEqual(text, "未稅 NT$ 1,819｜NT$ 2,001")
     }
 
     func testResultOffersRegularAndTaxFreePurchaseWithAmounts() {
@@ -482,8 +482,58 @@ final class ComputeViewModelTests: XCTestCase {
         waitForMainQueue()
         viewModel.input.amountTextChanged("1000")
 
-        XCTAssertEqual(result?.regularPurchaseTitle, "一般購買　NT$ 220")
-        XCTAssertEqual(result?.taxFreePurchaseTitle, "免稅購買　NT$ 200")
+        XCTAssertEqual(result?.regularPurchaseTitle, "一般購買　NT$ 200")
+        XCTAssertEqual(result?.taxFreePurchaseTitle, "免稅購買　NT$ 182")
         XCTAssertEqual(result?.isActionable, true)
+    }
+
+    // MARK: - 標價未含稅開關
+
+    /// 日韓標價大多含稅，預設未稅會讓沒注意到的人多算 10%。
+    func testDefaultsToTaxInclusivePriceTags() {
+        var label: String?
+        var isTaxExcluded: Bool?
+        viewModel.output.priceTagLabel.sink { label = $0 }.store(in: &cancellables)
+        viewModel.output.isTaxExcluded.sink { isTaxExcluded = $0 }.store(in: &cancellables)
+
+        XCTAssertEqual(label, "含稅價")
+        XCTAssertEqual(isTaxExcluded, false)
+
+        viewModel.input.taxModeChanged(to: .excludingTax)
+        XCTAssertEqual(label, "未稅價")
+        XCTAssertEqual(isTaxExcluded, true)
+    }
+
+    /// 未稅標價通常只是某一件商品，存完不回到含稅的話，忘了關就會一路少算稅。
+    func testSavingAnItemResetsToTaxInclusive() {
+        var isTaxExcluded: Bool?
+        viewModel.output.isTaxExcluded.sink { isTaxExcluded = $0 }.store(in: &cancellables)
+
+        viewModel.input.taxModeChanged(to: .excludingTax)
+        viewModel.input.itemSaved()
+
+        XCTAssertEqual(isTaxExcluded, false)
+    }
+
+    func testSwitchingCurrencyResetsToTaxInclusive() {
+        var isTaxExcluded: Bool?
+        viewModel.output.isTaxExcluded.sink { isTaxExcluded = $0 }.store(in: &cancellables)
+
+        viewModel.input.taxModeChanged(to: .excludingTax)
+        switchToWonTrip()
+        viewModel.input.reloadSettings()
+
+        XCTAssertEqual(isTaxExcluded, false)
+    }
+
+    /// 韓國標價一律含稅，不需要開關。
+    func testToggleIsHiddenForCurrenciesWithoutTaxExcludedPriceTags() {
+        var isVisible: Bool?
+        viewModel.output.isTaxExcludedToggleVisible.sink { isVisible = $0 }.store(in: &cancellables)
+        XCTAssertEqual(isVisible, true, "日本常見未稅標價")
+
+        switchToWonTrip()
+        viewModel.input.reloadSettings()
+        XCTAssertEqual(isVisible, false)
     }
 }

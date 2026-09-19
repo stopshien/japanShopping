@@ -75,6 +75,21 @@ enum Currency: Int, CaseIterable, Codable {
         }
     }
 
+    /// 該國店家是否常見未稅標價。
+    ///
+    /// 日本自 2021 年起規定標示含稅總價，但「1,000円（税込1,100円）」這種
+    /// 未稅價寫得比較大的標法仍很常見，所以保留切換。
+    /// 韓國零售標價幾乎都含稅；「부가세 별도」（加值稅另計）多見於飯店與部分餐廳，
+    /// 不是這個 App 的購物情境，因此不顯示開關，讓畫面保持簡潔。
+    var hasTaxExcludedPriceTags: Bool {
+        switch self {
+        case .japaneseYen:
+            return true
+        case .koreanWon:
+            return false
+        }
+    }
+
     /// 該國是否有輕減稅率。沒有的話就不需要讓使用者選類別。
     var hasReducedTaxRate: Bool {
         TaxCategory.allCases.map(taxMultiplier(for:)).uniqueCount > 1

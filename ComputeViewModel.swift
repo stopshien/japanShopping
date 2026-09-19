@@ -67,6 +67,7 @@ protocol ComputeViewModelInput {
     func reloadSettings()
     func taxCategoryChanged(to category: TaxCategory)
     func amountTextChanged(_ text: String)
+    /// 標價是否未含稅。預設為含稅，由「標價未含稅（税抜）」開關切換。
     func taxModeChanged(to mode: TaxMode)
     /// 一般購買付含稅價、免稅購買付未稅價。存進紀錄的仍是「含稅」或「未稅」。
     func usePrice(for mode: TaxMode)
@@ -87,6 +88,12 @@ protocol ComputeViewModelOutput {
     var amountFieldLabel: AnyPublisher<String, Never> { get }
     var taxCategoryTitles: AnyPublisher<[String], Never> { get }
     var isTaxCategoryVisible: AnyPublisher<Bool, Never> { get }
+    /// 輸入框旁的標註，「含稅價」或「未稅價」。
+    var priceTagLabel: AnyPublisher<String, Never> { get }
+    /// 目前是否以未稅標價換算，決定開關狀態與標註的強調色。
+    var isTaxExcluded: AnyPublisher<Bool, Never> { get }
+    /// 只有常見未稅標價的國家才顯示開關。
+    var isTaxExcludedToggleVisible: AnyPublisher<Bool, Never> { get }
     var result: AnyPublisher<ComputeResultDisplay, Never> { get }
     /// 需要改寫輸入框內容時送出：加上千分位，或清空。
     var amountFieldText: AnyPublisher<String, Never> { get }
@@ -111,7 +118,8 @@ final class ComputeViewModel: ComputeViewModelType {
     private var currency: Currency
     private var updatedAt: String?
     private var amountText = ""
-    private var taxMode: TaxMode = .excludingTax
+    /// 預設含稅：日韓的標價大多含稅，預設未稅會讓沒注意到的人多算 10%。
+    private var taxMode: TaxMode = .includingTax
     private var taxCategory: TaxCategory = .standard
     private var breakdown: PriceBreakdown?
     private var cancellables = Set<AnyCancellable>()
@@ -122,6 +130,9 @@ final class ComputeViewModel: ComputeViewModelType {
     private let amountFieldLabelSubject: CurrentValueSubject<String, Never>
     private let taxCategoryTitlesSubject: CurrentValueSubject<[String], Never>
     private let isTaxCategoryVisibleSubject: CurrentValueSubject<Bool, Never>
+    private let priceTagLabelSubject = CurrentValueSubject<String, Never>(TaxMode.includingTax.priceTagLabel)
+    private let isTaxExcludedSubject = CurrentValueSubject<Bool, Never>(false)
+    private let isTaxExcludedToggleVisibleSubject: CurrentValueSubject<Bool, Never>
     private let resultSubject = CurrentValueSubject<ComputeResultDisplay, Never>(.empty)
     private let amountFieldTextSubject = PassthroughSubject<String, Never>()
     private let routeSubject = PassthroughSubject<ComputeRoute, Never>()
@@ -140,6 +151,7 @@ final class ComputeViewModel: ComputeViewModelType {
         self.amountFieldLabelSubject = CurrentValueSubject(initialCurrency.amountLabel)
         self.taxCategoryTitlesSubject = CurrentValueSubject(ComputeViewModel.taxCategoryTitles(for: initialCurrency))
         self.isTaxCategoryVisibleSubject = CurrentValueSubject(initialCurrency.hasReducedTaxRate)
+        self.isTaxExcludedToggleVisibleSubject = CurrentValueSubject(initialCurrency.hasTaxExcludedPriceTags)
     }
 
     var input: ComputeViewModelInput { self }
@@ -183,6 +195,7 @@ final class ComputeViewModel: ComputeViewModelType {
         amountFieldLabelSubject.send(currency.amountLabel)
         taxCategoryTitlesSubject.send(Self.taxCategoryTitles(for: currency))
         isTaxCategoryVisibleSubject.send(currency.hasReducedTaxRate)
+        isTaxExcludedToggleVisibleSubject.send(currency.hasTaxExcludedPriceTags)
         publishRateDescription()
         recompute()
     }
@@ -214,6 +227,16 @@ final class ComputeViewModel: ComputeViewModelType {
     /// 標籤帶上實際稅率（例如「食品 8%」），稅率調整時標籤不會對不上。
     private static func taxCategoryTitles(for currency: Currency) -> [String] {
         TaxCategory.allCases.map { "\($0.title) \(currency.taxPercent(for: $0))%" }
+    }
+
+    private func setTaxMode(_ mode: TaxMode) {
+        taxMode = mode
+        priceTagLabelSubject.send(mode.priceTagLabel)
+        isTaxExcludedSubject.send(mode == .excludingTax)
+    }
+
+    private func resetTaxMode() {
+        setTaxMode(.includingTax)
     }
 
     private func clearAmount() {
@@ -282,6 +305,7 @@ extension ComputeViewModel: ComputeViewModelInput {
         currency = updated
         // 輸入的數字是舊幣別的價格，不能直接當成新幣別重算。
         clearAmount()
+        resetTaxMode()
         refreshForCurrentCurrency()
     }
 
@@ -302,7 +326,7 @@ extension ComputeViewModel: ComputeViewModelInput {
     }
 
     func taxModeChanged(to mode: TaxMode) {
-        taxMode = mode
+        setTaxMode(mode)
         recompute()
     }
 
@@ -312,8 +336,11 @@ extension ComputeViewModel: ComputeViewModelInput {
         routeSubject.send(.detail(item))
     }
 
+    /// 未稅標價通常只是某一件商品的情況，存完就回到含稅，
+    /// 否則忘了關開關，之後每一筆都會少算稅。
     func itemSaved() {
         clearAmount()
+        resetTaxMode()
         clearResult()
     }
 
@@ -340,6 +367,11 @@ extension ComputeViewModel: ComputeViewModelOutput {
     var amountFieldLabel: AnyPublisher<String, Never> { amountFieldLabelSubject.eraseToAnyPublisher() }
     var taxCategoryTitles: AnyPublisher<[String], Never> { taxCategoryTitlesSubject.eraseToAnyPublisher() }
     var isTaxCategoryVisible: AnyPublisher<Bool, Never> { isTaxCategoryVisibleSubject.eraseToAnyPublisher() }
+    var priceTagLabel: AnyPublisher<String, Never> { priceTagLabelSubject.eraseToAnyPublisher() }
+    var isTaxExcluded: AnyPublisher<Bool, Never> { isTaxExcludedSubject.eraseToAnyPublisher() }
+    var isTaxExcludedToggleVisible: AnyPublisher<Bool, Never> {
+        isTaxExcludedToggleVisibleSubject.eraseToAnyPublisher()
+    }
     var result: AnyPublisher<ComputeResultDisplay, Never> { resultSubject.eraseToAnyPublisher() }
     var amountFieldText: AnyPublisher<String, Never> { amountFieldTextSubject.eraseToAnyPublisher() }
     var route: AnyPublisher<ComputeRoute, Never> { routeSubject.eraseToAnyPublisher() }

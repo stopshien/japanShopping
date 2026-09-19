@@ -13,6 +13,7 @@ final class ComputeViewController: UIViewController {
         static let amountFieldHeight: CGFloat = 64
         static let segmentHeight: CGFloat = 36
         static let symbolWidth: CGFloat = 44
+        static let priceTagWidth: CGFloat = 72
         static let tripChevronSize: CGFloat = 11
         static let tripChevronPadding: CGFloat = 6
     }
@@ -57,7 +58,28 @@ final class ComputeViewController: UIViewController {
     private let resultCard = AppView.card()
 
     private let taxCategorySegmentedControl = AppView.segmentedControl(items: [])
-    private let taxSegmentedControl = AppView.segmentedControl(items: TaxMode.allCases.map(\.title))
+
+    /// 輸入框右側的「含稅價／未稅價」標註。
+    private let priceTagLabel = AppView.label(font: AppStyle.Font.label, alignment: .center)
+
+    private let taxExcludedTitleLabel = AppView.label(
+        "標價未含稅（税抜）", font: AppStyle.Font.body, color: AppColor.textPrimary
+    )
+
+    private let taxExcludedSwitch: UISwitch = {
+        let toggle = UISwitch()
+        toggle.onTintColor = AppColor.accent
+        toggle.accessibilityLabel = "標價未含稅"
+        return toggle
+    }()
+
+    private lazy var taxExcludedRow: UIStackView = {
+        let row = UIStackView(arrangedSubviews: [taxExcludedTitleLabel, taxExcludedSwitch])
+        row.axis = .horizontal
+        row.alignment = .center
+        row.spacing = AppStyle.Spacing.normal
+        return row
+    }()
 
     private let amountTextField: UITextField = {
         let textField = AppView.textField(keyboardType: .decimalPad)
@@ -153,12 +175,22 @@ final class ComputeViewController: UIViewController {
         symbolContainer.addSubview(currencySymbolLabel)
         amountTextField.leftView = symbolContainer
 
-        // 輸入卡：稅率類別（僅雙稅率國家）、金額、標價未稅或含稅
+        let priceTagContainer = UIView(
+            frame: CGRect(x: 0, y: 0, width: Constants.priceTagWidth, height: Constants.amountFieldHeight)
+        )
+        priceTagLabel.translatesAutoresizingMaskIntoConstraints = true
+        priceTagLabel.frame = priceTagContainer.bounds
+        priceTagLabel.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        priceTagContainer.addSubview(priceTagLabel)
+        amountTextField.rightView = priceTagContainer
+        amountTextField.rightViewMode = .always
+
+        // 輸入卡：稅率類別（僅雙稅率國家）、金額、標價未含稅開關（僅常見未稅標價的國家）
         let inputStack = AppView.cardStack(in: inputCard, spacing: AppStyle.Spacing.tight + 4)
         [
             taxCategorySegmentedControl,
             amountTextField,
-            taxSegmentedControl
+            taxExcludedRow
         ].forEach(inputStack.addArrangedSubview)
 
         // 結果卡：台幣大字、未稅補充、兩種購買方式
@@ -180,12 +212,10 @@ final class ComputeViewController: UIViewController {
 
         tripButton.addTarget(self, action: #selector(tripListTapped), for: .touchUpInside)
         taxCategorySegmentedControl.addTarget(self, action: #selector(taxCategoryChanged), for: .valueChanged)
-        taxSegmentedControl.addTarget(self, action: #selector(taxModeChanged), for: .valueChanged)
+        taxExcludedSwitch.addTarget(self, action: #selector(taxExcludedChanged), for: .valueChanged)
         amountTextField.addTarget(self, action: #selector(amountTextChanged), for: .editingChanged)
         regularPurchaseButton.addTarget(self, action: #selector(regularPurchaseTapped), for: .touchUpInside)
         taxFreePurchaseButton.addTarget(self, action: #selector(taxFreePurchaseTapped), for: .touchUpInside)
-
-        taxSegmentedControl.selectedSegmentIndex = TaxMode.excludingTax.rawValue
     }
 
     private func setupConstraints() {
@@ -207,8 +237,7 @@ final class ComputeViewController: UIViewController {
             ),
 
             amountTextField.heightAnchor.constraint(equalToConstant: Constants.amountFieldHeight),
-            taxCategorySegmentedControl.heightAnchor.constraint(equalToConstant: Constants.segmentHeight),
-            taxSegmentedControl.heightAnchor.constraint(equalToConstant: Constants.segmentHeight)
+            taxCategorySegmentedControl.heightAnchor.constraint(equalToConstant: Constants.segmentHeight)
         ])
     }
 
@@ -255,6 +284,30 @@ final class ComputeViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] isVisible in
                 self?.taxCategorySegmentedControl.isHidden = !isVisible
+            }
+            .store(in: &cancellables)
+
+        viewModel.output.priceTagLabel
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] text in
+                self?.priceTagLabel.text = text
+            }
+            .store(in: &cancellables)
+
+        // 未稅時標註改用強調色，不看開關也知道現在不是預設的含稅。
+        viewModel.output.isTaxExcluded
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isTaxExcluded in
+                self?.taxExcludedSwitch.setOn(isTaxExcluded, animated: true)
+                self?.priceTagLabel.textColor = isTaxExcluded ? AppColor.accent : AppColor.textSecondary
+                self?.priceTagLabel.font = isTaxExcluded ? AppStyle.Font.bodyEmphasis : AppStyle.Font.label
+            }
+            .store(in: &cancellables)
+
+        viewModel.output.isTaxExcludedToggleVisible
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isVisible in
+                self?.taxExcludedRow.isHidden = !isVisible
             }
             .store(in: &cancellables)
 
@@ -319,9 +372,8 @@ final class ComputeViewController: UIViewController {
         viewModel.input.taxCategoryChanged(to: category)
     }
 
-    @objc private func taxModeChanged() {
-        guard let mode = TaxMode(rawValue: taxSegmentedControl.selectedSegmentIndex) else { return }
-        viewModel.input.taxModeChanged(to: mode)
+    @objc private func taxExcludedChanged() {
+        viewModel.input.taxModeChanged(to: taxExcludedSwitch.isOn ? .excludingTax : .includingTax)
     }
 
     @objc private func amountTextChanged() {

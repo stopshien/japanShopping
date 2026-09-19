@@ -21,6 +21,11 @@ enum TaxMode: Int, CaseIterable {
             return "含稅"
         }
     }
+
+    /// 首頁輸入框旁的標註。
+    var priceTagLabel: String {
+        "\(title)價"
+    }
 }
 
 /// 一筆外幣價格換算後的台幣結果。
