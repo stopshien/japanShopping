@@ -201,6 +201,8 @@ final class DetailViewController: UIViewController {
             navigationController?.pushViewController(factory.makeShoppingList(allowsBack: true), animated: true)
 
         case .savedToShoppingList:
+            // 存檔成功給一下「成功」的觸覺回饋，不看螢幕也知道已經記下來了。
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
             onSaved?()
             navigationController?.pushViewController(factory.makeShoppingList(allowsBack: false), animated: true)
         }

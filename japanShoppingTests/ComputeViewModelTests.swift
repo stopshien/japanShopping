@@ -589,4 +589,21 @@ final class ComputeViewModelTests: XCTestCase {
         viewModel.input.reloadSettings()
         XCTAssertEqual(isVisible, false)
     }
+
+    // MARK: - VoiceOver
+
+    /// 「NT$」會被逐字念出，朗讀版本改成「台幣 … 元」。
+    func testResultHasSpokenVersionsForVoiceOver() {
+        var result: ComputeResultDisplay?
+        viewModel.output.result.sink { result = $0 }.store(in: &cancellables)
+
+        viewModel.input.viewDidLoad()
+        waitForMainQueue()
+        viewModel.input.amountTextChanged("10000")
+
+        XCTAssertEqual(result?.spokenPrimaryAmount, "含稅 台幣 2,000 元")
+        XCTAssertEqual(result?.spokenSecondaryDescription, "未稅 台幣 1,818 元")
+        XCTAssertEqual(result?.spokenRegularPurchase, "一般購買，台幣 2,000 元")
+        XCTAssertEqual(result?.spokenTaxFreePurchase, "免稅購買，台幣 1,818 元")
+    }
 }

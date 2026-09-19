@@ -52,4 +52,8 @@ final class PriceTextTests: XCTestCase {
         XCTAssertNil(PriceText.groupedInput(""))
         XCTAssertNil(PriceText.groupedInput("abc"))
     }
+
+    func testSpokenTWDAvoidsTheDollarSign() {
+        XCTAssertEqual(PriceText.twdSpoken(1254), "台幣 1,254 元")
+    }
 }

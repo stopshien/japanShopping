@@ -16,11 +16,15 @@ final class ComputeViewController: UIViewController {
         static let priceTagWidth: CGFloat = 72
         static let tripChevronSize: CGFloat = 11
         static let tripChevronPadding: CGFloat = 6
+        static let resultFadeDuration: TimeInterval = 0.2
     }
 
     private let viewModel: ComputeViewModelType
     private let factory: ScreenFactory
     private var cancellables = Set<AnyCancellable>()
+    /// 只有在「提示 ↔ 結果」切換時才淡入，打字時數字要立即更新。
+    /// 初始為 nil，確保第一次顯示時一定會套用可見狀態。
+    private var isShowingResult: Bool?
 
     // MARK: - Views
 
@@ -422,13 +426,35 @@ final class ComputeViewController: UIViewController {
     /// 沒有結果時只留提示，不放灰掉的按鈕佔位。
     private func render(_ result: ComputeResultDisplay) {
         hintLabel.text = result.hint
-        hintLabel.isHidden = result.isActionable
         primaryAmountLabel.text = result.primaryAmount
         secondaryAmountLabel.text = result.secondaryDescription
         regularPurchaseButton.setTitle(result.regularPurchaseTitle, for: .normal)
         taxFreePurchaseButton.setTitle(result.taxFreePurchaseTitle, for: .normal)
-        [primaryAmountLabel, secondaryAmountLabel, regularPurchaseButton, taxFreePurchaseButton]
-            .forEach { $0.isHidden = !result.isActionable }
+
+        primaryAmountLabel.accessibilityLabel = result.spokenPrimaryAmount
+        secondaryAmountLabel.accessibilityLabel = result.spokenSecondaryDescription
+        regularPurchaseButton.accessibilityLabel = result.spokenRegularPurchase
+        taxFreePurchaseButton.accessibilityLabel = result.spokenTaxFreePurchase
+
+        guard result.isActionable != isShowingResult else { return }
+        isShowingResult = result.isActionable
+        let resultViews: [UIView] = [primaryAmountLabel, secondaryAmountLabel, regularPurchaseButton, taxFreePurchaseButton]
+        let applyVisibility = {
+            self.hintLabel.isHidden = result.isActionable
+            resultViews.forEach { $0.isHidden = !result.isActionable }
+        }
+
+        // 第一次顯示、畫面還沒出現，或開啟「減少動態效果」時不播放動畫。
+        guard !UIAccessibility.isReduceMotionEnabled, view.window != nil else {
+            applyVisibility()
+            return
+        }
+        UIView.transition(
+            with: resultCard,
+            duration: Constants.resultFadeDuration,
+            options: .transitionCrossDissolve,
+            animations: applyVisibility
+        )
     }
 
     private func rebuildTaxCategorySegments(with titles: [String]) {

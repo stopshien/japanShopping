@@ -20,6 +20,11 @@ struct ComputeResultDisplay: Equatable {
     let isActionable: Bool
     /// 沒有結果時取代金額與按鈕的提示，說明現在缺什麼。有結果時為空字串。
     let hint: String
+    /// 給 VoiceOver 念的版本，金額念成「台幣 254 元」而不是「N T 錢字號 254」。
+    let spokenPrimaryAmount: String
+    let spokenSecondaryDescription: String
+    let spokenRegularPurchase: String
+    let spokenTaxFreePurchase: String
 
     /// 沒有結果時只顯示提示，不放灰掉的按鈕佔位。
     static func placeholder(_ hint: String) -> ComputeResultDisplay {
@@ -34,25 +39,37 @@ struct ComputeResultDisplay: Equatable {
     }
 
     init(primaryAmount: String, secondaryDescription: String,
-         regularPurchaseTitle: String, taxFreePurchaseTitle: String, isActionable: Bool, hint: String) {
+         regularPurchaseTitle: String, taxFreePurchaseTitle: String, isActionable: Bool, hint: String,
+         spokenPrimaryAmount: String = "", spokenSecondaryDescription: String = "",
+         spokenRegularPurchase: String = "", spokenTaxFreePurchase: String = "") {
         self.primaryAmount = primaryAmount
         self.secondaryDescription = secondaryDescription
         self.regularPurchaseTitle = regularPurchaseTitle
         self.taxFreePurchaseTitle = taxFreePurchaseTitle
         self.isActionable = isActionable
         self.hint = hint
+        self.spokenPrimaryAmount = spokenPrimaryAmount
+        self.spokenSecondaryDescription = spokenSecondaryDescription
+        self.spokenRegularPurchase = spokenRegularPurchase
+        self.spokenTaxFreePurchase = spokenTaxFreePurchase
     }
 
     init(breakdown: PriceBreakdown) {
         let taxed = PriceText.twd(breakdown.taxed)
         let untaxed = PriceText.twd(breakdown.untaxed)
+        let spokenTaxed = PriceText.twdSpoken(breakdown.taxed)
+        let spokenUntaxed = PriceText.twdSpoken(breakdown.untaxed)
         self.init(
             primaryAmount: taxed,
             secondaryDescription: "未稅 \(untaxed)",
             regularPurchaseTitle: "一般購買　\(taxed)",
             taxFreePurchaseTitle: "免稅購買　\(untaxed)",
             isActionable: true,
-            hint: ""
+            hint: "",
+            spokenPrimaryAmount: "含稅 \(spokenTaxed)",
+            spokenSecondaryDescription: "未稅 \(spokenUntaxed)",
+            spokenRegularPurchase: "一般購買，\(spokenTaxed)",
+            spokenTaxFreePurchase: "免稅購買，\(spokenUntaxed)"
         )
     }
 }

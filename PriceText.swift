@@ -50,6 +50,12 @@ enum PriceText {
         "NT$ \(groupedFormatter.string(from: NSNumber(value: value)) ?? "\(value)")"
     }
 
+    /// 給 VoiceOver 念的台幣金額，例如「台幣 1,254 元」。
+    /// 「NT$」會被逐字念成「N T 錢字號」。
+    static func twdSpoken(_ value: Double) -> String {
+        "台幣 \(groupedFormatter.string(from: NSNumber(value: value)) ?? "\(value)") 元"
+    }
+
     /// 輸入中的金額加上千分位。小數部分照使用者打的保留（「1000.」要留著小數點），
     /// 整數部分不是純數字時回傳 nil，由呼叫端維持原本的文字。
     static func groupedInput(_ raw: String) -> String? {
