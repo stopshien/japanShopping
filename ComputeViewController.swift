@@ -6,11 +6,15 @@
 import Combine
 import UIKit
 
+/// 首頁：輸入外幣價格，即時看到台幣金額，再選一般或免稅購買記一筆。
 final class ComputeViewController: UIViewController {
 
     private enum Constants {
-        static let fieldHeight: CGFloat = 48
+        static let amountFieldHeight: CGFloat = 64
         static let segmentHeight: CGFloat = 36
+        static let symbolWidth: CGFloat = 44
+        static let tripChevronSize: CGFloat = 11
+        static let tripChevronPadding: CGFloat = 6
     }
 
     private let viewModel: ComputeViewModelType
@@ -19,8 +23,33 @@ final class ComputeViewController: UIViewController {
 
     // MARK: - Views
 
-    private let rateLabel = AppView.label(font: AppStyle.Font.title, alignment: .center)
-    private let updatedAtLabel = AppView.label(
+    /// 導覽列中間的旅程標籤，點了切換旅程。
+    private let tripButton: UIButton = {
+        var configuration = UIButton.Configuration.filled()
+        configuration.baseBackgroundColor = AppColor.accentSoft
+        configuration.baseForegroundColor = AppColor.textPrimary
+        configuration.cornerStyle = .capsule
+        configuration.image = UIImage(
+            systemName: "chevron.down",
+            withConfiguration: UIImage.SymbolConfiguration(pointSize: Constants.tripChevronSize, weight: .semibold)
+        )
+        configuration.imagePlacement = .trailing
+        configuration.imagePadding = Constants.tripChevronPadding
+        configuration.titleLineBreakMode = .byTruncatingTail
+        let button = UIButton(configuration: configuration)
+        button.accessibilityHint = "切換旅程"
+        return button
+    }()
+
+    private let scrollView: UIScrollView = {
+        let scrollView = UIScrollView()
+        scrollView.keyboardDismissMode = .interactive
+        scrollView.alwaysBounceVertical = true
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        return scrollView
+    }()
+
+    private let rateLabel = AppView.label(
         font: AppStyle.Font.caption, color: AppColor.textSecondary, alignment: .center
     )
 
@@ -29,17 +58,30 @@ final class ComputeViewController: UIViewController {
 
     private let taxCategorySegmentedControl = AppView.segmentedControl(items: [])
     private let taxSegmentedControl = AppView.segmentedControl(items: TaxMode.allCases.map(\.title))
-    private let amountTextField = AppView.textField(keyboardType: .decimalPad)
 
-    private let useUntaxedButton = AppView.secondaryButton(title: "使用未稅價格")
-    private let useTaxedButton = AppView.secondaryButton(title: "使用含稅價格")
+    private let amountTextField: UITextField = {
+        let textField = AppView.textField(keyboardType: .decimalPad)
+        textField.font = AppStyle.Font.amountInput
+        textField.leftViewMode = .always
+        // 幣別符號已在左邊，提示只需要一個淡色的 0。
+        textField.placeholder = "0"
+        return textField
+    }()
+
+    private let currencySymbolLabel = AppView.label(
+        font: AppStyle.Font.amountInput, color: AppColor.textSecondary, alignment: .center
+    )
 
     private let resultTitleLabel = AppView.label(
-        "換算結果", font: AppStyle.Font.label, color: AppColor.textSecondary, alignment: .center
+        "台幣", font: AppStyle.Font.label, color: AppColor.textSecondary, alignment: .center
     )
-    private let resultLabel = AppView.label(
-        "—", font: AppStyle.Font.resultNumber, alignment: .center
+    private let primaryAmountLabel = AppView.label(font: AppStyle.Font.resultNumber, alignment: .center)
+    private let secondaryAmountLabel = AppView.label(
+        font: AppStyle.Font.body, color: AppColor.textSecondary, alignment: .center
     )
+
+    private let regularPurchaseButton = AppView.primaryButton(title: "一般購買")
+    private let taxFreePurchaseButton = AppView.secondaryButton(title: "免稅購買")
 
     private let contentStackView: UIStackView = {
         let stackView = UIStackView()
@@ -72,16 +114,19 @@ final class ComputeViewController: UIViewController {
         viewModel.input.viewDidLoad()
     }
 
+    /// 還沒輸入價格時直接叫出鍵盤，進來就能打，省一次點擊。
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        if amountTextField.text?.isEmpty ?? true {
+            amountTextField.becomeFirstResponder()
+        }
+    }
+
     // MARK: - Setup
 
     private func setupViews() {
         view.backgroundColor = AppColor.brand
-        navigationItem.leftBarButtonItem = AppView.barButton(
-            systemImage: "rectangle.stack",
-            accessibilityLabel: "切換旅程",
-            target: self,
-            action: #selector(tripListTapped)
-        )
+        navigationItem.titleView = tripButton
         // rightBarButtonItems 由右往左排，設定放在最右邊。
         navigationItem.rightBarButtonItems = [
             AppView.barButton(
@@ -99,7 +144,16 @@ final class ComputeViewController: UIViewController {
         ]
         addTapToDismissKeyboard()
 
-        // 輸入卡：幣別、稅率類別、金額、未稅／含稅
+        let symbolContainer = UIView(
+            frame: CGRect(x: 0, y: 0, width: Constants.symbolWidth, height: Constants.amountFieldHeight)
+        )
+        currencySymbolLabel.translatesAutoresizingMaskIntoConstraints = true
+        currencySymbolLabel.frame = symbolContainer.bounds
+        currencySymbolLabel.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        symbolContainer.addSubview(currencySymbolLabel)
+        amountTextField.leftView = symbolContainer
+
+        // 輸入卡：稅率類別（僅雙稅率國家）、金額、標價未稅或含稅
         let inputStack = AppView.cardStack(in: inputCard, spacing: AppStyle.Spacing.tight + 4)
         [
             taxCategorySegmentedControl,
@@ -107,57 +161,68 @@ final class ComputeViewController: UIViewController {
             taxSegmentedControl
         ].forEach(inputStack.addArrangedSubview)
 
-        // 結果卡：標題 + 數字 + 兩顆帶價前往的按鈕
+        // 結果卡：台幣大字、未稅補充、兩種購買方式
         let resultStack = AppView.cardStack(in: resultCard, spacing: AppStyle.Spacing.tight)
-        [resultTitleLabel, resultLabel, useUntaxedButton, useTaxedButton].forEach(resultStack.addArrangedSubview)
-        resultStack.setCustomSpacing(AppStyle.Spacing.normal, after: resultLabel)
+        [
+            resultTitleLabel,
+            primaryAmountLabel,
+            secondaryAmountLabel,
+            regularPurchaseButton,
+            taxFreePurchaseButton
+        ].forEach(resultStack.addArrangedSubview)
+        resultStack.setCustomSpacing(AppStyle.Spacing.loose, after: secondaryAmountLabel)
 
         [rateLabel, inputCard, resultCard].forEach(contentStackView.addArrangedSubview)
-        contentStackView.setCustomSpacing(AppStyle.Spacing.loose, after: rateLabel)
+        contentStackView.setCustomSpacing(AppStyle.Spacing.tight + 4, after: rateLabel)
 
-        view.addSubview(contentStackView)
-        view.addSubview(updatedAtLabel)
+        scrollView.addSubview(contentStackView)
+        view.addSubview(scrollView)
 
+        tripButton.addTarget(self, action: #selector(tripListTapped), for: .touchUpInside)
         taxCategorySegmentedControl.addTarget(self, action: #selector(taxCategoryChanged), for: .valueChanged)
         taxSegmentedControl.addTarget(self, action: #selector(taxModeChanged), for: .valueChanged)
         amountTextField.addTarget(self, action: #selector(amountTextChanged), for: .editingChanged)
-        useUntaxedButton.addTarget(self, action: #selector(useUntaxedTapped), for: .touchUpInside)
-        useTaxedButton.addTarget(self, action: #selector(useTaxedTapped), for: .touchUpInside)
+        regularPurchaseButton.addTarget(self, action: #selector(regularPurchaseTapped), for: .touchUpInside)
+        taxFreePurchaseButton.addTarget(self, action: #selector(taxFreePurchaseTapped), for: .touchUpInside)
 
         taxSegmentedControl.selectedSegmentIndex = TaxMode.excludingTax.rawValue
     }
 
     private func setupConstraints() {
+        let content = scrollView.contentLayoutGuide
         NSLayoutConstraint.activate([
-            contentStackView.topAnchor.constraint(
-                equalTo: view.safeAreaLayoutGuide.topAnchor, constant: AppStyle.Spacing.loose
-            ),
+            scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            // 鍵盤出現時可視範圍縮到鍵盤上緣，被擋住的按鈕可以捲出來。
+            scrollView.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor),
+
+            contentStackView.topAnchor.constraint(equalTo: content.topAnchor, constant: AppStyle.Spacing.normal),
+            contentStackView.bottomAnchor.constraint(equalTo: content.bottomAnchor, constant: -AppStyle.Spacing.normal),
             contentStackView.leadingAnchor.constraint(
-                equalTo: view.leadingAnchor, constant: AppStyle.Spacing.normal
+                equalTo: scrollView.frameLayoutGuide.leadingAnchor, constant: AppStyle.Spacing.normal
             ),
             contentStackView.trailingAnchor.constraint(
-                equalTo: view.trailingAnchor, constant: -AppStyle.Spacing.normal
+                equalTo: scrollView.frameLayoutGuide.trailingAnchor, constant: -AppStyle.Spacing.normal
             ),
 
-            amountTextField.heightAnchor.constraint(equalToConstant: Constants.fieldHeight),
+            amountTextField.heightAnchor.constraint(equalToConstant: Constants.amountFieldHeight),
             taxCategorySegmentedControl.heightAnchor.constraint(equalToConstant: Constants.segmentHeight),
-            taxSegmentedControl.heightAnchor.constraint(equalToConstant: Constants.segmentHeight),
-
-            updatedAtLabel.leadingAnchor.constraint(
-                equalTo: view.leadingAnchor, constant: AppStyle.Spacing.normal
-            ),
-            updatedAtLabel.trailingAnchor.constraint(
-                equalTo: view.trailingAnchor, constant: -AppStyle.Spacing.normal
-            ),
-            updatedAtLabel.bottomAnchor.constraint(
-                equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -AppStyle.Spacing.tight
-            )
+            taxSegmentedControl.heightAnchor.constraint(equalToConstant: Constants.segmentHeight)
         ])
     }
 
     // MARK: - Binding
 
     private func bindViewModel() {
+        viewModel.output.tripTitle
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] title in
+                self?.tripButton.configuration?.title = title
+                self?.tripButton.sizeToFit()
+            }
+            .store(in: &cancellables)
+
         viewModel.output.rateDescription
             .receive(on: DispatchQueue.main)
             .sink { [weak self] text in
@@ -165,10 +230,17 @@ final class ComputeViewController: UIViewController {
             }
             .store(in: &cancellables)
 
-        viewModel.output.inputPlaceholder
+        viewModel.output.currencySymbol
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] placeholder in
-                self?.amountTextField.placeholder = placeholder
+            .sink { [weak self] symbol in
+                self?.currencySymbolLabel.text = symbol
+            }
+            .store(in: &cancellables)
+
+        viewModel.output.amountFieldLabel
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] label in
+                self?.amountTextField.accessibilityLabel = label
             }
             .store(in: &cancellables)
 
@@ -186,22 +258,16 @@ final class ComputeViewController: UIViewController {
             }
             .store(in: &cancellables)
 
-        viewModel.output.updatedAtDescription
+        viewModel.output.result
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] text in
-                self?.updatedAtLabel.text = text
+            .sink { [weak self] result in
+                self?.render(result)
             }
             .store(in: &cancellables)
 
-        viewModel.output.resultText
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] text in
-                self?.renderResult(text)
-            }
-            .store(in: &cancellables)
-
+        // 刻意不加 receive(on:)：這裡由輸入事件同步觸發，本來就在主執行緒。
+        // 非同步回寫的話，連續快速輸入時晚到的舊文字會蓋掉剛打的數字。
         viewModel.output.amountFieldText
-            .receive(on: DispatchQueue.main)
             .sink { [weak self] text in
                 self?.amountTextField.text = text
             }
@@ -262,12 +328,14 @@ final class ComputeViewController: UIViewController {
         viewModel.input.amountTextChanged(amountTextField.text ?? "")
     }
 
-    @objc private func useUntaxedTapped() {
-        viewModel.input.usePrice(for: .excludingTax)
+    /// 一般購買付的是含稅價。
+    @objc private func regularPurchaseTapped() {
+        viewModel.input.usePrice(for: .includingTax)
     }
 
-    @objc private func useTaxedTapped() {
-        viewModel.input.usePrice(for: .includingTax)
+    /// 免稅購買付的是未稅價。
+    @objc private func taxFreePurchaseTapped() {
+        viewModel.input.usePrice(for: .excludingTax)
     }
 
     @objc private func showShoppingListTapped() {
@@ -284,16 +352,14 @@ final class ComputeViewController: UIViewController {
 
     // MARK: - Private
 
-    /// ViewModel 送出的是「台幣 \n未稅：X\n含稅：Y」，
-    /// 這裡只負責把它排成兩行等寬數字，不改內容。
-    private func renderResult(_ text: String) {
-        let hasResult = text.contains("\n")
-        resultLabel.text = hasResult
-            ? text.split(separator: "\n").dropFirst().joined(separator: "\n")
-            : "—"
-        resultTitleLabel.text = hasResult ? "換算結果（台幣）" : "換算結果"
-        useUntaxedButton.isEnabled = hasResult
-        useTaxedButton.isEnabled = hasResult
+    private func render(_ result: ComputeResultDisplay) {
+        primaryAmountLabel.text = result.primaryAmount
+        secondaryAmountLabel.text = result.secondaryDescription
+        secondaryAmountLabel.isHidden = result.secondaryDescription.isEmpty
+        regularPurchaseButton.setTitle(result.regularPurchaseTitle, for: .normal)
+        taxFreePurchaseButton.setTitle(result.taxFreePurchaseTitle, for: .normal)
+        regularPurchaseButton.isEnabled = result.isActionable
+        taxFreePurchaseButton.isEnabled = result.isActionable
     }
 
     private func rebuildTaxCategorySegments(with titles: [String]) {

@@ -24,7 +24,7 @@ Each entry names the test that locks it. If a change makes one of these tests fa
 - **Japan's two rates are selected by the user, never inferred.** The 8% reduced rate covers food and drink but excludes alcohol and eat-in dining — the same bento is 8% taken away and 10% eaten in the shop. Nothing the app knows (price, product name) determines this, so the choice must stay a user input. Japanese receipts mark reduced-rate lines, commonly with ※ or ★.
 - **The untaxed price is what tax-free shopping refunds are based on**, which is why the category choice matters even though Japanese shelf prices have included tax since the 2021 総額表示 requirement.
 - **The exchange rate is derived as TWD / foreign currency and kept to four significant digits**, not four decimal places. Korean won is an order of magnitude smaller than yen, so a fixed decimal place would leave it with three significant digits and a 0.2% error. `ExchangeRateDecodingTests`.
-- **The rate's update time is parsed with `en_US_POSIX`** and displayed in `Asia/Taipei`. Without the POSIX locale it fails to parse on non-English devices. `ComputeViewModelTests`.
+- **The rate's update time is parsed with `en_US_POSIX`** and displayed in `Asia/Taipei` as `M/d HH:mm`, joined to the rate line (`1 KRW = 0.02308 TWD・9/18 08:00 更新`). Without the POSIX locale it fails to parse on non-English devices. The rate is shown with 4 significant digits. `ComputeViewModelTests`.
 - **The on-disk property list format of `ShoppingItem` and `Card`.** The stored keys are the property names, so renaming a property silently breaks every existing user's saved data. `PersistenceFormatTests`, `FileShoppingListRepositoryTests`, `FileCardRepositoryTests`.
 - **Photos are referenced by bare filename, never by absolute path.** The app container path changes between installs. `FileImageStoreTests`.
 
@@ -47,7 +47,7 @@ There is no separate "has onboarded" flag: the stored data *is* the flag. `UserD
 - **The compute screen reloads the currency through `reloadSettings()`** when the trip list reports a change, rather than re-reading on every appearance. Settings no longer holds the currency, so it does not trigger a reload. A currency change clears the typed amount and the result, because the typed number was a price in the old currency.
 - **The user profile lives in `UserDefaults`, not a property list file.** The shopping list and cards are growing collections that earn a file; the user's name is a single setting. It still goes through `UserProfileRepository` so the ViewModel stays testable.
 - **`SceneDelegate` swaps the window's root controller** after onboarding finishes, rather than pushing or presenting the main flow. The welcome screen is then released and no back gesture can return to it.
-- **`PriceText` is the only place money is formatted.** It shows 0 to 2 decimal places with no grouping separator and a fixed `en_US_POSIX` locale, so output does not change with device settings. Every money string in the app goes through it.
+- **`PriceText` is the only place money is formatted.** It shows 0 to 2 decimal places with a fixed `en_US_POSIX` locale, so output does not change with device settings. Every money string in the app goes through it. `amount` has no grouping separator and is used by the list and detail screens; `twd` (`NT$ 1,254`) and `groupedInput` add thousands separators for the compute screen's large numbers, where reading the magnitude at a glance matters. `PriceTextTests`.
 
 ## Deliberate Departures From The Original App
 
@@ -57,6 +57,8 @@ Currency support was added after the migration; entries below marked (幣別) de
 Each entry is behavior that intentionally differs from the Storyboard/MVC version. They are listed so nobody "restores" them as bugs.
 
 - **(幣別) The rate label names the currency**, e.g. `日幣匯率：0.2047` rather than `匯率：0.2047`, because two currencies are now selectable.
+- **The compute screen leads with the trip and the TWD amount, not the rate.** The navigation bar shows the current trip as a pill (flag + name) that opens the trip list, and the rate is a caption. The large number is the tax-inclusive TWD price. The two actions are named after how the user pays: 一般購買 carries the 含稅 price and 免稅購買 the 未稅 price, and each button shows its amount. The stored `taxState` is still 含稅／未稅. `ComputeViewModelTests`.
+- **The amount field shows thousands separators while typing and is focused on arrival when empty.** The ViewModel strips commas before parsing. The grouped text is written back synchronously, without `receive(on:)`: an asynchronous write-back arrived after the next keystroke and overwrote it, dropping digits. The content scrolls above the keyboard so the actions stay reachable.
 - **The conversion is live; there is no 換算 button.** The result is recomputed whenever the amount, 未稅／含稅, the goods category or the rate changes. Empty or non-numeric input shows the placeholder. `ComputeViewModelTests`.
 - **(幣別) Switching the goods category recomputes the result** at the new tax rate, so no result computed at the old rate stays on screen.
 - **(幣別) Switching currency clears the typed amount and the previous conversion result.** The typed number is a price in the old currency; recomputing it at the new rate would let a yen price be saved as a won purchase.
@@ -66,7 +68,7 @@ Each entry is behavior that intentionally differs from the Storyboard/MVC versio
 - **Card setup rejects non-numeric input instead of crashing.** The original used `Double(moneyBack)!` and `Double(limit)!`, so non-numeric input crashed the app.
 - **Choosing 信用卡 without picking a card no longer crashes.** `PayMethod.card(index:)` makes "credit card, none chosen" a representable state.
 - **Returning from a card screen resets the selected card.** The original kept the old index, which could point past the end of the array after a deletion.
-- **Input typed before the rate arrives shows the placeholder instead of 0, and is converted once the rate arrives.** The original started with a rate of `0`, so converting too early silently produced 0 元. Likewise 使用未稅價格 / 使用含稅價格 do nothing until a conversion has been made, rather than carrying a 0 price forward.
+- **Input typed before the rate arrives shows the placeholder instead of 0, and is converted once the rate arrives.** The original started with a rate of `0`, so converting too early silently produced 0 元. Likewise 一般購買 / 免稅購買 do nothing until a conversion has been made, rather than carrying a 0 price forward.
 - **Pay type defaults to `現金`.** The picker has always displayed 現金 as its initial row, but `didSelectRow` never fires for it, so an item saved without touching the picker stored an empty `payType`.
 - **Deleting a shopping list row deletes its photo file.** The original left the JPEG behind forever.
 - **An empty shopping list shows `你已經花了0.0$`.** The original skipped the calculation when the list was empty, leaving the storyboard's design-time placeholder `總花費` on screen.

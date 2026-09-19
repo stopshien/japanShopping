@@ -37,4 +37,19 @@ final class PriceTextTests: XCTestCase {
     func testNegativeAmountsKeepTheirSign() {
         XCTAssertEqual(PriceText.amount(-42), "-42")
     }
+
+    // MARK: - 首頁的台幣大字與輸入框
+
+    func testTWDHasPrefixAndThousandsSeparator() {
+        XCTAssertEqual(PriceText.twd(254), "NT$ 254")
+        XCTAssertEqual(PriceText.twd(12345.5), "NT$ 12,345.5")
+    }
+
+    func testGroupedInputKeepsWhatTheUserIsTyping() {
+        XCTAssertEqual(PriceText.groupedInput("1000"), "1,000")
+        XCTAssertEqual(PriceText.groupedInput("1000."), "1,000.", "小數點要留著讓使用者繼續打")
+        XCTAssertEqual(PriceText.groupedInput("1234567.05"), "1,234,567.05")
+        XCTAssertNil(PriceText.groupedInput(""))
+        XCTAssertNil(PriceText.groupedInput("abc"))
+    }
 }

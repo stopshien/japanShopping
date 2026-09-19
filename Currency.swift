@@ -40,8 +40,39 @@ enum Currency: Int, CaseIterable, Codable {
         }
     }
 
-    var inputPlaceholder: String {
-        "請輸入\(title)價格..."
+    /// 金額輸入框的名稱，給 VoiceOver 念（畫面上的提示文字只有「0」）。
+    var amountLabel: String {
+        "\(title)價格"
+    }
+
+    /// 輸入框前的幣別符號。
+    var symbol: String {
+        switch self {
+        case .japaneseYen:
+            return "¥"
+        case .koreanWon:
+            return "₩"
+        }
+    }
+
+    /// ISO 4217 代碼，用於匯率說明（1 JPY = 0.2 TWD）。
+    var code: String {
+        switch self {
+        case .japaneseYen:
+            return "JPY"
+        case .koreanWon:
+            return "KRW"
+        }
+    }
+
+    /// 旅程標籤前的國旗，讓人一眼認出現在是哪個國家的旅程。
+    var flag: String {
+        switch self {
+        case .japaneseYen:
+            return "🇯🇵"
+        case .koreanWon:
+            return "🇰🇷"
+        }
     }
 
     /// 該國是否有輕減稅率。沒有的話就不需要讓使用者選類別。

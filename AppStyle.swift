@@ -24,7 +24,9 @@ enum AppStyle {
 
     enum Font {
         static let title = UIFont.systemFont(ofSize: 28, weight: .semibold)
-        static let resultNumber = UIFont.systemFont(ofSize: 34, weight: .bold)
+        /// 金額用等寬數字，打字或結果變動時數字不會左右跳動。
+        static let resultNumber = UIFont.monospacedDigitSystemFont(ofSize: 40, weight: .bold)
+        static let amountInput = UIFont.monospacedDigitSystemFont(ofSize: 30, weight: .semibold)
         static let body = UIFont.systemFont(ofSize: 17)
         static let bodyEmphasis = UIFont.systemFont(ofSize: 17, weight: .semibold)
         static let label = UIFont.systemFont(ofSize: 15, weight: .medium)

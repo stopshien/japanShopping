@@ -52,6 +52,7 @@ final class ShoppingListViewController: UIViewController {
 ## Binding
 - Bind in `bindViewModel()` only. Do not subscribe from `setupViews()` or from an action handler.
 - Receive on the main queue explicitly: `.receive(on: DispatchQueue.main)`.
+  - Exception: text written back into the field the user is typing in (for example thousands separators) is applied synchronously. The input event already runs on the main thread, and an asynchronous write-back lands after the next keystroke and overwrites it.
 - Use `[weak self]` in every `sink`.
 - Store subscriptions in the controller's own `cancellables`.
 - Render output; do not recompute it. If the view needs a formatted string, the ViewModel supplies the formatted string.
