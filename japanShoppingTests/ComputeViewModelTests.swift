@@ -89,15 +89,54 @@ final class ComputeViewModelTests: XCTestCase {
         XCTAssertEqual(text, "1 JPY = 0.2 TWD・6/13 08:00 更新")
     }
 
-    func testRateFailureReportsAnError() {
+    /// 失敗時不跳提示框，匯率那一行變成可點的重試。
+    func testRateFailureTurnsTheRateLineIntoARetry() {
         service.result = .failure(StubError.failure)
-        var message: String?
-        viewModel.output.errorMessage.sink { message = $0 }.store(in: &cancellables)
+        var rateText: String?
+        var isRetryable: Bool?
+        viewModel.output.rateDescription.sink { rateText = $0 }.store(in: &cancellables)
+        viewModel.output.isRateRetryable.sink { isRetryable = $0 }.store(in: &cancellables)
 
+        XCTAssertEqual(rateText, "匯率下載中…")
         viewModel.input.viewDidLoad()
         waitForMainQueue()
 
-        XCTAssertEqual(message, "匯率下載失敗，請檢查網路後再試")
+        XCTAssertEqual(rateText, "匯率更新失敗・點此重試")
+        XCTAssertEqual(isRetryable, true)
+    }
+
+    func testRetryLoadsTheRateAndComputesTheTypedPrice() {
+        service.result = .failure(StubError.failure)
+        var rateText: String?
+        var isRetryable: Bool?
+        var text: String?
+        viewModel.output.rateDescription.sink { rateText = $0 }.store(in: &cancellables)
+        viewModel.output.isRateRetryable.sink { isRetryable = $0 }.store(in: &cancellables)
+        viewModel.output.result.sink { text = $0.summary }.store(in: &cancellables)
+
+        viewModel.input.viewDidLoad()
+        waitForMainQueue()
+        viewModel.input.amountTextChanged("1000")
+
+        service.result = ExchangeRateServiceStub(yenRate: 0.2).result
+        viewModel.input.retryRateTapped()
+        XCTAssertEqual(rateText, "匯率下載中…")
+        XCTAssertEqual(isRetryable, false, "下載中不能重複點")
+        waitForMainQueue()
+
+        XCTAssertEqual(rateText, "1 JPY = 0.2 TWD・6/13 08:00 更新")
+        XCTAssertEqual(text, "未稅 NT$ 182｜NT$ 200", "重試成功後直接算出已輸入的價格")
+    }
+
+    func testRetryIsIgnoredWhenTheRateHasNotFailed() {
+        var rateText: String?
+        viewModel.output.rateDescription.sink { rateText = $0 }.store(in: &cancellables)
+
+        viewModel.input.viewDidLoad()
+        waitForMainQueue()
+        viewModel.input.retryRateTapped()
+
+        XCTAssertEqual(rateText, "1 JPY = 0.2 TWD・6/13 08:00 更新")
     }
 
     // MARK: - 換算

@@ -211,6 +211,7 @@ final class ComputeViewController: UIViewController {
         view.addSubview(scrollView)
 
         tripButton.addTarget(self, action: #selector(tripListTapped), for: .touchUpInside)
+        rateLabel.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(rateTapped)))
         taxCategorySegmentedControl.addTarget(self, action: #selector(taxCategoryChanged), for: .valueChanged)
         taxExcludedSwitch.addTarget(self, action: #selector(taxExcludedChanged), for: .valueChanged)
         amountTextField.addTarget(self, action: #selector(amountTextChanged), for: .editingChanged)
@@ -256,6 +257,18 @@ final class ComputeViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] text in
                 self?.rateLabel.text = text
+            }
+            .store(in: &cancellables)
+
+        // 失敗時匯率那一行變成可點的重試，用強調色和按鈕特性讓人看得出來。
+        viewModel.output.isRateRetryable
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isRetryable in
+                guard let self else { return }
+                self.rateLabel.isUserInteractionEnabled = isRetryable
+                self.rateLabel.textColor = isRetryable ? AppColor.accent : AppColor.textSecondary
+                self.rateLabel.font = isRetryable ? AppStyle.Font.label : AppStyle.Font.caption
+                self.rateLabel.accessibilityTraits = isRetryable ? .button : .staticText
             }
             .store(in: &cancellables)
 
@@ -323,13 +336,6 @@ final class ComputeViewController: UIViewController {
         viewModel.output.amountFieldText
             .sink { [weak self] text in
                 self?.amountTextField.text = text
-            }
-            .store(in: &cancellables)
-
-        viewModel.output.errorMessage
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] message in
-                self?.presentError(message)
             }
             .store(in: &cancellables)
 
@@ -402,6 +408,10 @@ final class ComputeViewController: UIViewController {
         viewModel.input.tripListTapped()
     }
 
+    @objc private func rateTapped() {
+        viewModel.input.retryRateTapped()
+    }
+
     // MARK: - Private
 
     private func render(_ result: ComputeResultDisplay) {
@@ -422,11 +432,5 @@ final class ComputeViewController: UIViewController {
         }
         taxCategorySegmentedControl.selectedSegmentIndex =
             titles.indices.contains(previousSelection) ? previousSelection : TaxCategory.standard.rawValue
-    }
-
-    private func presentError(_ message: String) {
-        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "好", style: .default))
-        present(alert, animated: true)
     }
 }

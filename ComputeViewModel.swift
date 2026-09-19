@@ -63,6 +63,8 @@ protocol ComputeViewModelType {
 
 protocol ComputeViewModelInput {
     func viewDidLoad()
+    /// 匯率下載失敗後點匯率那一行重新下載。
+    func retryRateTapped()
     /// 從旅程清單返回後重新讀取目前的旅程與幣別。
     func reloadSettings()
     func taxCategoryChanged(to category: TaxCategory)
@@ -82,7 +84,10 @@ protocol ComputeViewModelOutput {
     /// 導覽列中間的旅程標籤，例如「🇰🇷 首爾」。
     var tripTitle: AnyPublisher<String, Never> { get }
     /// 匯率與更新時間，例如「1 KRW = 0.0231 TWD・9/18 16:00 更新」。
+    /// 下載中與失敗時改顯示狀態文字。
     var rateDescription: AnyPublisher<String, Never> { get }
+    /// 匯率下載失敗時為 true，匯率那一行可以點擊重試。
+    var isRateRetryable: AnyPublisher<Bool, Never> { get }
     var currencySymbol: AnyPublisher<String, Never> { get }
     /// 金額輸入框給 VoiceOver 的名稱，例如「韓幣價格」。
     var amountFieldLabel: AnyPublisher<String, Never> { get }
@@ -98,7 +103,6 @@ protocol ComputeViewModelOutput {
     /// 需要改寫輸入框內容時送出：加上千分位，或清空。
     var amountFieldText: AnyPublisher<String, Never> { get }
     var route: AnyPublisher<ComputeRoute, Never> { get }
-    var errorMessage: AnyPublisher<String, Never> { get }
 }
 
 // MARK: - ViewModel
@@ -107,6 +111,8 @@ final class ComputeViewModel: ComputeViewModelType {
 
     private enum Constants {
         static let rateSignificantDigits = 4
+        static let rateLoading = "匯率下載中…"
+        static let rateFailed = "匯率更新失敗・點此重試"
     }
 
     private let service: ExchangeRateService
@@ -115,6 +121,8 @@ final class ComputeViewModel: ComputeViewModelType {
     private let rateFormatter: NumberFormatter
 
     private var exchangeRate: ExchangeRate?
+    private var rateLoadFailed = false
+    private var rateCancellable: AnyCancellable?
     private var currency: Currency
     private var updatedAt: String?
     private var amountText = ""
@@ -122,10 +130,10 @@ final class ComputeViewModel: ComputeViewModelType {
     private var taxMode: TaxMode = .includingTax
     private var taxCategory: TaxCategory = .standard
     private var breakdown: PriceBreakdown?
-    private var cancellables = Set<AnyCancellable>()
 
     private let tripTitleSubject: CurrentValueSubject<String, Never>
-    private let rateDescriptionSubject = CurrentValueSubject<String, Never>("")
+    private let rateDescriptionSubject = CurrentValueSubject<String, Never>(Constants.rateLoading)
+    private let isRateRetryableSubject = CurrentValueSubject<Bool, Never>(false)
     private let currencySymbolSubject: CurrentValueSubject<String, Never>
     private let amountFieldLabelSubject: CurrentValueSubject<String, Never>
     private let taxCategoryTitlesSubject: CurrentValueSubject<[String], Never>
@@ -136,7 +144,6 @@ final class ComputeViewModel: ComputeViewModelType {
     private let resultSubject = CurrentValueSubject<ComputeResultDisplay, Never>(.empty)
     private let amountFieldTextSubject = PassthroughSubject<String, Never>()
     private let routeSubject = PassthroughSubject<ComputeRoute, Never>()
-    private let errorMessageSubject = PassthroughSubject<String, Never>()
 
     init(service: ExchangeRateService, tripRepository: TripRepository) {
         self.service = service
@@ -267,6 +274,32 @@ final class ComputeViewModel: ComputeViewModelType {
         resultSubject.send(ComputeResultDisplay(breakdown: breakdown))
     }
 
+    /// 失敗時不跳提示框：匯率那一行改成可點的重試。
+    private func loadRate() {
+        rateLoadFailed = false
+        isRateRetryableSubject.send(false)
+        rateDescriptionSubject.send(Constants.rateLoading)
+        recompute()
+
+        rateCancellable = service.latestRate()
+            .receive(on: DispatchQueue.main)
+            .sink(
+                receiveCompletion: { [weak self] completion in
+                    guard case .failure = completion, let self else { return }
+                    self.rateLoadFailed = true
+                    self.isRateRetryableSubject.send(true)
+                    self.rateDescriptionSubject.send(Constants.rateFailed)
+                    self.recompute()
+                },
+                receiveValue: { [weak self] exchangeRate in
+                    guard let self else { return }
+                    self.exchangeRate = exchangeRate
+                    self.updatedAt = self.describeUpdatedAt(exchangeRate.lastUpdatedUTC)
+                    self.refreshForCurrentCurrency()
+                }
+            )
+    }
+
     private func makeItem(for mode: TaxMode) -> ShoppingItem? {
         guard let breakdown else { return nil }
         let price = mode == .excludingTax ? breakdown.untaxed : breakdown.taxed
@@ -279,21 +312,12 @@ final class ComputeViewModel: ComputeViewModelType {
 extension ComputeViewModel: ComputeViewModelInput {
 
     func viewDidLoad() {
-        service.latestRate()
-            .receive(on: DispatchQueue.main)
-            .sink(
-                receiveCompletion: { [weak self] completion in
-                    guard case .failure = completion else { return }
-                    self?.errorMessageSubject.send("匯率下載失敗，請檢查網路後再試")
-                },
-                receiveValue: { [weak self] exchangeRate in
-                    guard let self else { return }
-                    self.exchangeRate = exchangeRate
-                    self.updatedAt = self.describeUpdatedAt(exchangeRate.lastUpdatedUTC)
-                    self.refreshForCurrentCurrency()
-                }
-            )
-            .store(in: &cancellables)
+        loadRate()
+    }
+
+    func retryRateTapped() {
+        guard rateLoadFailed else { return }
+        loadRate()
     }
 
     func reloadSettings() {
@@ -363,6 +387,7 @@ extension ComputeViewModel: ComputeViewModelOutput {
 
     var tripTitle: AnyPublisher<String, Never> { tripTitleSubject.eraseToAnyPublisher() }
     var rateDescription: AnyPublisher<String, Never> { rateDescriptionSubject.eraseToAnyPublisher() }
+    var isRateRetryable: AnyPublisher<Bool, Never> { isRateRetryableSubject.eraseToAnyPublisher() }
     var currencySymbol: AnyPublisher<String, Never> { currencySymbolSubject.eraseToAnyPublisher() }
     var amountFieldLabel: AnyPublisher<String, Never> { amountFieldLabelSubject.eraseToAnyPublisher() }
     var taxCategoryTitles: AnyPublisher<[String], Never> { taxCategoryTitlesSubject.eraseToAnyPublisher() }
@@ -375,5 +400,4 @@ extension ComputeViewModel: ComputeViewModelOutput {
     var result: AnyPublisher<ComputeResultDisplay, Never> { resultSubject.eraseToAnyPublisher() }
     var amountFieldText: AnyPublisher<String, Never> { amountFieldTextSubject.eraseToAnyPublisher() }
     var route: AnyPublisher<ComputeRoute, Never> { routeSubject.eraseToAnyPublisher() }
-    var errorMessage: AnyPublisher<String, Never> { errorMessageSubject.eraseToAnyPublisher() }
 }
