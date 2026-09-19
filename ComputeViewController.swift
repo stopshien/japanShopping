@@ -61,6 +61,9 @@ final class ComputeViewController: UIViewController {
     private let inputCard = AppView.card()
     private let resultCard = AppView.card()
 
+    private let taxCategoryTitleLabel = AppView.label(
+        "商品類別", font: AppStyle.Font.label, color: AppColor.textSecondary
+    )
     private let taxCategorySegmentedControl = AppView.segmentedControl(items: [])
 
     /// 輸入框右側的「含稅價／未稅價」標註。
@@ -196,10 +199,12 @@ final class ComputeViewController: UIViewController {
         // 輸入卡：稅率類別（僅雙稅率國家）、金額、標價未含稅開關（僅常見未稅標價的國家）
         let inputStack = AppView.cardStack(in: inputCard, spacing: AppStyle.Spacing.tight + 4)
         [
+            taxCategoryTitleLabel,
             taxCategorySegmentedControl,
             amountTextField,
             taxExcludedRow
         ].forEach(inputStack.addArrangedSubview)
+        inputStack.setCustomSpacing(AppStyle.Spacing.tight, after: taxCategoryTitleLabel)
 
         // 結果卡：台幣大字、未稅補充、兩種購買方式
         let resultStack = AppView.cardStack(in: resultCard, spacing: AppStyle.Spacing.tight)
@@ -305,6 +310,7 @@ final class ComputeViewController: UIViewController {
         viewModel.output.isTaxCategoryVisible
             .receive(on: DispatchQueue.main)
             .sink { [weak self] isVisible in
+                self?.taxCategoryTitleLabel.isHidden = !isVisible
                 self?.taxCategorySegmentedControl.isHidden = !isVisible
             }
             .store(in: &cancellables)
