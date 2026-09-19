@@ -242,6 +242,8 @@ final class ComputeViewController: UIViewController {
             // 鍵盤出現時可視範圍縮到鍵盤上緣，被擋住的按鈕可以捲出來。
             scrollView.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor),
 
+            // 內容區要有寬度，否則 contentSize.width 為 0，scrollRectToVisible 會把目標當成在內容之外而不捲動。
+            content.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor),
             contentStackView.topAnchor.constraint(equalTo: content.topAnchor, constant: AppStyle.Spacing.normal),
             contentStackView.bottomAnchor.constraint(equalTo: content.bottomAnchor, constant: -AppStyle.Spacing.normal),
             contentStackView.leadingAnchor.constraint(
@@ -259,6 +261,14 @@ final class ComputeViewController: UIViewController {
     // MARK: - Binding
 
     private func bindViewModel() {
+        // 鍵盤出現後可視範圍變小，把輸入框與結果捲進畫面。
+        NotificationCenter.default.publisher(for: UIResponder.keyboardDidShowNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.keepAmountAndResultVisible()
+            }
+            .store(in: &cancellables)
+
         viewModel.output.tripTitle
             .receive(on: DispatchQueue.main)
             .sink { [weak self] title in
@@ -453,14 +463,47 @@ final class ComputeViewController: UIViewController {
         // 第一次顯示、畫面還沒出現，或開啟「減少動態效果」時不播放動畫。
         guard !UIAccessibility.isReduceMotionEnabled, view.window != nil else {
             applyVisibility()
+            keepAmountAndResultVisible()
             return
         }
+        // 結果剛出現時按鈕可能被鍵盤擋住。等淡入完成、新出現的按鈕排好版再捲，
+        // 在轉場當下量到的位置還不包含它們。
         UIView.transition(
             with: resultCard,
             duration: Constants.resultFadeDuration,
             options: .transitionCrossDissolve,
-            animations: applyVisibility
+            animations: applyVisibility,
+            completion: { [weak self] _ in
+                self?.keepAmountAndResultVisible()
+            }
         )
+    }
+
+    /// 鍵盤開著時，讓輸入框和結果盡量都在可視範圍內。
+    ///
+    /// 空間不夠時依序退讓：輸入框到免稅購買 → 到一般購買 → 到台幣大字。
+    /// 輸入框本身一定保持可見，使用者正在打字。
+    private func keepAmountAndResultVisible() {
+        guard amountTextField.isFirstResponder, view.window != nil else { return }
+        view.layoutIfNeeded()
+
+        let visibleHeight = scrollView.bounds.height
+            - scrollView.adjustedContentInset.top - scrollView.adjustedContentInset.bottom
+        let fieldFrame = amountTextField.convert(amountTextField.bounds, to: scrollView)
+        let candidates: [UIView] = isShowingResult == true
+            ? [taxFreePurchaseButton, regularPurchaseButton, primaryAmountLabel]
+            : [hintLabel]
+        let margin = AppStyle.Spacing.tight
+
+        var target = fieldFrame
+        for candidate in candidates {
+            let union = fieldFrame.union(candidate.convert(candidate.bounds, to: scrollView))
+            if union.height + margin * 2 <= visibleHeight {
+                target = union
+                break
+            }
+        }
+        scrollView.scrollRectToVisible(target.insetBy(dx: 0, dy: -margin), animated: true)
     }
 
     private func rebuildTaxCategorySegments(with titles: [String]) {
