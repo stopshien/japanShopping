@@ -147,18 +147,22 @@ final class DetailViewModelTests: XCTestCase {
         viewModel.input.cardSelected(at: 0)
 
         // (3.5 - 1.5) * 1000 * 0.01 = 20
-        XCTAssertEqual(text, "回饋金額為：20.00")
+        XCTAssertEqual(text, "這筆回饋 NT$ 20")
     }
 
-    func testCardButtonTitleShowsRemainingFeedback() {
+    /// 按鈕分成兩行：卡名與回饋率在上，剩餘額度在下。
+    func testCardButtonShowsTheCardAndItsRemainingFeedback() {
         var title: String?
+        var subtitle: String?
         viewModel.output.cardButtonTitle.sink { title = $0 }.store(in: &cancellables)
+        viewModel.output.cardButtonSubtitle.sink { subtitle = $0 }.store(in: &cancellables)
 
         viewModel.input.viewDidLoad()
         viewModel.input.payMethodSelected(row: 1)
         viewModel.input.cardSelected(at: 0)
 
-        XCTAssertEqual(title, "A卡卡 剩餘5000元")
+        XCTAssertEqual(title, "A卡 3.5%")
+        XCTAssertEqual(subtitle, "剩餘回饋 NT$ 5,000")
     }
 
     func testSavingUpdatesRemainingFeedbackOnTheSelectedCard() {

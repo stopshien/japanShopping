@@ -65,7 +65,10 @@ protocol DetailViewModelOutput {
     /// 商品名稱是必填，沒填時「加入消費紀錄」顯示為停用，而不是按了沒反應。
     var isSaveEnabled: AnyPublisher<Bool, Never> { get }
     var isCardSectionVisible: AnyPublisher<Bool, Never> { get }
+    /// 信用卡按鈕的主要文字：卡名與回饋率。
     var cardButtonTitle: AnyPublisher<String, Never> { get }
+    /// 信用卡按鈕的第二行：剩餘回饋額度。尚未選卡時為空字串。
+    var cardButtonSubtitle: AnyPublisher<String, Never> { get }
     var cardMenuItems: AnyPublisher<[CardMenuItem], Never> { get }
     var feedbackText: AnyPublisher<String, Never> { get }
     var route: AnyPublisher<DetailRoute, Never> { get }
@@ -80,7 +83,7 @@ final class DetailViewModel: DetailViewModelType {
         /// 回饋趴數要先扣掉的基礎趴數。
         static let baseFeedbackPercent = 1.5
         static let cardButtonPlaceholder = "請選擇信用卡"
-        static let feedbackPlaceholder = "信用卡回饋金額"
+        static let feedbackPlaceholder = "選擇信用卡後顯示回饋金額"
     }
 
     private let cardRepository: CardRepository
@@ -98,6 +101,7 @@ final class DetailViewModel: DetailViewModelType {
     private let isCardSectionVisibleSubject = CurrentValueSubject<Bool, Never>(false)
     private let cardButtonTitleSubject = CurrentValueSubject<String, Never>(Constants.cardButtonPlaceholder)
     private let cardMenuItemsSubject = CurrentValueSubject<[CardMenuItem], Never>([])
+    private let cardButtonSubtitleSubject = CurrentValueSubject<String, Never>("")
     private let feedbackTextSubject = CurrentValueSubject<String, Never>(Constants.feedbackPlaceholder)
     private let routeSubject = PassthroughSubject<DetailRoute, Never>()
     private let errorMessageSubject = PassthroughSubject<String, Never>()
@@ -137,6 +141,7 @@ final class DetailViewModel: DetailViewModelType {
             payMethod = .card(index: nil)
         }
         cardButtonTitleSubject.send(Constants.cardButtonPlaceholder)
+        cardButtonSubtitleSubject.send("")
         feedbackTextSubject.send(Constants.feedbackPlaceholder)
     }
 
@@ -200,8 +205,9 @@ extension DetailViewModel: DetailViewModelInput {
         item.payType = cards[index].name
         cards[index].feedbackMoney = feedbackMoney(for: cards[index])
 
-        cardButtonTitleSubject.send("\(cards[index].name)卡 剩餘\(PriceText.amount(cards[index].feedbackRemaining))元")
-        feedbackTextSubject.send("回饋金額為：\(String(format: "%.2f", cards[index].feedbackMoney))")
+        cardButtonTitleSubject.send("\(cards[index].name) \(cards[index].percent)%")
+        cardButtonSubtitleSubject.send("剩餘回饋 \(PriceText.twd(cards[index].feedbackRemaining))")
+        feedbackTextSubject.send("這筆回饋 \(PriceText.twd(cards[index].feedbackMoney))")
     }
 
     func addCardTapped() {
@@ -251,6 +257,7 @@ extension DetailViewModel: DetailViewModelOutput {
     var isSaveEnabled: AnyPublisher<Bool, Never> { isSaveEnabledSubject.eraseToAnyPublisher() }
     var isCardSectionVisible: AnyPublisher<Bool, Never> { isCardSectionVisibleSubject.eraseToAnyPublisher() }
     var cardButtonTitle: AnyPublisher<String, Never> { cardButtonTitleSubject.eraseToAnyPublisher() }
+    var cardButtonSubtitle: AnyPublisher<String, Never> { cardButtonSubtitleSubject.eraseToAnyPublisher() }
     var cardMenuItems: AnyPublisher<[CardMenuItem], Never> { cardMenuItemsSubject.eraseToAnyPublisher() }
     var feedbackText: AnyPublisher<String, Never> { feedbackTextSubject.eraseToAnyPublisher() }
     var route: AnyPublisher<DetailRoute, Never> { routeSubject.eraseToAnyPublisher() }

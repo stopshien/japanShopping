@@ -46,6 +46,13 @@ enum AppView {
         return make(configuration)
     }
 
+    /// 次要按鈕的第二行說明。空字串時只顯示主要文字。
+    static func setSubtitle(_ subtitle: String, on button: UIButton) {
+        button.configuration?.attributedSubtitle = subtitle.isEmpty ? nil : AttributedString(
+            subtitle, attributes: AttributeContainer([.font: AppStyle.Font.caption])
+        )
+    }
+
     /// 第三級：純文字，不搶視覺。
     static func plainButton(title: String) -> UIButton {
         var configuration = UIButton.Configuration.plain()

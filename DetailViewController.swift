@@ -16,7 +16,7 @@ final class DetailViewController: UIViewController {
         static let photoThumbnailSize: CGFloat = 72
         static let photoBorderWidth: CGFloat = 4
         static let fieldHeight: CGFloat = 48
-        static let pickerHeight: CGFloat = 99
+        static let segmentHeight: CGFloat = 36
         static let labelFontSize: CGFloat = 20
     }
 
@@ -25,6 +25,8 @@ final class DetailViewController: UIViewController {
     private var cancellables = Set<AnyCancellable>()
     /// 標籤＋欄位的每一列，字級改變時要重新決定排列方向。
     private var fieldRows: [UIStackView] = []
+    /// 信用卡按鈕的第二行，setTitle 重建 configuration 後要補回去。
+    private var cardSubtitle = ""
 
     /// 商品成功加入購物清單時呼叫。
     var onSaved: (() -> Void)?
@@ -60,11 +62,8 @@ final class DetailViewController: UIViewController {
         return textField
     }()
 
-    private let payTypePicker: UIPickerView = {
-        let picker = UIPickerView()
-        picker.translatesAutoresizingMaskIntoConstraints = false
-        return picker
-    }()
+    /// 只有現金與信用卡兩個選項，用分段控制比滾輪快，也和首頁一致。
+    private let payTypeSegmentedControl = AppView.segmentedControl(items: ["現金", "信用卡"])
 
     private let cardsChooseButton: UIButton = {
         let button = AppView.secondaryButton(title: "請選擇信用卡")
@@ -131,9 +130,6 @@ final class DetailViewController: UIViewController {
         )
         addTapToDismissKeyboard()
 
-        payTypePicker.delegate = self
-        payTypePicker.dataSource = self
-
 
         let photoRow = UIStackView(arrangedSubviews: [imageSelectButton, photoActionLabel])
         photoRow.axis = .horizontal
@@ -150,7 +146,7 @@ final class DetailViewController: UIViewController {
             priceTaxStateLabel,
             photoRow,
             makeRow(label: productLabel, field: productTextField),
-            makeRow(label: payTypeLabel, field: payTypePicker),
+            makeRow(label: payTypeLabel, field: payTypeSegmentedControl),
             cardsChooseButton,
             feedbackLabel,
             saveToListButton
@@ -164,6 +160,8 @@ final class DetailViewController: UIViewController {
         scrollView.addSubview(contentStackView)
         view.addSubview(scrollView)
 
+        payTypeSegmentedControl.selectedSegmentIndex = 0
+        payTypeSegmentedControl.addTarget(self, action: #selector(payMethodChanged), for: .valueChanged)
         imageSelectButton.addTarget(self, action: #selector(imagePickerTapped), for: .touchUpInside)
         saveToListButton.addTarget(self, action: #selector(saveTapped), for: .touchUpInside)
         productTextField.addTarget(self, action: #selector(productNameChanged), for: .editingChanged)
@@ -192,7 +190,9 @@ final class DetailViewController: UIViewController {
             imageSelectButton.widthAnchor.constraint(equalToConstant: Constants.photoThumbnailSize),
             imageSelectButton.heightAnchor.constraint(equalToConstant: Constants.photoThumbnailSize),
             productTextField.heightAnchor.constraint(greaterThanOrEqualToConstant: Constants.fieldHeight),
-            payTypePicker.heightAnchor.constraint(equalToConstant: Constants.pickerHeight)
+            payTypeSegmentedControl.heightAnchor.constraint(
+                greaterThanOrEqualToConstant: Constants.segmentHeight
+            )
         ])
     }
 
@@ -239,7 +239,19 @@ final class DetailViewController: UIViewController {
         viewModel.output.cardButtonTitle
             .receive(on: DispatchQueue.main)
             .sink { [weak self] title in
-                self?.cardsChooseButton.setTitle(title, for: .normal)
+                guard let self else { return }
+                self.cardsChooseButton.setTitle(title, for: .normal)
+                // setTitle 會重建 configuration，第二行要跟著重設。
+                AppView.setSubtitle(self.cardSubtitle, on: self.cardsChooseButton)
+            }
+            .store(in: &cancellables)
+
+        viewModel.output.cardButtonSubtitle
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] subtitle in
+                guard let self else { return }
+                self.cardSubtitle = subtitle
+                AppView.setSubtitle(subtitle, on: self.cardsChooseButton)
             }
             .store(in: &cancellables)
 
@@ -294,6 +306,10 @@ final class DetailViewController: UIViewController {
     }
 
     // MARK: - Actions
+
+    @objc private func payMethodChanged() {
+        viewModel.input.payMethodSelected(row: payTypeSegmentedControl.selectedSegmentIndex)
+    }
 
     @objc private func imagePickerTapped() {
         let imagePickerController = UIImagePickerController()
@@ -379,32 +395,6 @@ final class DetailViewController: UIViewController {
         return label
     }
 
-}
-
-// MARK: - UIPickerViewDataSource
-
-extension DetailViewController: UIPickerViewDataSource {
-
-    func numberOfComponents(in pickerView: UIPickerView) -> Int {
-        1
-    }
-
-    func pickerView(_ pickerView: UIPickerView, numberOfRowsInComponent component: Int) -> Int {
-        2
-    }
-}
-
-// MARK: - UIPickerViewDelegate
-
-extension DetailViewController: UIPickerViewDelegate {
-
-    func pickerView(_ pickerView: UIPickerView, titleForRow row: Int, forComponent component: Int) -> String? {
-        row == 0 ? "現金" : "信用卡"
-    }
-
-    func pickerView(_ pickerView: UIPickerView, didSelectRow row: Int, inComponent component: Int) {
-        viewModel.input.payMethodSelected(row: row)
-    }
 }
 
 // MARK: - UIImagePickerControllerDelegate
