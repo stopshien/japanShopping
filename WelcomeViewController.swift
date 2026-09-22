@@ -118,7 +118,7 @@ final class WelcomeViewController: UIViewController {
             ),
 
             iconView.heightAnchor.constraint(equalToConstant: Constants.iconSize),
-            nameTextField.heightAnchor.constraint(equalToConstant: Constants.fieldHeight)
+            nameTextField.heightAnchor.constraint(greaterThanOrEqualToConstant: Constants.fieldHeight)
         ])
     }
 

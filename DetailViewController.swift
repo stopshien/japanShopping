@@ -21,6 +21,8 @@ final class DetailViewController: UIViewController {
     private let viewModel: DetailViewModelType
     private let factory: ScreenFactory
     private var cancellables = Set<AnyCancellable>()
+    /// 標籤＋欄位的每一列，字級改變時要重新決定排列方向。
+    private var fieldRows: [UIStackView] = []
 
     /// 商品成功加入購物清單時呼叫。
     var onSaved: (() -> Void)?
@@ -86,6 +88,13 @@ final class DetailViewController: UIViewController {
         viewModel.input.viewDidLoad()
     }
 
+    /// 專案支援 iOS 15，所以用 traitCollectionDidChange 而不是 iOS 17 的 registerForTraitChanges。
+    override func traitCollectionDidChange(_ previous: UITraitCollection?) {
+        super.traitCollectionDidChange(previous)
+        guard traitCollection.preferredContentSizeCategory != previous?.preferredContentSizeCategory else { return }
+        fieldRows.forEach(applyAxis(to:))
+    }
+
     // MARK: - Setup
 
     private func setupViews() {
@@ -128,7 +137,7 @@ final class DetailViewController: UIViewController {
             contentStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalInset),
 
             imageSelectButton.heightAnchor.constraint(equalToConstant: Constants.photoHeight),
-            productTextField.heightAnchor.constraint(equalToConstant: Constants.fieldHeight),
+            productTextField.heightAnchor.constraint(greaterThanOrEqualToConstant: Constants.fieldHeight),
             payTypePicker.heightAnchor.constraint(equalToConstant: Constants.pickerHeight)
         ])
     }
@@ -252,12 +261,19 @@ final class DetailViewController: UIViewController {
         present(alert, animated: true)
     }
 
+    /// 標籤與欄位並排；大字級時欄位會被擠到只剩幾個字，改成上下排列。
     private func makeRow(label: UILabel, field: UIView) -> UIStackView {
         let row = UIStackView(arrangedSubviews: [label, field])
-        row.axis = .horizontal
         row.spacing = Constants.spacing
-        row.alignment = .center
+        fieldRows.append(row)
+        applyAxis(to: row)
         return row
+    }
+
+    private func applyAxis(to row: UIStackView) {
+        let isAccessibilitySize = traitCollection.preferredContentSizeCategory.isAccessibilityCategory
+        row.axis = isAccessibilitySize ? .vertical : .horizontal
+        row.alignment = isAccessibilitySize ? .fill : .center
     }
 
     private static func makeLabel(text: String? = nil) -> UILabel {

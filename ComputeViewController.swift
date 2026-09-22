@@ -68,6 +68,8 @@ final class ComputeViewController: UIViewController {
 
     /// 輸入框右側的「含稅價／未稅價」標註。
     private let priceTagLabel = AppView.label(font: AppStyle.Font.label, alignment: .center)
+    /// 大字級時右側放不下，改用輸入框下方的這一列顯示同樣的標註。
+    private let priceTagRowLabel = AppView.label(font: AppStyle.Font.label)
 
     private let taxExcludedTitleLabel = AppView.label(
         "標價未含稅（税抜）", font: AppStyle.Font.body, color: AppColor.textPrimary
@@ -100,6 +102,11 @@ final class ComputeViewController: UIViewController {
     private let currencySymbolLabel = AppView.label(
         font: AppStyle.Font.amountInput, color: AppColor.textSecondary, alignment: .center
     )
+
+    /// 放在輸入框左右兩側的容器。UITextField 只看它們的 frame，
+    /// 所以寬度要依目前字級重算，不能在建立時算一次就固定。
+    private let symbolContainer = UIView()
+    private let priceTagContainer = UIView()
 
     private let resultTitleLabel = AppView.label(
         "台幣", font: AppStyle.Font.label, color: AppColor.textSecondary, alignment: .center
@@ -144,7 +151,17 @@ final class ComputeViewController: UIViewController {
         setupViews()
         setupConstraints()
         bindViewModel()
+        updatePriceTagPlacement()
         viewModel.input.viewDidLoad()
+    }
+
+    /// 系統字級改變時重新決定標註要放在輸入框右側還是下方。
+    /// 專案支援 iOS 15，所以用 traitCollectionDidChange 而不是 iOS 17 的 registerForTraitChanges。
+    override func traitCollectionDidChange(_ previous: UITraitCollection?) {
+        super.traitCollectionDidChange(previous)
+        guard traitCollection.preferredContentSizeCategory != previous?.preferredContentSizeCategory else { return }
+        updateFieldAccessorySizes()
+        updatePriceTagPlacement()
     }
 
     /// 還沒輸入價格時直接叫出鍵盤，進來就能打，省一次點擊。
@@ -177,24 +194,18 @@ final class ComputeViewController: UIViewController {
         ]
         addTapToDismissKeyboard()
 
-        let symbolContainer = UIView(
-            frame: CGRect(x: 0, y: 0, width: Constants.symbolWidth, height: Constants.amountFieldHeight)
-        )
-        currencySymbolLabel.translatesAutoresizingMaskIntoConstraints = true
-        currencySymbolLabel.frame = symbolContainer.bounds
-        currencySymbolLabel.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        symbolContainer.addSubview(currencySymbolLabel)
+        [
+            (currencySymbolLabel, symbolContainer),
+            (priceTagLabel, priceTagContainer)
+        ].forEach { label, container in
+            label.translatesAutoresizingMaskIntoConstraints = true
+            label.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            container.addSubview(label)
+        }
         amountTextField.leftView = symbolContainer
-
-        let priceTagContainer = UIView(
-            frame: CGRect(x: 0, y: 0, width: Constants.priceTagWidth, height: Constants.amountFieldHeight)
-        )
-        priceTagLabel.translatesAutoresizingMaskIntoConstraints = true
-        priceTagLabel.frame = priceTagContainer.bounds
-        priceTagLabel.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        priceTagContainer.addSubview(priceTagLabel)
         amountTextField.rightView = priceTagContainer
         amountTextField.rightViewMode = .always
+        updateFieldAccessorySizes()
 
         // 輸入卡：稅率類別（僅雙稅率國家）、金額、標價未含稅開關（僅常見未稅標價的國家）
         let inputStack = AppView.cardStack(in: inputCard, spacing: AppStyle.Spacing.tight + 4)
@@ -202,6 +213,7 @@ final class ComputeViewController: UIViewController {
             taxCategoryTitleLabel,
             taxCategorySegmentedControl,
             amountTextField,
+            priceTagRowLabel,
             taxExcludedRow
         ].forEach(inputStack.addArrangedSubview)
         inputStack.setCustomSpacing(AppStyle.Spacing.tight, after: taxCategoryTitleLabel)
@@ -253,8 +265,11 @@ final class ComputeViewController: UIViewController {
                 equalTo: scrollView.frameLayoutGuide.trailingAnchor, constant: -AppStyle.Spacing.normal
             ),
 
-            amountTextField.heightAnchor.constraint(equalToConstant: Constants.amountFieldHeight),
-            taxCategorySegmentedControl.heightAnchor.constraint(equalToConstant: Constants.segmentHeight)
+            // 大字級時要能長高，所以是最小高度而不是固定高度。
+            amountTextField.heightAnchor.constraint(greaterThanOrEqualToConstant: Constants.amountFieldHeight),
+            taxCategorySegmentedControl.heightAnchor.constraint(
+                greaterThanOrEqualToConstant: Constants.segmentHeight
+            )
         ])
     }
 
@@ -300,6 +315,7 @@ final class ComputeViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] symbol in
                 self?.currencySymbolLabel.text = symbol
+                self?.updateFieldAccessorySizes()
             }
             .store(in: &cancellables)
 
@@ -329,6 +345,8 @@ final class ComputeViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] text in
                 self?.priceTagLabel.text = text
+                self?.priceTagRowLabel.text = text
+                self?.updateFieldAccessorySizes()
             }
             .store(in: &cancellables)
 
@@ -336,9 +354,15 @@ final class ComputeViewController: UIViewController {
         viewModel.output.isTaxExcluded
             .receive(on: DispatchQueue.main)
             .sink { [weak self] isTaxExcluded in
-                self?.taxExcludedSwitch.setOn(isTaxExcluded, animated: true)
-                self?.priceTagLabel.textColor = isTaxExcluded ? AppColor.accent : AppColor.textSecondary
-                self?.priceTagLabel.font = isTaxExcluded ? AppStyle.Font.bodyEmphasis : AppStyle.Font.label
+                guard let self else { return }
+                self.taxExcludedSwitch.setOn(isTaxExcluded, animated: true)
+                let color = isTaxExcluded ? AppColor.accent : AppColor.textSecondary
+                let font = isTaxExcluded ? AppStyle.Font.bodyEmphasis : AppStyle.Font.label
+                [self.priceTagLabel, self.priceTagRowLabel].forEach {
+                    $0.textColor = color
+                    $0.font = font
+                }
+                self.updateFieldAccessorySizes()
             }
             .store(in: &cancellables)
 
@@ -504,6 +528,31 @@ final class ComputeViewController: UIViewController {
             }
         }
         scrollView.scrollRectToVisible(target.insetBy(dx: 0, dy: -margin), animated: true)
+    }
+
+    /// 左右兩側容器的寬度依目前字級重算：字級變大要放得下，變回來也要縮回去，
+    /// 否則舊寬度會把符號與提示擠掉。
+    private func updateFieldAccessorySizes() {
+        let minimums: [(UILabel, UIView, CGFloat)] = [
+            (currencySymbolLabel, symbolContainer, Constants.symbolWidth),
+            (priceTagLabel, priceTagContainer, Constants.priceTagWidth)
+        ]
+        for (label, container, minimumWidth) in minimums {
+            let textWidth = label.sizeThatFits(
+                CGSize(width: .greatestFiniteMagnitude, height: Constants.amountFieldHeight)
+            ).width
+            let width = max(minimumWidth, textWidth + AppStyle.Spacing.normal)
+            container.frame = CGRect(x: 0, y: 0, width: width, height: Constants.amountFieldHeight)
+            label.frame = container.bounds
+        }
+        amountTextField.setNeedsLayout()
+    }
+
+    /// 大字級時「含稅價」在輸入框右側會被擠成兩行，改放到輸入框下方。
+    private func updatePriceTagPlacement() {
+        let isAccessibilitySize = traitCollection.preferredContentSizeCategory.isAccessibilityCategory
+        amountTextField.rightViewMode = isAccessibilitySize ? .never : .always
+        priceTagRowLabel.isHidden = !isAccessibilitySize
     }
 
     private func rebuildTaxCategorySegments(with titles: [String]) {

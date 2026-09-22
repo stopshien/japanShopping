@@ -149,8 +149,8 @@ final class TripEditorViewController: UIViewController {
                 equalTo: view.trailingAnchor, constant: -AppStyle.Spacing.normal
             ),
             iconView.heightAnchor.constraint(equalToConstant: Constants.iconSize),
-            nameTextField.heightAnchor.constraint(equalToConstant: Constants.fieldHeight),
-            currencySegmentedControl.heightAnchor.constraint(equalToConstant: Constants.segmentHeight)
+            nameTextField.heightAnchor.constraint(greaterThanOrEqualToConstant: Constants.fieldHeight),
+            currencySegmentedControl.heightAnchor.constraint(greaterThanOrEqualToConstant: Constants.segmentHeight)
         ])
     }
 

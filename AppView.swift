@@ -114,6 +114,7 @@ enum AppView {
         label.textColor = color
         label.textAlignment = alignment
         label.numberOfLines = 0
+        label.adjustsFontForContentSizeCategory = true
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }
@@ -129,6 +130,7 @@ enum AppView {
         textField.layer.borderColor = AppColor.separator.cgColor
         textField.leftView = UIView(frame: CGRect(x: 0, y: 0, width: AppStyle.Spacing.normal, height: 0))
         textField.leftViewMode = .always
+        textField.adjustsFontForContentSizeCategory = true
         textField.translatesAutoresizingMaskIntoConstraints = false
         return textField
     }
@@ -147,8 +149,13 @@ enum AppView {
         return control
     }
 
+    /// 按鈕的字也要跟著字級縮放；放不下時換行，不要截斷金額。
     private static func make(_ configuration: UIButton.Configuration) -> UIButton {
+        var configuration = configuration
+        configuration.titleLineBreakMode = .byWordWrapping
         let button = UIButton(configuration: configuration)
+        button.titleLabel?.adjustsFontForContentSizeCategory = true
+        button.titleLabel?.numberOfLines = 0
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }

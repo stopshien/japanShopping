@@ -78,9 +78,9 @@ final class CardSetViewController: UIViewController {
             stackView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: Constants.topInset),
             stackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalInset),
             stackView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalInset),
-            cardNameTextField.heightAnchor.constraint(equalToConstant: Constants.fieldHeight),
-            moneyBackTextField.heightAnchor.constraint(equalToConstant: Constants.fieldHeight),
-            limitTextField.heightAnchor.constraint(equalToConstant: Constants.fieldHeight)
+            cardNameTextField.heightAnchor.constraint(greaterThanOrEqualToConstant: Constants.fieldHeight),
+            moneyBackTextField.heightAnchor.constraint(greaterThanOrEqualToConstant: Constants.fieldHeight),
+            limitTextField.heightAnchor.constraint(greaterThanOrEqualToConstant: Constants.fieldHeight)
         ])
     }
 

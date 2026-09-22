@@ -89,7 +89,7 @@ final class ProfileViewController: UIViewController {
             contentStackView.trailingAnchor.constraint(
                 equalTo: view.trailingAnchor, constant: -AppStyle.Spacing.normal
             ),
-            nameTextField.heightAnchor.constraint(equalToConstant: Constants.fieldHeight)
+            nameTextField.heightAnchor.constraint(greaterThanOrEqualToConstant: Constants.fieldHeight)
         ])
     }
 

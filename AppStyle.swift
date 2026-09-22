@@ -22,14 +22,26 @@ enum AppStyle {
         static let card: CGFloat = 16
     }
 
+    /// 字級全部跟著系統的「文字大小」設定縮放。
+    ///
+    /// 這個 App 是在店裡、戶外光線下看數字，放大字體的需求比一般 App 高。
+    /// 金額的大字有上限，否則最大字級下 NT$ 1,280,000 會排不下。
     enum Font {
-        static let title = UIFont.systemFont(ofSize: 28, weight: .semibold)
+        static let title = scaled(.systemFont(ofSize: 28, weight: .semibold), as: .title1, maximum: 40)
         /// 金額用等寬數字，打字或結果變動時數字不會左右跳動。
-        static let resultNumber = UIFont.monospacedDigitSystemFont(ofSize: 40, weight: .bold)
-        static let amountInput = UIFont.monospacedDigitSystemFont(ofSize: 30, weight: .semibold)
-        static let body = UIFont.systemFont(ofSize: 17)
-        static let bodyEmphasis = UIFont.systemFont(ofSize: 17, weight: .semibold)
-        static let label = UIFont.systemFont(ofSize: 15, weight: .medium)
-        static let caption = UIFont.systemFont(ofSize: 13)
+        static let resultNumber = scaled(
+            .monospacedDigitSystemFont(ofSize: 40, weight: .bold), as: .largeTitle, maximum: 52
+        )
+        static let amountInput = scaled(
+            .monospacedDigitSystemFont(ofSize: 30, weight: .semibold), as: .title2, maximum: 40
+        )
+        static let body = scaled(.systemFont(ofSize: 17), as: .body, maximum: 30)
+        static let bodyEmphasis = scaled(.systemFont(ofSize: 17, weight: .semibold), as: .body, maximum: 30)
+        static let label = scaled(.systemFont(ofSize: 15, weight: .medium), as: .subheadline, maximum: 26)
+        static let caption = scaled(.systemFont(ofSize: 13), as: .caption1, maximum: 22)
+
+        private static func scaled(_ font: UIFont, as style: UIFont.TextStyle, maximum: CGFloat) -> UIFont {
+            UIFontMetrics(forTextStyle: style).scaledFont(for: font, maximumPointSize: maximum)
+        }
     }
 }

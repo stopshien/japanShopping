@@ -37,7 +37,9 @@ final class ShoppingListCell: UITableViewCell {
     private let textStackView: UIStackView = {
         let stackView = UIStackView()
         stackView.axis = .vertical
-        stackView.distribution = .fillEqually
+        // 不用 fillEqually：大字級時每行高度不同，等分會把列撐得很誇張。
+        stackView.distribution = .fill
+        stackView.spacing = AppStyle.Spacing.tight / 2
         stackView.translatesAutoresizingMaskIntoConstraints = false
         return stackView
     }()
@@ -66,9 +68,16 @@ final class ShoppingListCell: UITableViewCell {
     private func setupConstraints() {
         NSLayoutConstraint.activate([
             shopPhoto.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Constants.photoInset),
-            shopPhoto.topAnchor.constraint(equalTo: contentView.topAnchor, constant: Constants.verticalInset),
-            shopPhoto.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -Constants.verticalInset),
+            shopPhoto.topAnchor.constraint(
+                greaterThanOrEqualTo: contentView.topAnchor, constant: Constants.verticalInset
+            ),
+            shopPhoto.bottomAnchor.constraint(
+                lessThanOrEqualTo: contentView.bottomAnchor, constant: -Constants.verticalInset
+            ),
+            shopPhoto.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            // 照片維持正方形，列高由文字決定。
             shopPhoto.widthAnchor.constraint(equalToConstant: Constants.photoWidth),
+            shopPhoto.heightAnchor.constraint(equalToConstant: Constants.photoWidth),
 
             textStackView.leadingAnchor.constraint(equalTo: shopPhoto.trailingAnchor, constant: Constants.textLeading),
             textStackView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -Constants.photoInset),

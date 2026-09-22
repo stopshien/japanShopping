@@ -110,7 +110,7 @@ final class ItemEditorViewController: UIViewController {
             ),
 
             photoButton.heightAnchor.constraint(equalToConstant: Constants.photoHeight),
-            productNameTextField.heightAnchor.constraint(equalToConstant: Constants.fieldHeight)
+            productNameTextField.heightAnchor.constraint(greaterThanOrEqualToConstant: Constants.fieldHeight)
         ])
     }
 

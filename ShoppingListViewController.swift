@@ -11,7 +11,7 @@ import UIKit
 final class ShoppingListViewController: UIViewController {
 
     private enum Constants {
-        static let rowHeight: CGFloat = 130
+        static let estimatedRowHeight: CGFloat = 130
         static let horizontalInset: CGFloat = AppStyle.Spacing.normal
         static let bottomBarHeight: CGFloat = 56
     }
@@ -24,7 +24,9 @@ final class ShoppingListViewController: UIViewController {
 
     private let tableView: UITableView = {
         let tableView = UITableView(frame: .zero, style: .plain)
-        tableView.rowHeight = Constants.rowHeight
+        // 大字級時列高要跟著內容長高。
+        tableView.rowHeight = UITableView.automaticDimension
+        tableView.estimatedRowHeight = Constants.estimatedRowHeight
         tableView.backgroundColor = .clear
         tableView.separatorColor = AppColor.separator
         tableView.translatesAutoresizingMaskIntoConstraints = false
@@ -34,6 +36,14 @@ final class ShoppingListViewController: UIViewController {
     private let totalSpendLabel = AppView.label(font: AppStyle.Font.bodyEmphasis)
 
     private let doneButton = AppView.primaryButton(title: "完成")
+
+    private let bottomBarStackView: UIStackView = {
+        let stackView = UIStackView()
+        stackView.alignment = .center
+        stackView.spacing = AppStyle.Spacing.normal
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        return stackView
+    }()
 
     init(viewModel: ShoppingListViewModelType, factory: ScreenFactory, allowsBack: Bool) {
         self.viewModel = viewModel
@@ -55,6 +65,14 @@ final class ShoppingListViewController: UIViewController {
         setupConstraints()
         bindViewModel()
         viewModel.input.viewDidLoad()
+    }
+
+    /// 大字級時總金額與「完成」並排會互相擠壓，改成上下排列。
+    /// 專案支援 iOS 15，所以用 traitCollectionDidChange 而不是 iOS 17 的 registerForTraitChanges。
+    override func traitCollectionDidChange(_ previous: UITraitCollection?) {
+        super.traitCollectionDidChange(previous)
+        guard traitCollection.preferredContentSizeCategory != previous?.preferredContentSizeCategory else { return }
+        updateBottomBarAxis()
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -83,9 +101,13 @@ final class ShoppingListViewController: UIViewController {
 
         doneButton.addTarget(self, action: #selector(doneTapped), for: .touchUpInside)
 
+        totalSpendLabel.setContentCompressionResistancePriority(.required, for: .vertical)
+        bottomBarStackView.addArrangedSubview(totalSpendLabel)
+        bottomBarStackView.addArrangedSubview(doneButton)
+
         view.addSubview(tableView)
-        view.addSubview(totalSpendLabel)
-        view.addSubview(doneButton)
+        view.addSubview(bottomBarStackView)
+        updateBottomBarAxis()
     }
 
     private func setupConstraints() {
@@ -93,17 +115,17 @@ final class ShoppingListViewController: UIViewController {
             tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            tableView.bottomAnchor.constraint(equalTo: totalSpendLabel.topAnchor),
+            tableView.bottomAnchor.constraint(equalTo: bottomBarStackView.topAnchor),
 
-            totalSpendLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalInset),
-            totalSpendLabel.heightAnchor.constraint(equalToConstant: Constants.bottomBarHeight),
-            totalSpendLabel.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
-
-            doneButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalInset),
-            doneButton.leadingAnchor.constraint(
-                greaterThanOrEqualTo: totalSpendLabel.trailingAnchor, constant: AppStyle.Spacing.normal
+            bottomBarStackView.leadingAnchor.constraint(
+                equalTo: view.leadingAnchor, constant: Constants.horizontalInset
             ),
-            doneButton.centerYAnchor.constraint(equalTo: totalSpendLabel.centerYAnchor)
+            bottomBarStackView.trailingAnchor.constraint(
+                equalTo: view.trailingAnchor, constant: -Constants.horizontalInset
+            ),
+            bottomBarStackView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+            // 大字級時總金額會換行，底部列要能長高。
+            bottomBarStackView.heightAnchor.constraint(greaterThanOrEqualToConstant: Constants.bottomBarHeight)
         ])
     }
 
@@ -151,6 +173,12 @@ final class ShoppingListViewController: UIViewController {
 
     @objc private func doneTapped() {
         viewModel.input.doneTapped()
+    }
+
+    private func updateBottomBarAxis() {
+        let isAccessibilitySize = traitCollection.preferredContentSizeCategory.isAccessibilityCategory
+        bottomBarStackView.axis = isAccessibilitySize ? .vertical : .horizontal
+        bottomBarStackView.alignment = isAccessibilitySize ? .fill : .center
     }
 
     // MARK: - Navigation
