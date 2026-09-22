@@ -11,7 +11,8 @@ Each entry names the test that locks it. If a change makes one of these tests fa
 - **Deleting is only persisted on an explicit confirm.** Card list deletions save on 完成; shopping list deletions and item edits save on 完成. Leaving with the back button discards them, so a mis-tapped delete can be abandoned. `CardListViewModelTests`, `ShoppingListViewModelTests`.
 - **Adding a card from the card list merges rather than reloads.** Returning from the add-card screen appends only the cards that were not there before, so deletions that are still pending on that screen survive. A plain reload would silently undo them. `CardListViewModelTests`.
 - **The shopping list total is recalculated from scratch after every deletion or edit**, never accumulated. `ShoppingListViewModelTests`.
-- **The total line is prefixed with the user's name** (`Angus，你已經花了205$`) when a profile exists, and falls back to the plain sentence when it does not. The welcome screen makes a missing name unlikely, but the repository returns an optional, so the sentence must read correctly either way. `ShoppingListViewModelTests`.
+- **The bottom bar leads with the total as a large `NT$` amount**, with 共 N 筆 and the user's name beneath it (共 3 筆・Angus, or just 共 3 筆 without a profile). The total is the point of this screen, so it is not a sentence squeezed beside the button. The amount stays on one line and shrinks instead of wrapping. `ShoppingListViewModelTests`.
+- **A shopping list row hides the thumbnail when the item has no photo**, rather than leaving a 100pt grey placeholder, and shows the amount as `NT$ 43` with the tax state as a small tag beside it. `ShoppingListViewModelTests`.
 - **Deleting a shopping list row deletes its photo file**, but only after the list has been saved successfully, so a failed save never destroys an image. `ShoppingListViewModelTests`.
 - **Editing a shopping list item only changes its name and photo.** Tapping a row opens 編輯明細. Price, 未稅／含稅 and pay type are shown as plain text, not as fields or menus, because card feedback was computed from them when the item was added; changing them afterwards would leave the card's remaining feedback out of step with the record. `ItemEditorViewModelTests`.
 - **A replacement photo is only written on 完成.** Until then it lives in memory, so leaving the list with the back button leaves no orphan file. On a successful save the old file is removed; if the save fails the new file is removed and the old one kept. `ShoppingListViewModelTests`.
@@ -78,7 +79,7 @@ Each entry is behavior that intentionally differs from the Storyboard/MVC versio
 - **Pay type is a segmented control, not a picker wheel.** There are only 現金 and 信用卡, so a wheel cost a scroll and ~100pt for nothing, and its text ignored the system text size. The card button shows the card and its rate on the first line and the remaining feedback on the second, and amounts use `PriceText.twd` like everywhere else (剩餘回饋 NT$ 4,982.69, 這筆回饋 NT$ 20). `DetailViewModelTests`.
 - **Pay type defaults to `現金`.** The picker has always displayed 現金 as its initial row, but `didSelectRow` never fires for it, so an item saved without touching the picker stored an empty `payType`.
 - **Deleting a shopping list row deletes its photo file.** The original left the JPEG behind forever.
-- **An empty shopping list shows `你已經花了0.0$`.** The original skipped the calculation when the list was empty, leaving the storyboard's design-time placeholder `總花費` on screen.
+- **An empty shopping list shows `NT$ 0` and 共 0 筆.** The original skipped the calculation when the list was empty, leaving the storyboard's design-time placeholder `總花費` on screen.
 
 ## Open Debt
 

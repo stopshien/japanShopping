@@ -10,7 +10,10 @@ import Foundation
 
 struct ShoppingListItem: Equatable {
     let productName: String
-    let priceDescription: String
+    /// 大字金額，例如「NT$ 100」。
+    let amount: String
+    /// 金額旁的小標籤，「未稅」或「含稅」。
+    let taxState: String
     let payType: String
     let imageData: Data?
 }
@@ -37,7 +40,10 @@ protocol ShoppingListViewModelInput {
 
 protocol ShoppingListViewModelOutput {
     var items: AnyPublisher<[ShoppingListItem], Never> { get }
-    var totalSpendText: AnyPublisher<String, Never> { get }
+    /// 底部的總金額大字，例如「NT$ 51」。
+    var totalAmount: AnyPublisher<String, Never> { get }
+    /// 總金額下方的說明，例如「共 3 筆・Angus」。
+    var totalSummary: AnyPublisher<String, Never> { get }
     var errorMessage: AnyPublisher<String, Never> { get }
     var didFinish: AnyPublisher<Void, Never> { get }
     var editRequest: AnyPublisher<ShoppingListEditRequest, Never> { get }
@@ -63,7 +69,8 @@ final class ShoppingListViewModel: ShoppingListViewModelType {
     private var removedPhotoNames: [String] = []
 
     private let itemsSubject = CurrentValueSubject<[ShoppingListItem], Never>([])
-    private let totalSpendTextSubject = CurrentValueSubject<String, Never>("")
+    private let totalAmountSubject = CurrentValueSubject<String, Never>("")
+    private let totalSummarySubject = CurrentValueSubject<String, Never>("")
     private let errorMessageSubject = PassthroughSubject<String, Never>()
     private let didFinishSubject = PassthroughSubject<Void, Never>()
     private let editRequestSubject = PassthroughSubject<ShoppingListEditRequest, Never>()
@@ -85,13 +92,15 @@ final class ShoppingListViewModel: ShoppingListViewModelType {
 
     private func publish() {
         itemsSubject.send(rows.map(makeDisplayItem))
-        totalSpendTextSubject.send(makeTotalSpendText())
+        totalAmountSubject.send(PriceText.twd(rows.reduce(0) { $0 + $1.item.price }))
+        totalSummarySubject.send(makeTotalSummary())
     }
 
     private func makeDisplayItem(from row: Row) -> ShoppingListItem {
         ShoppingListItem(
             productName: row.item.productName,
-            priceDescription: "\(PriceText.amount(row.item.price))$(\(row.item.taxState))",
+            amount: PriceText.twd(row.item.price),
+            taxState: row.item.taxState,
             payType: row.item.payType,
             imageData: photoData(for: row)
         )
@@ -106,11 +115,11 @@ final class ShoppingListViewModel: ShoppingListViewModelType {
         return try? imageStore.loadData(named: filename)
     }
 
-    private func makeTotalSpendText() -> String {
-        let total = rows.reduce(0) { $0 + $1.item.price }
-        let amount = "你已經花了\(PriceText.amount(total))$"
-        guard let userName, !userName.isEmpty else { return amount }
-        return "\(userName)，\(amount)"
+    /// 例如「共 3 筆・Angus」。沒有稱呼時只顯示筆數。
+    private func makeTotalSummary() -> String {
+        let count = "共 \(rows.count) 筆"
+        guard let userName, !userName.isEmpty else { return count }
+        return "\(count)・\(userName)"
     }
 }
 
@@ -207,7 +216,8 @@ extension ShoppingListViewModel: ShoppingListViewModelInput {
 extension ShoppingListViewModel: ShoppingListViewModelOutput {
 
     var items: AnyPublisher<[ShoppingListItem], Never> { itemsSubject.eraseToAnyPublisher() }
-    var totalSpendText: AnyPublisher<String, Never> { totalSpendTextSubject.eraseToAnyPublisher() }
+    var totalAmount: AnyPublisher<String, Never> { totalAmountSubject.eraseToAnyPublisher() }
+    var totalSummary: AnyPublisher<String, Never> { totalSummarySubject.eraseToAnyPublisher() }
     var errorMessage: AnyPublisher<String, Never> { errorMessageSubject.eraseToAnyPublisher() }
     var didFinish: AnyPublisher<Void, Never> { didFinishSubject.eraseToAnyPublisher() }
     var editRequest: AnyPublisher<ShoppingListEditRequest, Never> { editRequestSubject.eraseToAnyPublisher() }

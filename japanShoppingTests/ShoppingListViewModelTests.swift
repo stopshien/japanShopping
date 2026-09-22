@@ -56,7 +56,8 @@ final class ShoppingListViewModelTests: XCTestCase {
 
         XCTAssertEqual(items.count, 2)
         XCTAssertEqual(items.first?.productName, "抹茶")
-        XCTAssertEqual(items.first?.priceDescription, "100$(含稅)")
+        XCTAssertEqual(items.first?.amount, "NT$ 100")
+        XCTAssertEqual(items.first?.taxState, "含稅")
         XCTAssertEqual(items.first?.payType, "現金")
     }
 
@@ -86,56 +87,56 @@ final class ShoppingListViewModelTests: XCTestCase {
 
     func testTotalSpendTextSumsEveryPrice() {
         var text: String?
-        viewModel.output.totalSpendText.sink { text = $0 }.store(in: &cancellables)
+        viewModel.output.totalAmount.sink { text = $0 }.store(in: &cancellables)
 
         viewModel.input.viewDidLoad()
 
-        XCTAssertEqual(text, "Angus，你已經花了350$")
+        XCTAssertEqual(text, "NT$ 350")
     }
 
     func testTotalSpendTextIsRecalculatedAfterDeletion() {
         var text: String?
-        viewModel.output.totalSpendText.sink { text = $0 }.store(in: &cancellables)
+        viewModel.output.totalAmount.sink { text = $0 }.store(in: &cancellables)
 
         viewModel.input.viewDidLoad()
         viewModel.input.deleteItem(at: 0)
 
-        XCTAssertEqual(text, "Angus，你已經花了250$", "刪除後要重算，不能累加")
+        XCTAssertEqual(text, "NT$ 250", "刪除後要重算，不能累加")
     }
 
     func testTotalSpendTextIsZeroWhenEveryItemIsDeleted() {
         var text: String?
-        viewModel.output.totalSpendText.sink { text = $0 }.store(in: &cancellables)
+        viewModel.output.totalAmount.sink { text = $0 }.store(in: &cancellables)
 
         viewModel.input.viewDidLoad()
         viewModel.input.deleteItem(at: 0)
         viewModel.input.deleteItem(at: 0)
 
-        XCTAssertEqual(text, "Angus，你已經花了0$")
+        XCTAssertEqual(text, "NT$ 0")
     }
 
     /// 遷移前這裡是 for i in 0...lists.count-1，空陣列會直接崩潰。
     func testEmptyListDoesNotCrashAndShowsZero() {
         repository.storedItems = []
         var text: String?
-        viewModel.output.totalSpendText.sink { text = $0 }.store(in: &cancellables)
+        viewModel.output.totalAmount.sink { text = $0 }.store(in: &cancellables)
 
         viewModel.input.viewDidLoad()
 
-        XCTAssertEqual(text, "Angus，你已經花了0$")
+        XCTAssertEqual(text, "NT$ 0")
     }
 
     /// 理論上歡迎頁會確保有稱呼，但 repository 回傳的是 optional，
     /// 沒有稱呼時句子仍須完整。
-    func testTotalSpendTextOmitsTheNameWhenNoProfileIsStored() {
+    func testTotalSummaryOmitsTheNameWhenNoProfileIsStored() {
         profileRepository.storedProfile = nil
         viewModel = makeViewModel()
         var text: String?
-        viewModel.output.totalSpendText.sink { text = $0 }.store(in: &cancellables)
+        viewModel.output.totalSummary.sink { text = $0 }.store(in: &cancellables)
 
         viewModel.input.viewDidLoad()
 
-        XCTAssertEqual(text, "你已經花了350$")
+        XCTAssertEqual(text, "共 2 筆", "沒有稱呼時只顯示筆數")
     }
 
     // MARK: - 刪除與存檔時機
@@ -225,15 +226,15 @@ final class ShoppingListViewModelTests: XCTestCase {
         var items: [ShoppingListItem] = []
         var total: String?
         viewModel.output.items.sink { items = $0 }.store(in: &cancellables)
-        viewModel.output.totalSpendText.sink { total = $0 }.store(in: &cancellables)
+        viewModel.output.totalAmount.sink { total = $0 }.store(in: &cancellables)
 
         viewModel.input.viewDidLoad()
         viewModel.input.itemEdited(at: 0, edit("焙茶", price: 150))
 
         XCTAssertEqual(items.first?.productName, "焙茶")
-        XCTAssertEqual(items.first?.priceDescription, "150$(未稅)")
+        XCTAssertEqual(items.first?.amount, "NT$ 150")
         XCTAssertEqual(items.first?.payType, "玉山")
-        XCTAssertEqual(total, "Angus，你已經花了400$")
+        XCTAssertEqual(total, "NT$ 400")
         XCTAssertEqual(repository.saveCallCount, 0, "尚未按下 Done，存檔不應變動")
 
         viewModel.input.doneTapped()
@@ -316,5 +317,16 @@ final class ShoppingListViewModelTests: XCTestCase {
         viewModel.input.doneTapped()
 
         XCTAssertTrue(didFinish)
+    }
+
+    func testTotalSummaryCountsTheItemsAndShowsTheName() {
+        var summary: String?
+        viewModel.output.totalSummary.sink { summary = $0 }.store(in: &cancellables)
+
+        viewModel.input.viewDidLoad()
+        XCTAssertEqual(summary, "共 2 筆・Angus")
+
+        viewModel.input.deleteItem(at: 0)
+        XCTAssertEqual(summary, "共 1 筆・Angus")
     }
 }

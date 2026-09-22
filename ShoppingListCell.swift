@@ -32,7 +32,17 @@ final class ShoppingListCell: UITableViewCell {
 
     private let productNameLabel = AppView.label(font: AppStyle.Font.title)
     private let priceLabel = AppView.label(font: AppStyle.Font.bodyEmphasis)
+    /// 稅別改成金額旁的小標籤，不再用括號夾在金額後面。
+    private let taxStateLabel = AppView.label(font: AppStyle.Font.caption, color: AppColor.textSecondary)
     private let payTypeLabel = AppView.label(font: AppStyle.Font.body, color: AppColor.textSecondary)
+
+    private lazy var priceRow: UIStackView = {
+        let row = UIStackView(arrangedSubviews: [priceLabel, taxStateLabel, UIView()])
+        row.axis = .horizontal
+        row.alignment = .firstBaseline
+        row.spacing = AppStyle.Spacing.tight / 2
+        return row
+    }()
 
     private let textStackView: UIStackView = {
         let stackView = UIStackView()
@@ -43,6 +53,9 @@ final class ShoppingListCell: UITableViewCell {
         stackView.translatesAutoresizingMaskIntoConstraints = false
         return stackView
     }()
+
+    private lazy var photoWidthConstraint =
+        shopPhoto.widthAnchor.constraint(equalToConstant: Constants.photoWidth)
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -60,7 +73,7 @@ final class ShoppingListCell: UITableViewCell {
     private func setupViews() {
         // 點選一筆可以編輯。
         accessoryType = .disclosureIndicator
-        [productNameLabel, priceLabel, payTypeLabel].forEach(textStackView.addArrangedSubview)
+        [productNameLabel, priceRow, payTypeLabel].forEach(textStackView.addArrangedSubview)
         contentView.addSubview(shopPhoto)
         contentView.addSubview(textStackView)
     }
@@ -68,6 +81,7 @@ final class ShoppingListCell: UITableViewCell {
     private func setupConstraints() {
         NSLayoutConstraint.activate([
             shopPhoto.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Constants.photoInset),
+            photoWidthConstraint,
             shopPhoto.topAnchor.constraint(
                 greaterThanOrEqualTo: contentView.topAnchor, constant: Constants.verticalInset
             ),
@@ -76,8 +90,7 @@ final class ShoppingListCell: UITableViewCell {
             ),
             shopPhoto.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
             // 照片維持正方形，列高由文字決定。
-            shopPhoto.widthAnchor.constraint(equalToConstant: Constants.photoWidth),
-            shopPhoto.heightAnchor.constraint(equalToConstant: Constants.photoWidth),
+            shopPhoto.heightAnchor.constraint(equalTo: shopPhoto.widthAnchor),
 
             textStackView.leadingAnchor.constraint(equalTo: shopPhoto.trailingAnchor, constant: Constants.textLeading),
             textStackView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -Constants.photoInset),
@@ -90,14 +103,22 @@ final class ShoppingListCell: UITableViewCell {
 
     func configure(with item: ShoppingListItem) {
         productNameLabel.text = item.productName
-        priceLabel.text = item.priceDescription
+        priceLabel.text = item.amount
+        taxStateLabel.text = item.taxState
         payTypeLabel.text = item.payType
-        shopPhoto.image = item.imageData.flatMap(UIImage.init(data:))
+
+        // 沒有照片就不留空灰塊，讓文字靠左。
+        let image = item.imageData.flatMap(UIImage.init(data:))
+        shopPhoto.image = image
+        shopPhoto.isHidden = image == nil
+        photoWidthConstraint.constant = image == nil ? 0 : Constants.photoWidth
     }
 
     override func prepareForReuse() {
         super.prepareForReuse()
         shopPhoto.image = nil
+        shopPhoto.isHidden = true
+        photoWidthConstraint.constant = 0
     }
 
     // MARK: - Private

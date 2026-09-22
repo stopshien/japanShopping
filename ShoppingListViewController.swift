@@ -33,9 +33,26 @@ final class ShoppingListViewController: UIViewController {
         return tableView
     }()
 
-    private let totalSpendLabel = AppView.label(font: AppStyle.Font.bodyEmphasis)
+    /// 這頁最重要的摘要，用大字。
+    private let totalAmountLabel: UILabel = {
+        let label = AppView.label(font: AppStyle.Font.resultNumber)
+        // 金額不換行，位數多時縮小字級，否則「NT$ 1,165」會斷成兩行。
+        label.numberOfLines = 1
+        label.adjustsFontSizeToFitWidth = true
+        label.minimumScaleFactor = 0.5
+        return label
+    }()
+    private let totalSummaryLabel = AppView.label(font: AppStyle.Font.caption, color: AppColor.textSecondary)
 
-    private let doneButton = AppView.primaryButton(title: "完成")
+    private lazy var totalStackView: UIStackView = {
+        let stackView = UIStackView(arrangedSubviews: [totalAmountLabel, totalSummaryLabel])
+        stackView.axis = .vertical
+        stackView.spacing = 0
+        return stackView
+    }()
+
+    /// 底部列在綠色底上，次要按鈕的淡色底幾乎融進背景、看起來像停用，所以維持實心。
+    private let doneButton = AppView.primaryButton(title: "完成並儲存")
 
     private let bottomBarStackView: UIStackView = {
         let stackView = UIStackView()
@@ -101,8 +118,8 @@ final class ShoppingListViewController: UIViewController {
 
         doneButton.addTarget(self, action: #selector(doneTapped), for: .touchUpInside)
 
-        totalSpendLabel.setContentCompressionResistancePriority(.required, for: .vertical)
-        bottomBarStackView.addArrangedSubview(totalSpendLabel)
+        totalAmountLabel.setContentCompressionResistancePriority(.required, for: .vertical)
+        bottomBarStackView.addArrangedSubview(totalStackView)
         bottomBarStackView.addArrangedSubview(doneButton)
 
         view.addSubview(tableView)
@@ -140,10 +157,17 @@ final class ShoppingListViewController: UIViewController {
             }
             .store(in: &cancellables)
 
-        viewModel.output.totalSpendText
+        viewModel.output.totalAmount
             .receive(on: DispatchQueue.main)
             .sink { [weak self] text in
-                self?.totalSpendLabel.text = text
+                self?.totalAmountLabel.text = text
+            }
+            .store(in: &cancellables)
+
+        viewModel.output.totalSummary
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] text in
+                self?.totalSummaryLabel.text = text
             }
             .store(in: &cancellables)
 
