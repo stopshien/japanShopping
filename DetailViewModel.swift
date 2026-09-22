@@ -58,7 +58,12 @@ protocol DetailViewModelInput {
 }
 
 protocol DetailViewModelOutput {
-    var priceDescription: AnyPublisher<String, Never> { get }
+    /// 大字金額，例如「NT$ 516」。
+    var priceAmount: AnyPublisher<String, Never> { get }
+    /// 金額下方的稅別，例如「含稅」。
+    var priceTaxState: AnyPublisher<String, Never> { get }
+    /// 商品名稱是必填，沒填時「加入消費紀錄」顯示為停用，而不是按了沒反應。
+    var isSaveEnabled: AnyPublisher<Bool, Never> { get }
     var isCardSectionVisible: AnyPublisher<Bool, Never> { get }
     var cardButtonTitle: AnyPublisher<String, Never> { get }
     var cardMenuItems: AnyPublisher<[CardMenuItem], Never> { get }
@@ -87,7 +92,9 @@ final class DetailViewModel: DetailViewModelType {
     private var payMethod: PayMethod = .cash
     private var photoData: Data?
 
-    private let priceDescriptionSubject = CurrentValueSubject<String, Never>("")
+    private let priceAmountSubject = CurrentValueSubject<String, Never>("")
+    private let priceTaxStateSubject = CurrentValueSubject<String, Never>("")
+    private let isSaveEnabledSubject = CurrentValueSubject<Bool, Never>(false)
     private let isCardSectionVisibleSubject = CurrentValueSubject<Bool, Never>(false)
     private let cardButtonTitleSubject = CurrentValueSubject<String, Never>(Constants.cardButtonPlaceholder)
     private let cardMenuItemsSubject = CurrentValueSubject<[CardMenuItem], Never>([])
@@ -158,7 +165,8 @@ final class DetailViewModel: DetailViewModelType {
 extension DetailViewModel: DetailViewModelInput {
 
     func viewDidLoad() {
-        priceDescriptionSubject.send("價格：\(PriceText.amount(item.price))$ (\(item.taxState))")
+        priceAmountSubject.send(PriceText.twd(item.price))
+        priceTaxStateSubject.send(item.taxState)
         loadCards()
     }
 
@@ -168,6 +176,7 @@ extension DetailViewModel: DetailViewModelInput {
     }
 
     func productNameChanged(_ text: String) {
+        isSaveEnabledSubject.send(!text.trimmingCharacters(in: .whitespaces).isEmpty)
         item.productName = text
     }
 
@@ -237,7 +246,9 @@ extension DetailViewModel: DetailViewModelInput {
 
 extension DetailViewModel: DetailViewModelOutput {
 
-    var priceDescription: AnyPublisher<String, Never> { priceDescriptionSubject.eraseToAnyPublisher() }
+    var priceAmount: AnyPublisher<String, Never> { priceAmountSubject.eraseToAnyPublisher() }
+    var priceTaxState: AnyPublisher<String, Never> { priceTaxStateSubject.eraseToAnyPublisher() }
+    var isSaveEnabled: AnyPublisher<Bool, Never> { isSaveEnabledSubject.eraseToAnyPublisher() }
     var isCardSectionVisible: AnyPublisher<Bool, Never> { isCardSectionVisibleSubject.eraseToAnyPublisher() }
     var cardButtonTitle: AnyPublisher<String, Never> { cardButtonTitleSubject.eraseToAnyPublisher() }
     var cardMenuItems: AnyPublisher<[CardMenuItem], Never> { cardMenuItemsSubject.eraseToAnyPublisher() }

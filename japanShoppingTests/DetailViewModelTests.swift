@@ -47,13 +47,31 @@ final class DetailViewModelTests: XCTestCase {
 
     // MARK: - 初始顯示
 
-    func testPriceDescriptionShowsPriceAndTaxState() {
-        var text: String?
-        viewModel.output.priceDescription.sink { text = $0 }.store(in: &cancellables)
+    func testPriceIsShownAsALargeAmountWithItsTaxState() {
+        var amount: String?
+        var taxState: String?
+        viewModel.output.priceAmount.sink { amount = $0 }.store(in: &cancellables)
+        viewModel.output.priceTaxState.sink { taxState = $0 }.store(in: &cancellables)
 
         viewModel.input.viewDidLoad()
 
-        XCTAssertEqual(text, "價格：1000$ (未稅)")
+        XCTAssertEqual(amount, "NT$ 1,000")
+        XCTAssertEqual(taxState, "未稅")
+    }
+
+    /// 商品名稱是必填，沒填時按鈕停用，而不是按了沒反應。
+    func testSaveIsDisabledUntilTheProductHasAName() {
+        var isEnabled: Bool?
+        viewModel.output.isSaveEnabled.sink { isEnabled = $0 }.store(in: &cancellables)
+
+        viewModel.input.viewDidLoad()
+        XCTAssertEqual(isEnabled, false)
+
+        viewModel.input.productNameChanged("抹茶")
+        XCTAssertEqual(isEnabled, true)
+
+        viewModel.input.productNameChanged("   ")
+        XCTAssertEqual(isEnabled, false)
     }
 
     func testCardSectionIsHiddenInitially() {

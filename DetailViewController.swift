@@ -12,6 +12,8 @@ final class DetailViewController: UIViewController {
         static let horizontalInset: CGFloat = AppStyle.Spacing.normal
         static let spacing: CGFloat = 16
         static let photoHeight: CGFloat = 180
+        /// 照片改成一列後的縮圖大小。
+        static let photoThumbnailSize: CGFloat = 72
         static let photoBorderWidth: CGFloat = 4
         static let fieldHeight: CGFloat = 48
         static let pickerHeight: CGFloat = 99
@@ -29,13 +31,34 @@ final class DetailViewController: UIViewController {
 
     // MARK: - Views
 
-    private let imageSelectButton = PhotoButton(accessibilityLabel: "選擇照片")
+    private let imageSelectButton: PhotoButton = {
+        let button = PhotoButton(accessibilityLabel: "選擇照片")
+        // 白色卡片上的白色縮圖看不出是可點區塊。
+        button.backgroundColor = AppColor.accentSoft
+        return button
+    }()
+    /// 照片那一列的說明，選了照片後改為「更換照片」。
+    private let photoActionLabel = AppView.label("加入照片", color: AppColor.accent)
 
-    private let priceLabel = DetailViewController.makeLabel()
-    private let productLabel = DetailViewController.makeLabel(text: "商品")
+    private let scrollView: UIScrollView = {
+        let scrollView = UIScrollView()
+        scrollView.keyboardDismissMode = .interactive
+        scrollView.alwaysBounceVertical = true
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        return scrollView
+    }()
+
+    /// 這頁最重要的資訊之一，用和首頁一致的大字金額。
+    private let priceLabel = AppView.label(font: AppStyle.Font.resultNumber)
+    private let priceTaxStateLabel = AppView.label(font: AppStyle.Font.label, color: AppColor.textSecondary)
+    private let productLabel = DetailViewController.makeLabel(text: "商品（必填）")
     private let payTypeLabel = DetailViewController.makeLabel(text: "付款方式")
 
-    private let productTextField = AppView.textField()
+    private let productTextField: UITextField = {
+        let textField = AppView.textField()
+        textField.placeholder = "例如：抹茶捲"
+        return textField
+    }()
 
     private let payTypePicker: UIPickerView = {
         let picker = UIPickerView()
@@ -111,9 +134,21 @@ final class DetailViewController: UIViewController {
         payTypePicker.delegate = self
         payTypePicker.dataSource = self
 
+
+        let photoRow = UIStackView(arrangedSubviews: [imageSelectButton, photoActionLabel])
+        photoRow.axis = .horizontal
+        photoRow.alignment = .center
+        photoRow.spacing = Constants.spacing
+        photoRow.isUserInteractionEnabled = true
+        photoRow.addGestureRecognizer(
+            UITapGestureRecognizer(target: self, action: #selector(imagePickerTapped))
+        )
+
         let cardStack = AppView.cardStack(in: formCard, spacing: AppStyle.Spacing.tight + 4)
         [
             priceLabel,
+            priceTaxStateLabel,
+            photoRow,
             makeRow(label: productLabel, field: productTextField),
             makeRow(label: payTypeLabel, field: payTypePicker),
             cardsChooseButton,
@@ -121,9 +156,13 @@ final class DetailViewController: UIViewController {
             saveToListButton
         ].forEach(cardStack.addArrangedSubview)
 
-        [imageSelectButton, formCard].forEach(contentStackView.addArrangedSubview)
+        cardStack.setCustomSpacing(AppStyle.Spacing.normal, after: priceTaxStateLabel)
+        cardStack.setCustomSpacing(AppStyle.Spacing.normal, after: photoRow)
 
-        view.addSubview(contentStackView)
+        contentStackView.addArrangedSubview(formCard)
+
+        scrollView.addSubview(contentStackView)
+        view.addSubview(scrollView)
 
         imageSelectButton.addTarget(self, action: #selector(imagePickerTapped), for: .touchUpInside)
         saveToListButton.addTarget(self, action: #selector(saveTapped), for: .touchUpInside)
@@ -131,12 +170,27 @@ final class DetailViewController: UIViewController {
     }
 
     private func setupConstraints() {
+        let content = scrollView.contentLayoutGuide
         NSLayoutConstraint.activate([
-            contentStackView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: Constants.spacing),
-            contentStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalInset),
-            contentStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalInset),
+            scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            // 鍵盤出現時可視範圍縮到鍵盤上緣，被擋住的按鈕可以捲出來。
+            scrollView.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor),
 
-            imageSelectButton.heightAnchor.constraint(equalToConstant: Constants.photoHeight),
+            // 內容區要有寬度，否則 contentSize.width 為 0，捲動計算會失效。
+            content.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor),
+            contentStackView.topAnchor.constraint(equalTo: content.topAnchor, constant: Constants.spacing),
+            contentStackView.bottomAnchor.constraint(equalTo: content.bottomAnchor, constant: -Constants.spacing),
+            contentStackView.leadingAnchor.constraint(
+                equalTo: scrollView.frameLayoutGuide.leadingAnchor, constant: Constants.horizontalInset
+            ),
+            contentStackView.trailingAnchor.constraint(
+                equalTo: scrollView.frameLayoutGuide.trailingAnchor, constant: -Constants.horizontalInset
+            ),
+
+            imageSelectButton.widthAnchor.constraint(equalToConstant: Constants.photoThumbnailSize),
+            imageSelectButton.heightAnchor.constraint(equalToConstant: Constants.photoThumbnailSize),
             productTextField.heightAnchor.constraint(greaterThanOrEqualToConstant: Constants.fieldHeight),
             payTypePicker.heightAnchor.constraint(equalToConstant: Constants.pickerHeight)
         ])
@@ -145,10 +199,32 @@ final class DetailViewController: UIViewController {
     // MARK: - Binding
 
     private func bindViewModel() {
-        viewModel.output.priceDescription
+        // 鍵盤出現後可視範圍變小，把輸入框與「加入消費紀錄」捲進畫面。
+        NotificationCenter.default.publisher(for: UIResponder.keyboardDidShowNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.keepFormVisible()
+            }
+            .store(in: &cancellables)
+
+        viewModel.output.priceAmount
             .receive(on: DispatchQueue.main)
             .sink { [weak self] text in
                 self?.priceLabel.text = text
+            }
+            .store(in: &cancellables)
+
+        viewModel.output.priceTaxState
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] text in
+                self?.priceTaxStateLabel.text = text
+            }
+            .store(in: &cancellables)
+
+        viewModel.output.isSaveEnabled
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isEnabled in
+                self?.saveToListButton.isEnabled = isEnabled
             }
             .store(in: &cancellables)
 
@@ -262,6 +338,21 @@ final class DetailViewController: UIViewController {
     }
 
     /// 標籤與欄位並排；大字級時欄位會被擠到只剩幾個字，改成上下排列。
+    /// 鍵盤開著時，讓商品名稱與儲存按鈕都留在可視範圍內。
+    private func keepFormVisible() {
+        guard productTextField.isFirstResponder, view.window != nil else { return }
+        view.layoutIfNeeded()
+
+        let field = productTextField.convert(productTextField.bounds, to: scrollView)
+        let button = saveToListButton.convert(saveToListButton.bounds, to: scrollView)
+        let margin = AppStyle.Spacing.tight
+        let visibleHeight = scrollView.bounds.height
+            - scrollView.adjustedContentInset.top - scrollView.adjustedContentInset.bottom
+        // 兩者都放不下時以輸入框為主，使用者正在打字。
+        let target = field.union(button).height + margin * 2 <= visibleHeight ? field.union(button) : field
+        scrollView.scrollRectToVisible(target.insetBy(dx: 0, dy: -margin), animated: true)
+    }
+
     private func makeRow(label: UILabel, field: UIView) -> UIStackView {
         let row = UIStackView(arrangedSubviews: [label, field])
         row.spacing = Constants.spacing
@@ -326,6 +417,7 @@ extension DetailViewController: UIImagePickerControllerDelegate, UINavigationCon
     ) {
         if let image = info[.originalImage] as? UIImage {
             imageSelectButton.setPhoto(image)
+            photoActionLabel.text = "更換照片"
             viewModel.input.photoSelected(image.jpegData(compressionQuality: 0.9))
         }
         dismiss(animated: true)
