@@ -7,17 +7,21 @@
 
 import UIKit
 
+/// 消費紀錄的一列：左邊商品與付款方式，右邊金額。
+///
+/// 金額靠右對齊，由上往下掃就能比較每一筆花了多少；商品名稱不再用大字，
+/// 否則會和金額互相搶注意力，列也會高到一頁看不到幾筆。
 final class ShoppingListCell: UITableViewCell {
 
     static let reuseIdentifier = "ShoppingListCell"
 
     private enum Constants {
-        static let photoWidth: CGFloat = 100
+        static let photoWidth: CGFloat = 56
         static let photoInset: CGFloat = AppStyle.Spacing.normal
         static let verticalInset: CGFloat = AppStyle.Spacing.tight + 4
-        static let textLeading: CGFloat = 14
-        static let nameFontSize: CGFloat = 25
-        static let detailFontSize: CGFloat = 20
+        static let textLeading: CGFloat = 12
+        static let tagHorizontalInset: CGFloat = 8
+        static let tagVerticalInset: CGFloat = 2
     }
 
     private let shopPhoto: UIImageView = {
@@ -30,25 +34,25 @@ final class ShoppingListCell: UITableViewCell {
         return imageView
     }()
 
-    private let productNameLabel = AppView.label(font: AppStyle.Font.title)
-    private let priceLabel = AppView.label(font: AppStyle.Font.bodyEmphasis)
-    /// 稅別改成金額旁的小標籤，不再用括號夾在金額後面。
-    private let taxStateLabel = AppView.label(font: AppStyle.Font.caption, color: AppColor.textSecondary)
-    private let payTypeLabel = AppView.label(font: AppStyle.Font.body, color: AppColor.textSecondary)
+    private let productNameLabel = AppView.label(font: AppStyle.Font.bodyEmphasis)
+    private let amountLabel = AppView.label(font: AppStyle.Font.amountRow, alignment: .right)
 
-    private lazy var priceRow: UIStackView = {
-        let row = UIStackView(arrangedSubviews: [priceLabel, taxStateLabel, UIView()])
+    /// 付款方式放進淡色標籤，和稅別分開，掃視時看得出是哪張卡。
+    private let payTypeLabel = AppView.label(font: AppStyle.Font.caption, color: AppColor.accent)
+    private let payTypeTag = UIView()
+    private let taxStateLabel = AppView.label(font: AppStyle.Font.caption, color: AppColor.textSecondary)
+
+    private lazy var detailRow: UIStackView = {
+        let row = UIStackView(arrangedSubviews: [payTypeTag, taxStateLabel, UIView()])
         row.axis = .horizontal
-        row.alignment = .firstBaseline
-        row.spacing = AppStyle.Spacing.tight / 2
+        row.alignment = .center
+        row.spacing = AppStyle.Spacing.tight
         return row
     }()
 
-    private let textStackView: UIStackView = {
-        let stackView = UIStackView()
+    private lazy var textStackView: UIStackView = {
+        let stackView = UIStackView(arrangedSubviews: [productNameLabel, detailRow])
         stackView.axis = .vertical
-        // 不用 fillEqually：大字級時每行高度不同，等分會把列撐得很誇張。
-        stackView.distribution = .fill
         stackView.spacing = AppStyle.Spacing.tight / 2
         stackView.translatesAutoresizingMaskIntoConstraints = false
         return stackView
@@ -73,15 +77,24 @@ final class ShoppingListCell: UITableViewCell {
     private func setupViews() {
         // 點選一筆可以編輯。
         accessoryType = .disclosureIndicator
-        [productNameLabel, priceRow, payTypeLabel].forEach(textStackView.addArrangedSubview)
+        backgroundColor = AppColor.surface
+
+        payTypeTag.backgroundColor = AppColor.accentSoft
+        payTypeTag.layer.cornerRadius = AppStyle.Radius.control / 2
+        payTypeTag.translatesAutoresizingMaskIntoConstraints = false
+        payTypeTag.addSubview(payTypeLabel)
+
+        amountLabel.setContentHuggingPriority(.required, for: .horizontal)
+        amountLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+
         contentView.addSubview(shopPhoto)
         contentView.addSubview(textStackView)
+        contentView.addSubview(amountLabel)
     }
 
     private func setupConstraints() {
         NSLayoutConstraint.activate([
             shopPhoto.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Constants.photoInset),
-            photoWidthConstraint,
             shopPhoto.topAnchor.constraint(
                 greaterThanOrEqualTo: contentView.topAnchor, constant: Constants.verticalInset
             ),
@@ -89,13 +102,35 @@ final class ShoppingListCell: UITableViewCell {
                 lessThanOrEqualTo: contentView.bottomAnchor, constant: -Constants.verticalInset
             ),
             shopPhoto.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            photoWidthConstraint,
             // 照片維持正方形，列高由文字決定。
             shopPhoto.heightAnchor.constraint(equalTo: shopPhoto.widthAnchor),
 
+            payTypeLabel.topAnchor.constraint(equalTo: payTypeTag.topAnchor, constant: Constants.tagVerticalInset),
+            payTypeLabel.bottomAnchor.constraint(
+                equalTo: payTypeTag.bottomAnchor, constant: -Constants.tagVerticalInset
+            ),
+            payTypeLabel.leadingAnchor.constraint(
+                equalTo: payTypeTag.leadingAnchor, constant: Constants.tagHorizontalInset
+            ),
+            payTypeLabel.trailingAnchor.constraint(
+                equalTo: payTypeTag.trailingAnchor, constant: -Constants.tagHorizontalInset
+            ),
+
             textStackView.leadingAnchor.constraint(equalTo: shopPhoto.trailingAnchor, constant: Constants.textLeading),
-            textStackView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -Constants.photoInset),
             textStackView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: Constants.verticalInset),
-            textStackView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -Constants.verticalInset)
+            textStackView.bottomAnchor.constraint(
+                equalTo: contentView.bottomAnchor, constant: -Constants.verticalInset
+            ),
+
+            amountLabel.leadingAnchor.constraint(
+                greaterThanOrEqualTo: textStackView.trailingAnchor, constant: AppStyle.Spacing.tight
+            ),
+            // 右側是「>」箭頭，金額不要貼著它。
+            amountLabel.trailingAnchor.constraint(
+                equalTo: contentView.trailingAnchor, constant: -AppStyle.Spacing.tight
+            ),
+            amountLabel.centerYAnchor.constraint(equalTo: contentView.centerYAnchor)
         ])
     }
 
@@ -103,11 +138,12 @@ final class ShoppingListCell: UITableViewCell {
 
     func configure(with item: ShoppingListItem) {
         productNameLabel.text = item.productName
-        priceLabel.text = item.amount
-        taxStateLabel.text = item.taxState
+        amountLabel.text = item.amount
         payTypeLabel.text = item.payType
+        payTypeTag.isHidden = item.payType.isEmpty
+        taxStateLabel.text = item.taxState
 
-        // 沒有照片就不留空灰塊，讓文字靠左。
+        // 沒有照片就不留空位，讓文字靠左。
         let image = item.imageData.flatMap(UIImage.init(data:))
         shopPhoto.image = image
         shopPhoto.isHidden = image == nil
@@ -120,7 +156,4 @@ final class ShoppingListCell: UITableViewCell {
         shopPhoto.isHidden = true
         photoWidthConstraint.constant = 0
     }
-
-    // MARK: - Private
-
 }

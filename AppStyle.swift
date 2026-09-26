@@ -32,6 +32,10 @@ enum AppStyle {
         static let resultNumber = scaled(
             .monospacedDigitSystemFont(ofSize: 40, weight: .bold), as: .largeTitle, maximum: 52
         )
+        /// 清單列的金額，等寬數字讓上下兩列的位數對得齊。
+        static let amountRow = scaled(
+            .monospacedDigitSystemFont(ofSize: 17, weight: .semibold), as: .body, maximum: 30
+        )
         static let amountInput = scaled(
             .monospacedDigitSystemFont(ofSize: 30, weight: .semibold), as: .title2, maximum: 40
         )

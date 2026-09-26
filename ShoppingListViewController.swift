@@ -23,7 +23,9 @@ final class ShoppingListViewController: UIViewController {
     private var items: [ShoppingListItem] = []
 
     private let tableView: UITableView = {
-        let tableView = UITableView(frame: .zero, style: .plain)
+        // 圓角卡片清單，和我的旅程、設定同一套視覺；整片白底會和其他頁不一致，
+        // 筆數少時還會在畫面中間留下一條白綠分界。
+        let tableView = UITableView(frame: .zero, style: .insetGrouped)
         // 大字級時列高要跟著內容長高。
         tableView.rowHeight = UITableView.automaticDimension
         tableView.estimatedRowHeight = Constants.estimatedRowHeight
@@ -53,6 +55,17 @@ final class ShoppingListViewController: UIViewController {
 
     /// 底部列在綠色底上，次要按鈕的淡色底幾乎融進背景、看起來像停用，所以維持實心。
     private let doneButton = AppView.primaryButton(title: "完成並儲存")
+
+    /// 底部摘要做成浮起的卡片，和清單、其他頁的卡片語言一致；
+    /// 直接坐在綠色背景上會顯得單薄。
+    private let bottomCard = AppView.card()
+
+    private let emptyStateLabel = AppView.label(
+        "還沒有任何消費紀錄\n回上一頁輸入價格就能記一筆",
+        font: AppStyle.Font.body,
+        color: AppColor.textSecondary,
+        alignment: .center
+    )
 
     private let bottomBarStackView: UIStackView = {
         let stackView = UIStackView()
@@ -122,8 +135,12 @@ final class ShoppingListViewController: UIViewController {
         bottomBarStackView.addArrangedSubview(totalStackView)
         bottomBarStackView.addArrangedSubview(doneButton)
 
+        let bottomStack = AppView.cardStack(in: bottomCard, spacing: 0)
+        bottomStack.addArrangedSubview(bottomBarStackView)
+
         view.addSubview(tableView)
-        view.addSubview(bottomBarStackView)
+        view.addSubview(emptyStateLabel)
+        view.addSubview(bottomCard)
         updateBottomBarAxis()
     }
 
@@ -132,15 +149,22 @@ final class ShoppingListViewController: UIViewController {
             tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            tableView.bottomAnchor.constraint(equalTo: bottomBarStackView.topAnchor),
+            tableView.bottomAnchor.constraint(equalTo: bottomCard.topAnchor, constant: -AppStyle.Spacing.tight),
 
-            bottomBarStackView.leadingAnchor.constraint(
-                equalTo: view.leadingAnchor, constant: Constants.horizontalInset
+            emptyStateLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            emptyStateLabel.centerYAnchor.constraint(equalTo: tableView.centerYAnchor),
+            emptyStateLabel.leadingAnchor.constraint(
+                equalTo: view.leadingAnchor, constant: AppStyle.Spacing.loose
             ),
-            bottomBarStackView.trailingAnchor.constraint(
-                equalTo: view.trailingAnchor, constant: -Constants.horizontalInset
+            emptyStateLabel.trailingAnchor.constraint(
+                equalTo: view.trailingAnchor, constant: -AppStyle.Spacing.loose
             ),
-            bottomBarStackView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+
+            bottomCard.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalInset),
+            bottomCard.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalInset),
+            bottomCard.bottomAnchor.constraint(
+                equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -AppStyle.Spacing.tight
+            ),
             // 大字級時總金額會換行，底部列要能長高。
             bottomBarStackView.heightAnchor.constraint(greaterThanOrEqualToConstant: Constants.bottomBarHeight)
         ])
@@ -152,8 +176,10 @@ final class ShoppingListViewController: UIViewController {
         viewModel.output.items
             .receive(on: DispatchQueue.main)
             .sink { [weak self] items in
-                self?.items = items
-                self?.tableView.reloadData()
+                guard let self else { return }
+                self.items = items
+                self.tableView.reloadData()
+                self.emptyStateLabel.isHidden = !items.isEmpty
             }
             .store(in: &cancellables)
 
