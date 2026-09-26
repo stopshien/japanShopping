@@ -656,7 +656,6 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 9D7ST37ACJ;
-				EXCHANGE_RATE_API_KEY = 953c2dbe0b2c321ef179490a;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = japanShopping/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -684,7 +683,6 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 9D7ST37ACJ;
-				EXCHANGE_RATE_API_KEY = 953c2dbe0b2c321ef179490a;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = japanShopping/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;

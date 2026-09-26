@@ -6,7 +6,7 @@
 import XCTest
 @testable import japanShopping
 
-/// 鎖定匯率 API 的回應格式與日圓兌台幣的換算方式。
+/// 鎖定匯率 API（免金鑰端點）的回應格式與日圓兌台幣的換算方式。
 final class ExchangeRateDecodingTests: XCTestCase {
 
     private let sampleJSON = """
@@ -14,7 +14,7 @@ final class ExchangeRateDecodingTests: XCTestCase {
         "result": "success",
         "time_last_update_utc": "Fri, 13 Jun 2025 00:00:01 +0000",
         "base_code": "USD",
-        "conversion_rates": {
+        "rates": {
             "USD": 1,
             "JPY": 157.25,
             "TWD": 32.5,

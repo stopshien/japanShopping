@@ -11,13 +11,10 @@ protocol ExchangeRateService {
 }
 
 enum ExchangeRateServiceError: LocalizedError {
-    case missingAPIKey
     case invalidURL
 
     var errorDescription: String? {
         switch self {
-        case .missingAPIKey:
-            return "找不到匯率 API 金鑰設定"
         case .invalidURL:
             return "匯率服務網址不正確"
         }
@@ -27,23 +24,22 @@ enum ExchangeRateServiceError: LocalizedError {
 final class RemoteExchangeRateService: ExchangeRateService {
 
     private enum Constants {
-        static let apiKeyInfoPlistKey = "ExchangeRateAPIKey"
-        static let baseURL = "https://v6.exchangerate-api.com/v6"
+        /// exchangerate-api.com 的免金鑰端點。
+        ///
+        /// 刻意不用需要金鑰的 v6 端點：金鑰會被打包進 App，任何人解開 App 都拿得到，
+        /// 放在專案設定或遠端設定都只是換個地方藏。真要保護金鑰得由後端代理，
+        /// 而這個 App 只需要每天一次的匯率，免金鑰端點就夠。
+        static let latestRateURL = "https://open.er-api.com/v6/latest/USD"
     }
 
     private let session: URLSession
-    private let apiKey: String?
 
-    init(session: URLSession = .shared, bundle: Bundle = .main) {
+    init(session: URLSession = .shared) {
         self.session = session
-        self.apiKey = bundle.object(forInfoDictionaryKey: Constants.apiKeyInfoPlistKey) as? String
     }
 
     func latestRate() -> AnyPublisher<ExchangeRate, Error> {
-        guard let apiKey, !apiKey.isEmpty else {
-            return Fail(error: ExchangeRateServiceError.missingAPIKey).eraseToAnyPublisher()
-        }
-        guard let url = URL(string: "\(Constants.baseURL)/\(apiKey)/latest/USD") else {
+        guard let url = URL(string: Constants.latestRateURL) else {
             return Fail(error: ExchangeRateServiceError.invalidURL).eraseToAnyPublisher()
         }
 

@@ -27,6 +27,7 @@ Each entry names the test that locks it. If a change makes one of these tests fa
 - **Japan's two rates are selected by the user, never inferred.** The 8% reduced rate covers food and drink but excludes alcohol and eat-in dining — the same bento is 8% taken away and 10% eaten in the shop. Nothing the app knows (price, product name) determines this, so the choice must stay a user input. Japanese receipts mark reduced-rate lines, commonly with ※ or ★.
 - **The untaxed price is what tax-free shopping refunds are based on**, which is why the category choice matters even though Japanese shelf prices have included tax since the 2021 総額表示 requirement.
 - **The exchange rate is derived as TWD / foreign currency and kept to four significant digits**, not four decimal places. Korean won is an order of magnitude smaller than yen, so a fixed decimal place would leave it with three significant digits and a 0.2% error. `ExchangeRateDecodingTests`.
+- **The rate comes from exchangerate-api.com's key-free endpoint** (`open.er-api.com/v6/latest/USD`), so the app ships no secret at all. A key would be packed into the bundle and could be read out of any installed copy; a config file or a remote-config service only moves it. Hiding a key needs a backend proxy, and this app only needs a once-a-day rate. `ExchangeRateDecodingTests`.
 - **The rate's update time is parsed with `en_US_POSIX`** and displayed in `Asia/Taipei` as `M/d HH:mm`, joined to the rate line (`1 KRW = 0.02308 TWD・9/18 08:00 更新`). Without the POSIX locale it fails to parse on non-English devices. The rate is shown with 4 significant digits. `ComputeViewModelTests`.
 - **The on-disk property list format of `ShoppingItem` and `Card`.** The stored keys are the property names, so renaming a property silently breaks every existing user's saved data. `PersistenceFormatTests`, `FileShoppingListRepositoryTests`, `FileCardRepositoryTests`.
 - **Photos are referenced by bare filename, never by absolute path.** The app container path changes between installs. `FileImageStoreTests`.
@@ -87,7 +88,8 @@ Each entry is behavior that intentionally differs from the Storyboard/MVC versio
 
 - **The legacy single shopping list is migrated once by `TripMigration`.** It moves `Documents/list` to `Documents/list-<tripID>` and creates a trip from the currency stored in the old profile. If the move fails it leaves the old file untouched and retries on the next launch. Once no installs predate trips, this can be deleted.
 
-- **The exchange-rate API key is not a secret.** It moved out of Swift source into the `EXCHANGE_RATE_API_KEY` build setting, surfaced through `Info.plist`, which only made it configurable. It still ships inside the app bundle and is still present in this repository's git history. Rotating the key and proxying the request through a backend is the only real fix.
+- **Deleting a shopping list item does not give the card's feedback back.** Feedback is deducted when the item is saved, but `ShoppingListViewModel` never touches `CardRepository`, so a deleted card purchase leaves the card's `feedbackRemaining` permanently lower. Two things must be decided before fixing it: an item stores only the card's *name*, so a deleted or duplicated name cannot be resolved to one card (do not guess — skip the refund), and it does not store what the feedback was, so a refund can only be recomputed at today's percentage unless a field is added to `ShoppingItem`. Editing cannot cause this: 編輯明細 deliberately locks price and pay type.
+
 
 ## Update Discipline
 

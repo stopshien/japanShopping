@@ -5,7 +5,7 @@
 
 import Foundation
 
-/// exchangerate-api.com 的回應。
+/// exchangerate-api.com 免金鑰端點的回應。
 /// 屬性名依 Swift 慣例命名，對應的 JSON 鍵由 CodingKeys 指定。
 struct ExchangeRate: Codable, Equatable {
 
@@ -22,7 +22,7 @@ struct ExchangeRate: Codable, Equatable {
 
     enum CodingKeys: String, CodingKey {
         case lastUpdatedUTC = "time_last_update_utc"
-        case conversionRates = "conversion_rates"
+        case conversionRates = "rates"
     }
 
     /// 外幣兌台幣。API 以美金為基準，因此由 TWD / 外幣 推導。
