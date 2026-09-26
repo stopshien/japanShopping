@@ -11,6 +11,8 @@ final class TripListViewController: UIViewController {
 
     private enum Constants {
         static let estimatedRowHeight: CGFloat = 68
+        /// 各自獨立的卡片之間的間距。
+        static let cardSpacing: CGFloat = AppStyle.Spacing.tight + 4
     }
 
     /// 切換專案後呼叫，讓換算頁重新載入幣別與清單。
@@ -26,7 +28,8 @@ final class TripListViewController: UIViewController {
         tableView.rowHeight = UITableView.automaticDimension
         tableView.estimatedRowHeight = Constants.estimatedRowHeight
         tableView.backgroundColor = .clear
-        tableView.separatorColor = AppColor.separator
+        // 每張卡片只有一列，不需要列與列之間的分隔線。
+        tableView.separatorStyle = .none
         tableView.translatesAutoresizingMaskIntoConstraints = false
         return tableView
     }()
@@ -176,14 +179,22 @@ final class TripListViewController: UIViewController {
 
 extension TripListViewController: UITableViewDataSource {
 
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    /// 一筆旅程一個 section，insetGrouped 就會把每一筆畫成各自獨立的圓角卡片。
+    func numberOfSections(in tableView: UITableView) -> Int {
         items.count
+    }
+
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        1
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: TripListCell.reuseIdentifier, for: indexPath)
-        if let tripCell = cell as? TripListCell, items.indices.contains(indexPath.row) {
-            tripCell.configure(with: items[indexPath.row])
+        if let tripCell = cell as? TripListCell, items.indices.contains(indexPath.section) {
+            tripCell.configure(with: items[indexPath.section])
+            tripCell.onEdit = { [weak self] in
+                self?.viewModel.input.editTrip(at: indexPath.section)
+            }
         }
         return cell
     }
@@ -193,19 +204,23 @@ extension TripListViewController: UITableViewDataSource {
 
 extension TripListViewController: UITableViewDelegate {
 
-    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        tableView.deselectRow(at: indexPath, animated: true)
-        viewModel.input.selectTrip(at: indexPath.row)
+    /// 卡片之間只留間距，不放 section 標題。
+    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+        section == 0 ? .leastNonzeroMagnitude : Constants.cardSpacing
     }
 
-    /// 右側的 ⓘ 進入編輯，與「點列＝切換專案」分開，避免誤觸。
-    func tableView(_ tableView: UITableView, accessoryButtonTappedForRowWith indexPath: IndexPath) {
-        viewModel.input.editTrip(at: indexPath.row)
+    func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
+        .leastNonzeroMagnitude
+    }
+
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        viewModel.input.selectTrip(at: indexPath.section)
     }
 
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
-        guard editingStyle == .delete, items.indices.contains(indexPath.row) else { return }
-        confirmDelete(at: indexPath.row)
+        guard editingStyle == .delete, items.indices.contains(indexPath.section) else { return }
+        confirmDelete(at: indexPath.section)
     }
 
     /// 刪除專案會連同購物清單與照片一起消失，而且無法復原，所以先確認。

@@ -9,6 +9,26 @@ final class TripListCell: UITableViewCell {
 
     static let reuseIdentifier = "TripListCell"
 
+    /// 右側的編輯按鈕。系統的 detailButton 只能是 ⓘ，換成鉛筆要自己放 accessoryView，
+    /// 因此點擊也要自己往外傳（accessoryButtonTapped 只對系統的 ⓘ 有效）。
+    var onEdit: (() -> Void)?
+
+    private lazy var editButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setImage(
+            UIImage(
+                systemName: "square.and.pencil",
+                withConfiguration: UIImage.SymbolConfiguration(textStyle: .body)
+            ),
+            for: .normal
+        )
+        button.tintColor = AppColor.accent
+        button.accessibilityLabel = "編輯旅程"
+        button.sizeToFit()
+        button.addTarget(self, action: #selector(editTapped), for: .touchUpInside)
+        return button
+    }()
+
     private let nameLabel = AppView.label(font: AppStyle.Font.bodyEmphasis)
     private let detailLabel = AppView.label(font: AppStyle.Font.caption, color: AppColor.textSecondary)
 
@@ -32,11 +52,17 @@ final class TripListCell: UITableViewCell {
         fatalError("init(coder:) is not supported")
     }
 
+    // MARK: - Actions
+
+    @objc private func editTapped() {
+        onEdit?()
+    }
+
     // MARK: - Setup
 
     private func setupViews() {
         backgroundColor = AppColor.surface
-        accessoryType = .detailButton
+        accessoryView = editButton
 
         contentView.addSubview(nameLabel)
         contentView.addSubview(currentMarkView)
@@ -73,5 +99,10 @@ final class TripListCell: UITableViewCell {
         detailLabel.text = item.detail
         currentMarkView.isHidden = !item.isCurrent
         accessibilityLabel = item.isCurrent ? "\(item.name)，使用中。\(item.detail)" : "\(item.name)。\(item.detail)"
+    }
+
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        onEdit = nil
     }
 }
