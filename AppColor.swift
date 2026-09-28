@@ -12,16 +12,16 @@ import UIKit
 /// 調整任一顏色前請先確認對比度仍達標。
 enum AppColor {
 
-    /// 主視覺的橄欖綠，用於畫面底色。
-    static let brand = UIColor(displayP3Red: 0.7567, green: 0.7892, blue: 0.5646, alpha: 1)
+    /// 帶一點橄欖綠的米白，用於畫面底色。
+    static let brand = UIColor(displayP3Red: 0.953, green: 0.949, blue: 0.922, alpha: 1)
 
     /// 卡片與輸入區的底色。
     static let surface = UIColor.white
 
-    /// 主要文字。在 brand 上對比 8.47、在 surface 上 14.76。
+    /// 主要文字。在 brand 上對比 13.2、在 surface 上 14.76。
     static let textPrimary = UIColor(displayP3Red: 0.13, green: 0.17, blue: 0.06, alpha: 1)
 
-    /// 次要文字（說明、時間戳）。在 brand 上對比 4.62、在 surface 上 8.06。
+    /// 次要文字（說明、時間戳）。在 brand 上對比 7.22、在 surface 上 8.06。
     static let textSecondary = UIColor(displayP3Red: 0.29, green: 0.33, blue: 0.19, alpha: 1)
 
     /// 強調色，用於主要按鈕底色與可點擊文字。白字在其上對比 9.11。
