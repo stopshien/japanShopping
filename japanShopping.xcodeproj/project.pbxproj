@@ -658,6 +658,7 @@
 				DEVELOPMENT_TEAM = 9D7ST37ACJ;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = japanShopping/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "跡帳";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
@@ -685,6 +686,7 @@
 				DEVELOPMENT_TEAM = 9D7ST37ACJ;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = japanShopping/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "跡帳";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
