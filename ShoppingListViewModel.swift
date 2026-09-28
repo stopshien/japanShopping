@@ -83,6 +83,7 @@ final class ShoppingListViewModel: ShoppingListViewModelType {
 
     private let repository: ShoppingListRepository
     private let imageStore: ImageStore
+    private let ledgerRepository: FeedbackLedgerRepository
     /// 歡迎頁設定的稱呼。沒有設定時總金額就用不帶稱呼的句子。
     private let userName: String?
     private let calendar: Calendar
@@ -105,12 +106,14 @@ final class ShoppingListViewModel: ShoppingListViewModelType {
         repository: ShoppingListRepository,
         imageStore: ImageStore,
         userProfileRepository: UserProfileRepository,
+        ledgerRepository: FeedbackLedgerRepository,
         calendar: Calendar = .current,
         now: @escaping () -> Date = Date.init
     ) {
         self.repository = repository
         self.imageStore = imageStore
         self.userName = userProfileRepository.load()?.name
+        self.ledgerRepository = ledgerRepository
         self.calendar = calendar
         self.now = now
     }
@@ -169,6 +172,15 @@ final class ShoppingListViewModel: ShoppingListViewModelType {
         let isThisYear = calendar.isDate(date, equalTo: now(), toGranularity: .year)
         formatter.dateFormat = isThisYear ? "M/d（EEEEE）" : "yyyy/M/d（EEEEE）"
         return formatter.string(from: date)
+    }
+
+    /// 刷卡的消費被刪除時，移除它的回饋明細，額度就會回到卡片上。
+    /// 回饋明細出現前的消費沒有對應明細，刪了也不會退。
+    private func refundFeedback(of item: ShoppingItem) {
+        guard let itemID = item.id, let entries = try? ledgerRepository.load() else { return }
+        let kept = entries.filter { $0.shoppingItemID != itemID }
+        guard kept.count != entries.count else { return }
+        try? ledgerRepository.save(kept)
     }
 
     private func rowIndex(for indexPath: IndexPath) -> Int? {
@@ -236,6 +248,7 @@ extension ShoppingListViewModel: ShoppingListViewModelInput {
         if let photoName = removed.photoURL {
             try? imageStore.remove(named: photoName)
         }
+        refundFeedback(of: removed)
         publish()
     }
 

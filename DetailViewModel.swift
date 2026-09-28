@@ -89,10 +89,15 @@ final class DetailViewModel: DetailViewModelType {
     private let cardRepository: CardRepository
     private let shoppingListRepository: ShoppingListRepository
     private let imageStore: ImageStore
+    private let ledgerRepository: FeedbackLedgerRepository
     private let now: () -> Date
 
     private var item: ShoppingItem
     private var cards: [Card] = []
+    /// 回饋明細，用來算每張卡的剩餘額度。
+    private var entries: [FeedbackEntry] = []
+    /// 目前選中的卡這筆能拿到的回饋，已受剩餘額度限制。
+    private var selectedFeedback = 0.0
     private var payMethod: PayMethod = .cash
     private var photoData: Data?
 
@@ -112,12 +117,14 @@ final class DetailViewModel: DetailViewModelType {
         cardRepository: CardRepository,
         shoppingListRepository: ShoppingListRepository,
         imageStore: ImageStore,
+        ledgerRepository: FeedbackLedgerRepository,
         now: @escaping () -> Date = Date.init
     ) {
         self.item = item
         self.cardRepository = cardRepository
         self.shoppingListRepository = shoppingListRepository
         self.imageStore = imageStore
+        self.ledgerRepository = ledgerRepository
         self.now = now
         // 畫面上的 picker 預設停在「現金」，所以付款方式的初始值也是現金。
         self.item.payType = "現金"
@@ -135,6 +142,7 @@ final class DetailViewModel: DetailViewModelType {
             cards = []
             errorMessageSubject.send("信用卡資料讀取失敗")
         }
+        entries = (try? ledgerRepository.load()) ?? []
         cardMenuItemsSubject.send(cards.map { CardMenuItem(title: "\($0.name) \($0.percent)%") })
     }
 
@@ -143,22 +151,31 @@ final class DetailViewModel: DetailViewModelType {
         if payMethod.isCard {
             payMethod = .card(index: nil)
         }
+        selectedFeedback = 0
         cardButtonTitleSubject.send(Constants.cardButtonPlaceholder)
         cardButtonSubtitleSubject.send("")
         feedbackTextSubject.send(Constants.feedbackPlaceholder)
     }
 
+    /// 這筆的回饋，最多只到剩餘額度：額度用完的卡，銀行也不會再給。
+    /// 趴數低於手續費時算出來是負的，視為沒有回饋。
     private func feedbackMoney(for card: Card) -> Double {
-        Self.roundedToCents((card.percent - Constants.baseFeedbackPercent) * item.price * 0.01)
+        let feedback = Self.roundedToCents((card.percent - Constants.baseFeedbackPercent) * item.price * 0.01)
+        return min(max(0, feedback), card.remainingFeedback(in: entries))
     }
 
-    /// 從目前的剩餘額度扣掉這一筆的回饋，而不是從上限扣：每一筆消費都要累積扣減。
-    /// 額度用完後停在 0，不會變成負數。
-    private func persistSelectedCardFeedback() {
-        guard let index = payMethod.selectedCardIndex, cards.indices.contains(index) else { return }
-        let remaining = cards[index].feedbackRemaining - cards[index].feedbackMoney
-        cards[index].feedbackRemaining = Self.roundedToCents(max(0, remaining))
-        try? cardRepository.save(cards)
+    /// 在回饋明細加一筆，剩餘額度由明細加總算出，所以會跨消費累積扣減。
+    /// 重新讀一次明細再加，避免覆蓋掉進入這頁之後別處寫入的明細。
+    private func recordSelectedCardFeedback(for itemID: UUID?) {
+        guard let index = payMethod.selectedCardIndex, cards.indices.contains(index),
+              let cardID = cards[index].id, selectedFeedback > 0 else { return }
+        var latest = (try? ledgerRepository.load()) ?? entries
+        latest.append(
+            FeedbackEntry(id: UUID(), cardID: cardID, date: item.purchasedAt ?? now(),
+                          amount: selectedFeedback, shoppingItemID: itemID)
+        )
+        guard (try? ledgerRepository.save(latest)) != nil else { return }
+        entries = latest
     }
 
     /// 回饋金額是浮點相乘相減的結果，不取到分位就會存進
@@ -206,11 +223,11 @@ extension DetailViewModel: DetailViewModelInput {
         payMethod = .card(index: index)
         // 存進清單的是卡片名稱，不是「信用卡」三個字。
         item.payType = cards[index].name
-        cards[index].feedbackMoney = feedbackMoney(for: cards[index])
+        selectedFeedback = feedbackMoney(for: cards[index])
 
         cardButtonTitleSubject.send("\(cards[index].name) \(cards[index].percent)%")
-        cardButtonSubtitleSubject.send("剩餘回饋 \(PriceText.twd(cards[index].feedbackRemaining))")
-        feedbackTextSubject.send("這筆回饋 \(PriceText.twd(cards[index].feedbackMoney))")
+        cardButtonSubtitleSubject.send("剩餘回饋 \(PriceText.twd(cards[index].remainingFeedback(in: entries)))")
+        feedbackTextSubject.send("這筆回饋 \(PriceText.twd(selectedFeedback))")
     }
 
     func addCardTapped() {
@@ -245,7 +262,7 @@ extension DetailViewModel: DetailViewModelInput {
         // 紀錄確定存進去才扣回饋額度。剩餘額度是累積扣減的，
         // 沒存成功或沒填名稱就先扣，重按一次就會再扣一次。
         if payMethod.isCard {
-            persistSelectedCardFeedback()
+            recordSelectedCardFeedback(for: item.id)
         }
 
         routeSubject.send(.savedToShoppingList)

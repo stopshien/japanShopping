@@ -108,7 +108,8 @@ final class CardSetViewModel: CardSetViewModelType {
         return lhs == rhs
     }
 
-    /// 已用掉的回饋保留下來：改上限後，剩餘 = 新上限 − 已用，最低為 0。
+    /// 剩餘額度由回饋明細算出，改上限後自然是「新上限 − 已用」。
+    /// 舊欄位 `feedbackRemaining` 仍依同樣規則更新，只是讓尚未轉成明細的舊卡保持一致。
     /// 趴數只影響之後的消費，已存的紀錄不會重算。
     private static func edited(_ card: Card, name: String, percent: Double, limit: Double) -> Card {
         let used = max(0, card.limit - card.feedbackRemaining)

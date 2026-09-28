@@ -12,15 +12,18 @@ final class DetailViewModelTests: XCTestCase {
     private var cardRepository: CardRepositoryStub!
     private var listRepository: ShoppingListRepositoryStub!
     private var imageStore: ImageStoreStub!
+    private var ledgerRepository: FeedbackLedgerRepositoryStub!
+    private let cardAID = UUID()
     private var viewModel: DetailViewModel!
     private var cancellables: Set<AnyCancellable>!
 
     override func setUp() {
         super.setUp()
         cardRepository = CardRepositoryStub(storedCards: [
-            Card(name: "A卡", percent: 3.5, limit: 5000, feedbackRemaining: 5000),
-            Card(name: "B卡", percent: 5, limit: 2000, feedbackRemaining: 2000)
+            Card(name: "A卡", percent: 3.5, limit: 5000, feedbackRemaining: 5000, id: cardAID),
+            Card(name: "B卡", percent: 5, limit: 2000, feedbackRemaining: 2000, id: UUID())
         ])
+        ledgerRepository = FeedbackLedgerRepositoryStub()
         listRepository = ShoppingListRepositoryStub()
         imageStore = ImageStoreStub()
         viewModel = makeViewModel()
@@ -30,6 +33,7 @@ final class DetailViewModelTests: XCTestCase {
     override func tearDown() {
         cancellables = nil
         viewModel = nil
+        ledgerRepository = nil
         imageStore = nil
         listRepository = nil
         cardRepository = nil
@@ -41,7 +45,8 @@ final class DetailViewModelTests: XCTestCase {
             item: ShoppingItem(productName: "", price: price, payType: "", taxState: taxState),
             cardRepository: cardRepository,
             shoppingListRepository: listRepository,
-            imageStore: imageStore
+            imageStore: imageStore,
+            ledgerRepository: ledgerRepository
         )
     }
 
@@ -165,87 +170,121 @@ final class DetailViewModelTests: XCTestCase {
         XCTAssertEqual(subtitle, "剩餘回饋 NT$ 5,000")
     }
 
-    func testSavingUpdatesRemainingFeedbackOnTheSelectedCard() {
+    private func entry(_ amount: Double, cardID: UUID? = nil) -> FeedbackEntry {
+        FeedbackEntry(id: UUID(), cardID: cardID ?? cardAID, date: Date(), amount: amount, shoppingItemID: nil)
+    }
+
+    private func buyMatchaWithCardA() {
         viewModel.input.viewDidLoad()
         viewModel.input.payMethodSelected(row: 1)
         viewModel.input.cardSelected(at: 0)
         viewModel.input.productNameChanged("抹茶")
         viewModel.input.saveTapped()
-
-        // 5000 - 20 = 4980
-        XCTAssertEqual(cardRepository.storedCards.first?.feedbackRemaining, 4980)
-        XCTAssertEqual(cardRepository.storedCards.first?.feedbackMoney, 20)
     }
 
-    /// 剩餘額度要從目前的剩餘扣，不是從上限扣。遷移前每一筆都從上限重算，
-    /// 刷第二次以後剩餘額度就只反映最新一筆。
+    func testSavingRecordsAFeedbackEntryForTheItem() {
+        buyMatchaWithCardA()
+
+        let saved = listRepository.storedItems.first
+        XCTAssertEqual(ledgerRepository.storedEntries.count, 1)
+        XCTAssertEqual(ledgerRepository.storedEntries.first?.cardID, cardAID)
+        XCTAssertEqual(ledgerRepository.storedEntries.first?.amount, 20)
+        XCTAssertEqual(ledgerRepository.storedEntries.first?.shoppingItemID, saved?.id)
+        XCTAssertEqual(cardRepository.saveCallCount, 0, "剩餘額度改由明細算出，不再改寫卡片")
+    }
+
+    /// 剩餘額度是明細的加總，每一筆消費都會累積扣減。
     func testRemainingFeedbackAccumulatesAcrossPurchases() {
-        cardRepository.storedCards = [Card(name: "A卡", percent: 3.5, limit: 5000, feedbackRemaining: 4980)]
+        ledgerRepository.storedEntries = [entry(20)]
+        var subtitle: String?
+        viewModel.output.cardButtonSubtitle.sink { subtitle = $0 }.store(in: &cancellables)
 
         viewModel.input.viewDidLoad()
         viewModel.input.payMethodSelected(row: 1)
         viewModel.input.cardSelected(at: 0)
-        viewModel.input.productNameChanged("抹茶")
-        viewModel.input.saveTapped()
 
-        // 已剩 4980，這筆 1000 元回饋 20，應剩 4960（舊算法會存成 5000 - 20 = 4980）
-        XCTAssertEqual(cardRepository.storedCards.first?.feedbackRemaining, 4960)
+        XCTAssertEqual(subtitle, "剩餘回饋 NT$ 4,980")
     }
 
-    func testRemainingFeedbackStopsAtZero() {
-        cardRepository.storedCards = [Card(name: "A卡", percent: 3.5, limit: 5000, feedbackRemaining: 5)]
+    func testEntriesOfOtherCardsDoNotCount() {
+        ledgerRepository.storedEntries = [entry(300, cardID: UUID())]
+        var subtitle: String?
+        viewModel.output.cardButtonSubtitle.sink { subtitle = $0 }.store(in: &cancellables)
 
         viewModel.input.viewDidLoad()
         viewModel.input.payMethodSelected(row: 1)
         viewModel.input.cardSelected(at: 0)
-        viewModel.input.productNameChanged("抹茶")
-        viewModel.input.saveTapped()
 
-        XCTAssertEqual(cardRepository.storedCards.first?.feedbackRemaining, 0)
+        XCTAssertEqual(subtitle, "剩餘回饋 NT$ 5,000")
     }
 
-    /// 沒填名稱時不會存入紀錄，也就不能扣回饋，否則每按一次就多扣一次。
-    func testSaveWithoutANameDoesNotDeductFeedback() {
+    /// 額度只剩 5 元時，這筆最多只拿到 5 元，剩餘停在 0。
+    func testFeedbackIsLimitedByTheRemainingAmount() {
+        ledgerRepository.storedEntries = [entry(4995)]
+        var text: String?
+        viewModel.output.feedbackText.sink { text = $0 }.store(in: &cancellables)
+
+        buyMatchaWithCardA()
+
+        XCTAssertEqual(text, "這筆回饋 NT$ 5")
+        XCTAssertEqual(ledgerRepository.storedEntries.last?.amount, 5)
+        XCTAssertEqual(cardRepository.storedCards[0].remainingFeedback(in: ledgerRepository.storedEntries), 0)
+    }
+
+    func testNoEntryIsRecordedWhenTheCardIsUsedUp() {
+        ledgerRepository.storedEntries = [entry(5000)]
+
+        buyMatchaWithCardA()
+
+        XCTAssertEqual(ledgerRepository.storedEntries.count, 1)
+    }
+
+    /// 趴數低於 1.5 時算出來是負的，不能反過來把額度加回去。
+    func testARateBelowTheFeeGivesNoFeedback() {
+        cardRepository.storedCards = [Card(name: "低趴卡", percent: 1, limit: 100, feedbackRemaining: 100, id: cardAID)]
+        var text: String?
+        viewModel.output.feedbackText.sink { text = $0 }.store(in: &cancellables)
+
+        buyMatchaWithCardA()
+
+        XCTAssertEqual(text, "這筆回饋 NT$ 0")
+        XCTAssertTrue(ledgerRepository.storedEntries.isEmpty)
+    }
+
+    /// 沒填名稱時不會存入紀錄，也就不能記回饋，否則每按一次就多記一次。
+    func testSaveWithoutANameDoesNotRecordFeedback() {
         viewModel.input.viewDidLoad()
         viewModel.input.payMethodSelected(row: 1)
         viewModel.input.cardSelected(at: 0)
         viewModel.input.saveTapped()
         viewModel.input.saveTapped()
 
-        XCTAssertEqual(cardRepository.saveCallCount, 0)
-        XCTAssertEqual(cardRepository.storedCards.first?.feedbackRemaining, 5000)
+        XCTAssertEqual(ledgerRepository.saveCallCount, 0)
     }
 
-    func testFailedSaveDoesNotDeductFeedback() {
+    func testFailedSaveDoesNotRecordFeedback() {
         listRepository.saveError = StubError.failure
 
-        viewModel.input.viewDidLoad()
-        viewModel.input.payMethodSelected(row: 1)
-        viewModel.input.cardSelected(at: 0)
-        viewModel.input.productNameChanged("抹茶")
-        viewModel.input.saveTapped()
+        buyMatchaWithCardA()
 
-        XCTAssertEqual(cardRepository.saveCallCount, 0, "紀錄沒存成功，不該扣回饋")
+        XCTAssertEqual(ledgerRepository.saveCallCount, 0, "紀錄沒存成功，不該記回饋")
     }
 
     /// 0.1% * 637 元會算出 0.6370000000000006，不取到分位就會存進檔案並持續累積。
     func testFeedbackIsRoundedToCents() {
-        cardRepository.storedCards = [Card(name: "C卡", percent: 1.6, limit: 1000, feedbackRemaining: 1000)]
+        cardRepository.storedCards = [Card(name: "C卡", percent: 1.6, limit: 1000, feedbackRemaining: 1000, id: cardAID)]
         viewModel = DetailViewModel(
             item: ShoppingItem(productName: "", price: 637, payType: "", taxState: "未稅"),
             cardRepository: cardRepository,
             shoppingListRepository: listRepository,
-            imageStore: imageStore
+            imageStore: imageStore,
+            ledgerRepository: ledgerRepository
         )
 
-        viewModel.input.viewDidLoad()
-        viewModel.input.payMethodSelected(row: 1)
-        viewModel.input.cardSelected(at: 0)
-        viewModel.input.productNameChanged("抹茶")
-        viewModel.input.saveTapped()
+        buyMatchaWithCardA()
 
-        XCTAssertEqual(cardRepository.storedCards.first?.feedbackMoney, 0.64)
-        XCTAssertEqual(cardRepository.storedCards.first?.feedbackRemaining, 999.36)
+        XCTAssertEqual(ledgerRepository.storedEntries.first?.amount, 0.64)
+        XCTAssertEqual(cardRepository.storedCards[0].remainingFeedback(in: ledgerRepository.storedEntries), 999.36)
     }
 
     func testCashPurchaseDoesNotTouchCards() {
@@ -255,6 +294,7 @@ final class DetailViewModelTests: XCTestCase {
         viewModel.input.saveTapped()
 
         XCTAssertEqual(cardRepository.saveCallCount, 0)
+        XCTAssertEqual(ledgerRepository.saveCallCount, 0)
     }
 
     /// 遷移前若選了信用卡卻沒選卡片就按儲存，會以 -1 索引存取陣列而崩潰。
@@ -299,6 +339,7 @@ final class DetailViewModelTests: XCTestCase {
             cardRepository: cardRepository,
             shoppingListRepository: listRepository,
             imageStore: imageStore,
+            ledgerRepository: ledgerRepository,
             now: { now }
         )
 
@@ -398,7 +439,7 @@ final class DetailViewModelTests: XCTestCase {
 
         viewModel.input.productNameChanged("抹茶")
         viewModel.input.saveTapped()
-        XCTAssertEqual(cardRepository.saveCallCount, 0, "卡片已不存在，不該再寫入回饋")
+        XCTAssertEqual(ledgerRepository.saveCallCount, 0, "卡片已不存在，不該再記回饋")
     }
 
     func testReloadCardsRefreshesTheMenu() {

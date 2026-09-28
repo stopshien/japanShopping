@@ -48,8 +48,11 @@ protocol CardListViewModelOutput {
 final class CardListViewModel: CardListViewModelType {
 
     private let repository: CardRepository
+    private let ledgerRepository: FeedbackLedgerRepository
 
     private var cards: [Card] = []
+    /// 回饋明細，用來算剩餘額度。
+    private var entries: [FeedbackEntry] = []
     /// 進入畫面時的快照，用來分辨「新加入的卡片」與「使用者刪掉的卡片」。
     private var loadedCards: [Card] = []
 
@@ -58,23 +61,33 @@ final class CardListViewModel: CardListViewModelType {
     private let errorMessageSubject = PassthroughSubject<String, Never>()
     private let didFinishSubject = PassthroughSubject<Void, Never>()
 
-    init(repository: CardRepository) {
+    init(repository: CardRepository, ledgerRepository: FeedbackLedgerRepository) {
         self.repository = repository
+        self.ledgerRepository = ledgerRepository
     }
 
     var input: CardListViewModelInput { self }
     var output: CardListViewModelOutput { self }
 
     private func publishItems() {
-        itemsSubject.send(cards.map(Self.makeItem))
+        itemsSubject.send(cards.map(makeItem))
     }
 
-    private static func makeItem(from card: Card) -> CardListItem {
-        CardListItem(
+    private func makeItem(from card: Card) -> CardListItem {
+        let remaining = card.remainingFeedback(in: entries)
+        return CardListItem(
             name: card.name,
             percentBadge: "\(PriceText.amount(card.percent))%",
-            limitDescription: "上限 \(PriceText.amount(card.limit))　剩餘 \(PriceText.amount(card.feedbackRemaining))"
+            limitDescription: "上限 \(PriceText.amount(card.limit))　剩餘 \(PriceText.amount(remaining))"
         )
+    }
+
+    /// 已刪除的卡片，它的明細也一併移除，不留下對不到卡片的資料。
+    private func removeEntriesOfDeletedCards() {
+        let cardIDs = Set(cards.compactMap(\.id))
+        let kept = entries.filter { cardIDs.contains($0.cardID) }
+        guard kept.count != entries.count, (try? ledgerRepository.save(kept)) != nil else { return }
+        entries = kept
     }
 }
 
@@ -89,6 +102,7 @@ extension CardListViewModel: CardListViewModelInput {
             cards = []
             errorMessageSubject.send("信用卡資料讀取失敗")
         }
+        entries = (try? ledgerRepository.load()) ?? []
         loadedCards = cards
         publishItems()
     }
@@ -142,6 +156,7 @@ extension CardListViewModel: CardListViewModelInput {
             errorMessageSubject.send("信用卡儲存失敗，請再試一次")
             return
         }
+        removeEntriesOfDeletedCards()
         didFinishSubject.send(())
     }
 }

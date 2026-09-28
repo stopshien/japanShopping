@@ -39,6 +39,7 @@ final class AppScreenFactory: ScreenFactory {
     private let userProfileRepository: UserProfileRepository
     private let tripRepository: TripRepository
     private let tripContentStore: TripContentStore
+    private let ledgerRepository: FeedbackLedgerRepository
 
     init(
         cardRepository: CardRepository = FileCardRepository(),
@@ -47,7 +48,8 @@ final class AppScreenFactory: ScreenFactory {
         exchangeRateService: ExchangeRateService = RemoteExchangeRateService(),
         userProfileRepository: UserProfileRepository = UserDefaultsUserProfileRepository(),
         tripRepository: TripRepository = FileTripRepository(),
-        tripContentStore: TripContentStore = FileTripContentStore()
+        tripContentStore: TripContentStore = FileTripContentStore(),
+        ledgerRepository: FeedbackLedgerRepository = FileFeedbackLedgerRepository()
     ) {
         self.cardRepository = cardRepository
         self.shoppingListRepository = shoppingListRepository
@@ -56,6 +58,7 @@ final class AppScreenFactory: ScreenFactory {
         self.userProfileRepository = userProfileRepository
         self.tripRepository = tripRepository
         self.tripContentStore = tripContentStore
+        self.ledgerRepository = ledgerRepository
 
         // 舊版的單一清單轉成第一個專案，只會執行一次。
         TripMigration.run(tripRepository: tripRepository)
@@ -65,6 +68,8 @@ final class AppScreenFactory: ScreenFactory {
             tripRepository: tripRepository,
             tripContentStore: tripContentStore
         )
+        // 已用掉的額度轉成回饋明細；要在補上卡片 id 之後。
+        FeedbackLedgerMigration.run(cardRepository: cardRepository, ledgerRepository: ledgerRepository)
     }
 
     /// 目前使用中的專案。沒有選中時退回最新建立的一個。
@@ -140,7 +145,8 @@ final class AppScreenFactory: ScreenFactory {
             item: item,
             cardRepository: cardRepository,
             shoppingListRepository: currentShoppingListRepository,
-            imageStore: imageStore
+            imageStore: imageStore,
+            ledgerRepository: ledgerRepository
         )
         let controller = DetailViewController(viewModel: viewModel, factory: self)
         controller.onSaved = onSaved
@@ -170,7 +176,8 @@ final class AppScreenFactory: ScreenFactory {
         let viewModel = ShoppingListViewModel(
             repository: currentShoppingListRepository,
             imageStore: imageStore,
-            userProfileRepository: userProfileRepository
+            userProfileRepository: userProfileRepository,
+            ledgerRepository: ledgerRepository
         )
         return ShoppingListViewController(viewModel: viewModel, factory: self, allowsBack: allowsBack)
     }
@@ -195,7 +202,7 @@ final class AppScreenFactory: ScreenFactory {
 
     func makeCardList() -> UIViewController {
         CardListViewController(
-            viewModel: CardListViewModel(repository: cardRepository),
+            viewModel: CardListViewModel(repository: cardRepository, ledgerRepository: ledgerRepository),
             factory: self
         )
     }

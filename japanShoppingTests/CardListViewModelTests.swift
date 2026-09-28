@@ -10,6 +10,7 @@ import XCTest
 final class CardListViewModelTests: XCTestCase {
 
     private var repository: CardRepositoryStub!
+    private var ledgerRepository: FeedbackLedgerRepositoryStub!
     private var viewModel: CardListViewModel!
     private var cancellables: Set<AnyCancellable>!
 
@@ -19,13 +20,15 @@ final class CardListViewModelTests: XCTestCase {
             Card(name: "A卡", percent: 3, limit: 1000, feedbackRemaining: 1000),
             Card(name: "B卡", percent: 5, limit: 2000, feedbackRemaining: 2000)
         ])
-        viewModel = CardListViewModel(repository: repository)
+        ledgerRepository = FeedbackLedgerRepositoryStub()
+        viewModel = CardListViewModel(repository: repository, ledgerRepository: ledgerRepository)
         cancellables = []
     }
 
     override func tearDown() {
         cancellables = nil
         viewModel = nil
+        ledgerRepository = nil
         repository = nil
         super.tearDown()
     }
@@ -54,6 +57,41 @@ final class CardListViewModelTests: XCTestCase {
 
         XCTAssertEqual(items.first?.percentBadge, "3.5%")
         XCTAssertEqual(items.first?.limitDescription, "上限 5000　剩餘 4995.88")
+    }
+
+    func testRemainingIsComputedFromTheLedger() {
+        let id = UUID()
+        repository.storedCards = [Card(name: "A卡", percent: 3.5, limit: 5000, feedbackRemaining: 5000, id: id)]
+        ledgerRepository.storedEntries = [
+            FeedbackEntry(id: UUID(), cardID: id, date: Date(), amount: 4.12, shoppingItemID: UUID())
+        ]
+        var items: [CardListItem] = []
+        viewModel.output.items.sink { items = $0 }.store(in: &cancellables)
+
+        viewModel.input.viewDidLoad()
+
+        XCTAssertEqual(items.first?.limitDescription, "上限 5000　剩餘 4995.88")
+    }
+
+    func testFinishRemovesTheEntriesOfDeletedCards() {
+        let keptID = UUID()
+        let deletedID = UUID()
+        repository.storedCards = [
+            Card(name: "A卡", percent: 3, limit: 1000, feedbackRemaining: 1000, id: deletedID),
+            Card(name: "B卡", percent: 5, limit: 2000, feedbackRemaining: 2000, id: keptID)
+        ]
+        ledgerRepository.storedEntries = [
+            FeedbackEntry(id: UUID(), cardID: deletedID, date: Date(), amount: 10, shoppingItemID: nil),
+            FeedbackEntry(id: UUID(), cardID: keptID, date: Date(), amount: 20, shoppingItemID: nil)
+        ]
+
+        viewModel.input.viewDidLoad()
+        viewModel.input.deleteCard(at: 0)
+        XCTAssertEqual(ledgerRepository.saveCallCount, 0, "按「完成」之前不動明細")
+
+        viewModel.input.finishTapped()
+
+        XCTAssertEqual(ledgerRepository.storedEntries.map(\.cardID), [keptID])
     }
 
     func testDeleteRemovesItemFromTheList() {

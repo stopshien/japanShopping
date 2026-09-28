@@ -12,6 +12,7 @@ final class ShoppingListViewModelTests: XCTestCase {
     private var repository: ShoppingListRepositoryStub!
     private var imageStore: ImageStoreStub!
     private var profileRepository: UserProfileRepositoryStub!
+    private var ledgerRepository: FeedbackLedgerRepositoryStub!
     private var viewModel: ShoppingListViewModel!
     private var cancellables: Set<AnyCancellable>!
 
@@ -25,6 +26,7 @@ final class ShoppingListViewModelTests: XCTestCase {
         ])
         imageStore = ImageStoreStub(storedImages: ["photo-1": photoData])
         profileRepository = UserProfileRepositoryStub(storedProfile: UserProfile(name: "Angus"))
+        ledgerRepository = FeedbackLedgerRepositoryStub()
         viewModel = makeViewModel()
         cancellables = []
     }
@@ -32,6 +34,7 @@ final class ShoppingListViewModelTests: XCTestCase {
     override func tearDown() {
         cancellables = nil
         viewModel = nil
+        ledgerRepository = nil
         profileRepository = nil
         imageStore = nil
         repository = nil
@@ -43,6 +46,7 @@ final class ShoppingListViewModelTests: XCTestCase {
             repository: repository,
             imageStore: imageStore,
             userProfileRepository: profileRepository,
+            ledgerRepository: ledgerRepository,
             calendar: Self.taipeiCalendar,
             now: { Self.date(2026, 9, 28, hour: 20) }
         )
@@ -304,6 +308,37 @@ final class ShoppingListViewModelTests: XCTestCase {
         viewModel.input.deleteItem(at: IndexPath(row: 0, section: 0))
 
         XCTAssertEqual(imageStore.removedNames, ["photo-1"])
+    }
+
+    func testDeletingACardPurchaseRefundsItsFeedback() {
+        let itemID = UUID()
+        let otherID = UUID()
+        repository.storedItems[1].id = itemID
+        ledgerRepository.storedEntries = [
+            FeedbackEntry(id: UUID(), cardID: UUID(), date: Date(), amount: 5, shoppingItemID: itemID),
+            FeedbackEntry(id: UUID(), cardID: UUID(), date: Date(), amount: 7, shoppingItemID: otherID)
+        ]
+
+        viewModel.input.viewDidLoad()
+        viewModel.input.deleteItem(at: IndexPath(row: 1, section: 0))
+
+        XCTAssertEqual(ledgerRepository.storedEntries.map(\.shoppingItemID), [otherID])
+    }
+
+    /// 刪除沒存成功，消費還在，回饋也不能退。
+    func testFailedDeleteDoesNotRefundFeedback() {
+        let itemID = UUID()
+        repository.storedItems[0].id = itemID
+        repository.saveError = StubError.failure
+        ledgerRepository.storedEntries = [
+            FeedbackEntry(id: UUID(), cardID: UUID(), date: Date(), amount: 5, shoppingItemID: itemID)
+        ]
+
+        viewModel.input.viewDidLoad()
+        viewModel.input.deleteItem(at: IndexPath(row: 0, section: 0))
+
+        XCTAssertEqual(ledgerRepository.storedEntries.count, 1)
+        XCTAssertEqual(ledgerRepository.saveCallCount, 0)
     }
 
     func testFailedDeleteKeepsTheItemAndItsImage() {

@@ -13,23 +13,27 @@ When the user pays by credit card, the app shows how much feedback (回饋) that
 - `CardSetViewModel.swift` / `CardSetViewController.swift` — add a card, or edit one when created with `editingCard` (name, percent, limit).
 - `CardListViewModel.swift` / `CardListViewController.swift` — 設定 → 管理信用卡. Lists cards, opens a card for editing on tap, and deletes them on 完成.
 - `IdentityMigration.swift` — at launch, gives an `id` to every card and every shopping item in every trip that lacks one.
-- `DetailViewModel.swift` — 購買明細. Card picker, feedback calculation, and the deduction after a purchase is saved.
+- `DetailViewModel.swift` — 購買明細. Card picker, feedback calculation, and the ledger entry added after a purchase is saved.
+- `FeedbackEntry.swift` — one ledger entry (card, date, amount, purchase) and `Card.remainingFeedback(in:)`.
+- `FeedbackLedgerRepository.swift` — `FileFeedbackLedgerRepository`, a property list file named `cardFeedback`, shared by every trip.
+- `FeedbackLedgerMigration.swift` — at launch, turns each card's pre-ledger used amount into one entry.
 - `ShoppingItem.swift` — a purchase with an optional `id`. `payType` stores `現金` or the **card's name**. It does not reference the card by identity yet.
 
 ## Data Flow
 
-1. `DetailViewModel.loadCards()` reads all cards and builds the menu (`<name> <percent>%`).
-2. `cardSelected(at:)` computes `feedbackMoney = round2((percent - 1.5) * price * 0.01)` and shows `剩餘回饋 <feedbackRemaining>`.
-3. `saveTapped()` appends the item to the current trip's shopping list. Only after that save succeeds, `persistSelectedCardFeedback()` sets `feedbackRemaining = max(0, round2(feedbackRemaining - feedbackMoney))` and saves every card.
+1. `DetailViewModel.loadCards()` reads all cards and the ledger, and builds the menu (`<name> <percent>%`).
+2. `cardSelected(at:)` computes `min(max(0, round2((percent - 1.5) * price * 0.01)), remaining)` and shows `剩餘回饋 <limit − Σ entries>`.
+3. `saveTapped()` appends the item to the current trip's shopping list. Only after that save succeeds, a `FeedbackEntry` pointing at the item is appended to the ledger. Cards are not written.
+4. Deleting that purchase in 消費紀錄 removes its entry; deleting the card in 管理信用卡 removes all of the card's entries.
 
 ## Known Limits Of The Current Model
 
-- `feedbackRemaining` is a running balance. It never resets, so a monthly or per-statement cap cannot be represented.
+- Every entry counts against the cap forever; there are no cap periods yet, so a monthly or per-statement cap cannot be represented.
 - A card has one rate and one cap. Real cards have an uncapped base rate and a capped bonus, sometimes several switchable plans. See `references.md`.
 - There is no validity period. A card keeps earning at its rate after the bank's campaign ends.
-- Deleting or editing a shopping list item never gives feedback back to the card, because the item does not know which card it used, only its name.
-- The cap is consumed by the **net** amount (after subtracting 1.5), while banks cap the **gross** bonus amount.
-- `feedbackMoney` is a transient value stored on `Card` only to pass it from selection to save.
+- Purchases saved before the ledger have no entry, so deleting them gives nothing back.
+- The cap is consumed by the **net** amount (after subtracting 1.5), while banks cap the **gross** bonus amount. Entries store that net amount until phase 3.
+- `Card.feedbackMoney` and `feedbackRemaining` are legacy fields. Only `FeedbackLedgerMigration` and card editing still touch `feedbackRemaining`.
 
 ## Dependencies
 

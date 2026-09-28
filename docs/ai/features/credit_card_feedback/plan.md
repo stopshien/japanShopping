@@ -53,13 +53,14 @@ Each phase ships on its own, keeps the app working, and updates tests plus the b
 - No change to how feedback is calculated.
 - As built: `IdentityMigration` runs at every launch in `AppScreenFactory.init` and writes only when an `id` is missing. A new purchase gets its `id` in `DetailViewModel.saveTapped`. Editing keeps the used amount (`limit - feedbackRemaining`).
 
-### Phase 2 — Feedback ledger
+### Phase 2 — Feedback ledger — done 2026-09-29
 
 - Add `FeedbackLedgerRepository` with the `cardFeedback` file.
 - `DetailViewModel` records a `FeedbackEntry` after a successful save instead of editing `feedbackRemaining`. The purchase stores `cardID`.
 - Remaining is computed from entries. The migration turns each card's used amount (`limit - feedbackRemaining`) into one legacy entry, so nothing resets.
 - Deleting a purchase in the shopping list removes its entries, so the feedback goes back to the card.
 - Deleting a card deletes its entries.
+- As built: entries have a single `amount` (the net amount counted against the cap, as before); phase 3 adds gross base and bonus amounts. The purchase does not store `cardID`; the entry stores `shoppingItemID`, which is enough to refund. A purchase never earns more than the card has left, and a negative result counts as zero. Deleting a trip keeps its entries.
 
 ### Phase 3 — Plans, base and bonus
 
