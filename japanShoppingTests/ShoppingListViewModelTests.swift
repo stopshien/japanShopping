@@ -42,15 +42,31 @@ final class ShoppingListViewModelTests: XCTestCase {
         ShoppingListViewModel(
             repository: repository,
             imageStore: imageStore,
-            userProfileRepository: profileRepository
+            userProfileRepository: profileRepository,
+            calendar: Self.taipeiCalendar,
+            now: { Self.date(2026, 9, 28, hour: 20) }
         )
+    }
+
+    private static let taipeiCalendar: Calendar = {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Asia/Taipei")!
+        return calendar
+    }()
+
+    private static func date(_ year: Int, _ month: Int, _ day: Int, hour: Int = 12) -> Date {
+        taipeiCalendar.date(from: DateComponents(year: year, month: month, day: day, hour: hour))!
+    }
+
+    private func item(_ name: String, price: Double, on date: Date?) -> ShoppingItem {
+        ShoppingItem(productName: name, price: price, payType: "現金", taxState: "含稅", purchasedAt: date)
     }
 
     // MARK: - 顯示
 
     func testViewDidLoadPublishesFormattedItems() {
         var items: [ShoppingListItem] = []
-        viewModel.output.items.sink { items = $0 }.store(in: &cancellables)
+        viewModel.output.sections.sink { items = $0.flatMap(\.items) }.store(in: &cancellables)
 
         viewModel.input.viewDidLoad()
 
@@ -63,7 +79,7 @@ final class ShoppingListViewModelTests: XCTestCase {
 
     func testItemWithPhotoCarriesImageData() {
         var items: [ShoppingListItem] = []
-        viewModel.output.items.sink { items = $0 }.store(in: &cancellables)
+        viewModel.output.sections.sink { items = $0.flatMap(\.items) }.store(in: &cancellables)
 
         viewModel.input.viewDidLoad()
 
@@ -75,12 +91,136 @@ final class ShoppingListViewModelTests: XCTestCase {
     func testMissingImageFileStillShowsTheItem() {
         imageStore.storedImages = [:]
         var items: [ShoppingListItem] = []
-        viewModel.output.items.sink { items = $0 }.store(in: &cancellables)
+        viewModel.output.sections.sink { items = $0.flatMap(\.items) }.store(in: &cancellables)
 
         viewModel.input.viewDidLoad()
 
         XCTAssertEqual(items.count, 2)
         XCTAssertNil(items.first?.imageData)
+    }
+
+    // MARK: - 依日期分區
+
+    func testItemsAreGroupedByDayWithTitleAndSubtotal() {
+        repository.storedItems = [
+            item("抹茶", price: 100, on: Self.date(2026, 9, 27, hour: 9)),
+            item("咖啡", price: 250, on: Self.date(2026, 9, 27, hour: 23)),
+            item("拉麵", price: 300, on: Self.date(2026, 9, 28, hour: 0))
+        ]
+        var sections: [ShoppingListSection] = []
+        viewModel.output.sections.sink { sections = $0 }.store(in: &cancellables)
+
+        viewModel.input.viewDidLoad()
+
+        XCTAssertEqual(sections.map(\.title), ["9/27（日）", "9/28（一）"])
+        XCTAssertEqual(sections.map(\.subtotal), ["NT$ 350", "NT$ 300"])
+        XCTAssertEqual(sections.map { $0.items.map(\.productName) }, [["抹茶", "咖啡"], ["拉麵"]])
+    }
+
+    func testItemsWithoutADateShareOneSection() {
+        repository.storedItems = [
+            item("舊的一", price: 10, on: nil),
+            item("舊的二", price: 20, on: nil),
+            item("新的", price: 30, on: Self.date(2026, 9, 28))
+        ]
+        var sections: [ShoppingListSection] = []
+        viewModel.output.sections.sink { sections = $0 }.store(in: &cancellables)
+
+        viewModel.input.viewDidLoad()
+
+        XCTAssertEqual(sections.map(\.title), ["較早的紀錄", "9/28（一）"])
+        XCTAssertEqual(sections.first?.items.count, 2)
+    }
+
+    func testSectionTitleShowsTheYearWhenItIsNotThisYear() {
+        repository.storedItems = [item("去年", price: 10, on: Self.date(2025, 12, 31))]
+        var sections: [ShoppingListSection] = []
+        viewModel.output.sections.sink { sections = $0 }.store(in: &cancellables)
+
+        viewModel.input.viewDidLoad()
+
+        XCTAssertEqual(sections.first?.title, "2025/12/31（三）")
+    }
+
+    func testIndexPathInALaterSectionMapsToTheRightItem() {
+        repository.storedItems = [
+            item("抹茶", price: 100, on: Self.date(2026, 9, 27)),
+            item("咖啡", price: 250, on: Self.date(2026, 9, 28)),
+            item("拉麵", price: 300, on: Self.date(2026, 9, 28))
+        ]
+        var request: ShoppingListEditRequest?
+        viewModel.output.editRequest.sink { request = $0 }.store(in: &cancellables)
+
+        viewModel.input.viewDidLoad()
+        viewModel.input.itemSelected(at: IndexPath(row: 1, section: 1))
+        XCTAssertEqual(request?.item.productName, "拉麵")
+
+        viewModel.input.deleteItem(at: IndexPath(row: 0, section: 1))
+        XCTAssertEqual(repository.storedItems.map(\.productName), ["抹茶", "拉麵"])
+    }
+
+    func testSortOrderStartsOldestFirstAndToggles() {
+        var orders: [ShoppingListSortOrder] = []
+        viewModel.output.sortOrder.sink { orders.append($0) }.store(in: &cancellables)
+
+        viewModel.input.viewDidLoad()
+        viewModel.input.sortOrderToggled()
+        viewModel.input.sortOrderToggled()
+
+        XCTAssertEqual(orders, [.oldestFirst, .newestFirst, .oldestFirst])
+    }
+
+    func testNewestFirstReversesSectionsAndItemsAndPutsUndatedLast() {
+        repository.storedItems = [
+            item("舊的", price: 10, on: nil),
+            item("抹茶", price: 100, on: Self.date(2026, 9, 27)),
+            item("咖啡", price: 250, on: Self.date(2026, 9, 28, hour: 9)),
+            item("拉麵", price: 300, on: Self.date(2026, 9, 28, hour: 19))
+        ]
+        var sections: [ShoppingListSection] = []
+        viewModel.output.sections.sink { sections = $0 }.store(in: &cancellables)
+
+        viewModel.input.viewDidLoad()
+        viewModel.input.sortOrderToggled()
+
+        XCTAssertEqual(sections.map(\.title), ["9/28（一）", "9/27（日）", "較早的紀錄"])
+        XCTAssertEqual(sections.first?.items.map(\.productName), ["拉麵", "咖啡"])
+        XCTAssertEqual(repository.saveCallCount, 0, "排序只改顯示，不寫檔")
+
+        viewModel.input.sortOrderToggled()
+
+        XCTAssertEqual(sections.map(\.title), ["較早的紀錄", "9/27（日）", "9/28（一）"])
+    }
+
+    func testIndexPathFollowsTheNewestFirstOrder() {
+        repository.storedItems = [
+            item("抹茶", price: 100, on: Self.date(2026, 9, 27)),
+            item("咖啡", price: 250, on: Self.date(2026, 9, 28, hour: 9)),
+            item("拉麵", price: 300, on: Self.date(2026, 9, 28, hour: 19))
+        ]
+        var request: ShoppingListEditRequest?
+        viewModel.output.editRequest.sink { request = $0 }.store(in: &cancellables)
+
+        viewModel.input.viewDidLoad()
+        viewModel.input.sortOrderToggled()
+        viewModel.input.itemSelected(at: IndexPath(row: 0, section: 0))
+        XCTAssertEqual(request?.item.productName, "拉麵")
+
+        viewModel.input.itemEdited(at: request!.index, edit("豚骨拉麵", price: 300))
+        XCTAssertEqual(repository.storedItems.map(\.productName), ["抹茶", "咖啡", "豚骨拉麵"])
+
+        viewModel.input.deleteItem(at: IndexPath(row: 0, section: 1))
+        XCTAssertEqual(repository.storedItems.map(\.productName), ["咖啡", "豚骨拉麵"])
+    }
+
+    func testEditKeepsThePurchaseDate() {
+        let purchasedAt = Self.date(2026, 9, 27)
+        repository.storedItems = [item("抹茶", price: 100, on: purchasedAt)]
+
+        viewModel.input.viewDidLoad()
+        viewModel.input.itemEdited(at: 0, edit("焙茶", price: 100))
+
+        XCTAssertEqual(repository.storedItems.first?.purchasedAt, purchasedAt)
     }
 
     // MARK: - 總金額
@@ -99,7 +239,7 @@ final class ShoppingListViewModelTests: XCTestCase {
         viewModel.output.totalAmount.sink { text = $0 }.store(in: &cancellables)
 
         viewModel.input.viewDidLoad()
-        viewModel.input.deleteItem(at: 0)
+        viewModel.input.deleteItem(at: IndexPath(row: 0, section: 0))
 
         XCTAssertEqual(text, "NT$ 250", "刪除後要重算，不能累加")
     }
@@ -109,8 +249,8 @@ final class ShoppingListViewModelTests: XCTestCase {
         viewModel.output.totalAmount.sink { text = $0 }.store(in: &cancellables)
 
         viewModel.input.viewDidLoad()
-        viewModel.input.deleteItem(at: 0)
-        viewModel.input.deleteItem(at: 0)
+        viewModel.input.deleteItem(at: IndexPath(row: 0, section: 0))
+        viewModel.input.deleteItem(at: IndexPath(row: 0, section: 0))
 
         XCTAssertEqual(text, "NT$ 0")
     }
@@ -143,7 +283,7 @@ final class ShoppingListViewModelTests: XCTestCase {
 
     func testDeletePersistsImmediately() {
         viewModel.input.viewDidLoad()
-        viewModel.input.deleteItem(at: 0)
+        viewModel.input.deleteItem(at: IndexPath(row: 0, section: 0))
 
         XCTAssertEqual(repository.saveCallCount, 1)
         XCTAssertEqual(repository.storedItems.map(\.productName), ["咖啡"])
@@ -152,8 +292,8 @@ final class ShoppingListViewModelTests: XCTestCase {
     func testDeleteOutOfRangeIndexIsIgnored() {
         viewModel.input.viewDidLoad()
 
-        viewModel.input.deleteItem(at: 99)
-        viewModel.input.deleteItem(at: -1)
+        viewModel.input.deleteItem(at: IndexPath(row: 99, section: 0))
+        viewModel.input.deleteItem(at: IndexPath(row: -1, section: 0))
 
         XCTAssertEqual(repository.saveCallCount, 0)
         XCTAssertEqual(repository.storedItems.count, 2)
@@ -161,7 +301,7 @@ final class ShoppingListViewModelTests: XCTestCase {
 
     func testDeleteRemovesTheImageOfTheDeletedItem() {
         viewModel.input.viewDidLoad()
-        viewModel.input.deleteItem(at: 0)
+        viewModel.input.deleteItem(at: IndexPath(row: 0, section: 0))
 
         XCTAssertEqual(imageStore.removedNames, ["photo-1"])
     }
@@ -170,11 +310,11 @@ final class ShoppingListViewModelTests: XCTestCase {
         repository.saveError = StubError.failure
         var items: [ShoppingListItem] = []
         var message: String?
-        viewModel.output.items.sink { items = $0 }.store(in: &cancellables)
+        viewModel.output.sections.sink { items = $0.flatMap(\.items) }.store(in: &cancellables)
         viewModel.output.errorMessage.sink { message = $0 }.store(in: &cancellables)
 
         viewModel.input.viewDidLoad()
-        viewModel.input.deleteItem(at: 0)
+        viewModel.input.deleteItem(at: IndexPath(row: 0, section: 0))
 
         XCTAssertEqual(items.count, 2, "存檔失敗時清單不該少一筆")
         XCTAssertTrue(imageStore.removedNames.isEmpty, "存檔失敗時不該刪掉圖片")
@@ -195,7 +335,7 @@ final class ShoppingListViewModelTests: XCTestCase {
         viewModel.output.editRequest.sink { request = $0 }.store(in: &cancellables)
 
         viewModel.input.viewDidLoad()
-        viewModel.input.itemSelected(at: 0)
+        viewModel.input.itemSelected(at: IndexPath(row: 0, section: 0))
 
         XCTAssertEqual(request?.index, 0)
         XCTAssertEqual(request?.item.productName, "抹茶")
@@ -207,7 +347,7 @@ final class ShoppingListViewModelTests: XCTestCase {
         viewModel.output.editRequest.sink { request = $0 }.store(in: &cancellables)
 
         viewModel.input.viewDidLoad()
-        viewModel.input.itemSelected(at: 99)
+        viewModel.input.itemSelected(at: IndexPath(row: 99, section: 0))
 
         XCTAssertNil(request)
     }
@@ -215,7 +355,7 @@ final class ShoppingListViewModelTests: XCTestCase {
     func testEditPersistsImmediatelyAndUpdatesTheTotal() {
         var items: [ShoppingListItem] = []
         var total: String?
-        viewModel.output.items.sink { items = $0 }.store(in: &cancellables)
+        viewModel.output.sections.sink { items = $0.flatMap(\.items) }.store(in: &cancellables)
         viewModel.output.totalAmount.sink { total = $0 }.store(in: &cancellables)
 
         viewModel.input.viewDidLoad()
@@ -233,7 +373,7 @@ final class ShoppingListViewModelTests: XCTestCase {
 
     func testNewPhotoIsWrittenOnSaveAndReplacesTheOldFile() {
         var items: [ShoppingListItem] = []
-        viewModel.output.items.sink { items = $0 }.store(in: &cancellables)
+        viewModel.output.sections.sink { items = $0.flatMap(\.items) }.store(in: &cancellables)
         let newPhoto = Data("new".utf8)
 
         viewModel.input.viewDidLoad()
@@ -251,7 +391,7 @@ final class ShoppingListViewModelTests: XCTestCase {
         repository.saveError = StubError.failure
         var items: [ShoppingListItem] = []
         var message: String?
-        viewModel.output.items.sink { items = $0 }.store(in: &cancellables)
+        viewModel.output.sections.sink { items = $0.flatMap(\.items) }.store(in: &cancellables)
         viewModel.output.errorMessage.sink { message = $0 }.store(in: &cancellables)
 
         viewModel.input.viewDidLoad()
@@ -269,7 +409,7 @@ final class ShoppingListViewModelTests: XCTestCase {
         var message: String?
         var items: [ShoppingListItem] = []
         viewModel.output.errorMessage.sink { message = $0 }.store(in: &cancellables)
-        viewModel.output.items.sink { items = $0 }.store(in: &cancellables)
+        viewModel.output.sections.sink { items = $0.flatMap(\.items) }.store(in: &cancellables)
 
         viewModel.input.viewDidLoad()
 
@@ -295,7 +435,7 @@ final class ShoppingListViewModelTests: XCTestCase {
         viewModel.input.viewDidLoad()
         XCTAssertEqual(summary, "共 2 筆・Angus")
 
-        viewModel.input.deleteItem(at: 0)
+        viewModel.input.deleteItem(at: IndexPath(row: 0, section: 0))
         XCTAssertEqual(summary, "共 1 筆・Angus")
     }
 }

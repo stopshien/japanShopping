@@ -51,6 +51,26 @@ final class PersistenceFormatTests: XCTestCase {
         XCTAssertEqual(decoded.map(\.productName), ["第一項", "第二項"])
     }
 
+    func testShoppingItemKeepsItsPurchaseDate() throws {
+        var original = ShoppingItem(productName: "抹茶", price: 100, payType: "現金", taxState: "含稅")
+        original.purchasedAt = Date(timeIntervalSince1970: 1_790_000_000)
+
+        let decoded = try roundTrip(original)
+
+        XCTAssertEqual(decoded.purchasedAt, original.purchasedAt)
+    }
+
+    /// 加入日期欄位前存下的紀錄沒有 purchasedAt 這個鍵，必須仍能讀取。
+    func testShoppingItemSavedBeforePurchaseDateExistedStillDecodes() throws {
+        let legacy: [String: Any] = ["productName": "抹茶", "price": 100.0, "payType": "現金", "taxState": "含稅"]
+        let data = try PropertyListSerialization.data(fromPropertyList: legacy, format: .xml, options: 0)
+
+        let decoded = try PropertyListDecoder().decode(ShoppingItem.self, from: data)
+
+        XCTAssertEqual(decoded.productName, "抹茶")
+        XCTAssertNil(decoded.purchasedAt)
+    }
+
     // MARK: - Card
 
     func testCardSurvivesPropertyListRoundTrip() throws {

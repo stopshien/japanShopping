@@ -11,6 +11,7 @@ import UIKit
 final class ShoppingListViewController: UIViewController {
 
     private enum Constants {
+        static let sectionHeaderIdentifier = "ShoppingListSectionHeader"
         static let estimatedRowHeight: CGFloat = 130
         static let horizontalInset: CGFloat = AppStyle.Spacing.normal
     }
@@ -19,7 +20,7 @@ final class ShoppingListViewController: UIViewController {
     private let factory: ScreenFactory
     private let allowsBack: Bool
     private var cancellables = Set<AnyCancellable>()
-    private var items: [ShoppingListItem] = []
+    private var sections: [ShoppingListSection] = []
 
     private let tableView: UITableView = {
         // 圓角卡片清單，和我的旅程、設定同一套視覺；整片白底會和其他頁不一致，
@@ -48,6 +49,28 @@ final class ShoppingListViewController: UIViewController {
     /// 底部摘要做成浮起的卡片，和清單、其他頁的卡片語言一致；
     /// 直接坐在綠色背景上會顯得單薄。
     private let bottomCard = AppView.card()
+
+    /// 清單右上角的日期排序切換，只是一個小的文字按鈕，不搶清單的注意力。
+    private let sortButton: UIButton = {
+        var configuration = UIButton.Configuration.plain()
+        configuration.attributedTitle = AttributedString(
+            "日期", attributes: AttributeContainer([.font: AppStyle.Font.label])
+        )
+        configuration.image = UIImage(
+            systemName: "arrow.up.arrow.down",
+            withConfiguration: UIImage.SymbolConfiguration(font: AppStyle.Font.caption)
+        )
+        configuration.imagePlacement = .trailing
+        configuration.imagePadding = 4
+        configuration.baseForegroundColor = AppColor.accent
+        configuration.contentInsets = NSDirectionalEdgeInsets(
+            top: AppStyle.Spacing.tight, leading: 0, bottom: AppStyle.Spacing.tight, trailing: 0
+        )
+        let button = UIButton(configuration: configuration)
+        button.accessibilityLabel = "日期排序"
+        button.translatesAutoresizingMaskIntoConstraints = false
+        return button
+    }()
 
     private let emptyStateLabel = AppView.label(
         "還沒有任何消費紀錄\n回上一頁輸入價格就能記一筆",
@@ -107,11 +130,17 @@ final class ShoppingListViewController: UIViewController {
         tableView.dataSource = self
         tableView.delegate = self
         tableView.register(ShoppingListCell.self, forCellReuseIdentifier: ShoppingListCell.reuseIdentifier)
+        tableView.register(
+            UITableViewHeaderFooterView.self, forHeaderFooterViewReuseIdentifier: Constants.sectionHeaderIdentifier
+        )
 
         totalAmountLabel.setContentCompressionResistancePriority(.required, for: .vertical)
         let bottomStack = AppView.cardStack(in: bottomCard, spacing: 0)
         [totalAmountLabel, totalSummaryLabel].forEach(bottomStack.addArrangedSubview)
 
+        sortButton.addTarget(self, action: #selector(sortTapped), for: .touchUpInside)
+
+        view.addSubview(sortButton)
         view.addSubview(tableView)
         view.addSubview(emptyStateLabel)
         view.addSubview(bottomCard)
@@ -119,7 +148,14 @@ final class ShoppingListViewController: UIViewController {
 
     private func setupConstraints() {
         NSLayoutConstraint.activate([
-            tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            // 和區塊標題的小計右緣對齊。
+            sortButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            // insetGrouped 的卡片比清單邊距再內縮一層，標題文字又在卡片內側。
+            sortButton.trailingAnchor.constraint(
+                equalTo: tableView.layoutMarginsGuide.trailingAnchor, constant: -AppStyle.Spacing.normal
+            ),
+
+            tableView.topAnchor.constraint(equalTo: sortButton.bottomAnchor),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             tableView.bottomAnchor.constraint(equalTo: bottomCard.topAnchor, constant: -AppStyle.Spacing.tight),
@@ -144,13 +180,15 @@ final class ShoppingListViewController: UIViewController {
     // MARK: - Binding
 
     private func bindViewModel() {
-        viewModel.output.items
+        viewModel.output.sections
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] items in
+            .sink { [weak self] sections in
                 guard let self else { return }
-                self.items = items
+                self.sections = sections
                 self.tableView.reloadData()
-                self.emptyStateLabel.isHidden = !items.isEmpty
+                self.emptyStateLabel.isHidden = !sections.isEmpty
+                // 沒有紀錄時排序沒有意義，收起來避免空畫面上多一個控制項。
+                self.sortButton.isHidden = sections.isEmpty
             }
             .store(in: &cancellables)
 
@@ -175,6 +213,13 @@ final class ShoppingListViewController: UIViewController {
             }
             .store(in: &cancellables)
 
+        viewModel.output.sortOrder
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] order in
+                self?.sortButton.accessibilityValue = order.title
+            }
+            .store(in: &cancellables)
+
         viewModel.output.didFinish
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
@@ -196,6 +241,10 @@ final class ShoppingListViewController: UIViewController {
         viewModel.input.doneTapped()
     }
 
+    @objc private func sortTapped() {
+        viewModel.input.sortOrderToggled()
+    }
+
     // MARK: - Navigation
 
     private func showEditor(for request: ShoppingListEditRequest) {
@@ -208,8 +257,8 @@ final class ShoppingListViewController: UIViewController {
     // MARK: - Private
 
     /// 刪除會立即寫檔且無法復原，先確認；取消時收起滑出的刪除鍵。
-    private func confirmDelete(at index: Int) {
-        let name = items.indices.contains(index) ? items[index].productName : ""
+    private func confirmDelete(at indexPath: IndexPath) {
+        let name = item(at: indexPath)?.productName ?? ""
         let alert = UIAlertController(
             title: "刪除這筆消費？",
             message: name.isEmpty ? "刪除後無法復原。" : "「\(name)」刪除後無法復原。",
@@ -219,9 +268,15 @@ final class ShoppingListViewController: UIViewController {
             self?.tableView.setEditing(false, animated: true)
         })
         alert.addAction(UIAlertAction(title: "刪除", style: .destructive) { [weak self] _ in
-            self?.viewModel.input.deleteItem(at: index)
+            self?.viewModel.input.deleteItem(at: indexPath)
         })
         present(alert, animated: true)
+    }
+
+    private func item(at indexPath: IndexPath) -> ShoppingListItem? {
+        guard sections.indices.contains(indexPath.section),
+              sections[indexPath.section].items.indices.contains(indexPath.row) else { return nil }
+        return sections[indexPath.section].items[indexPath.row]
     }
 
     private func presentError(_ message: String) {
@@ -235,14 +290,18 @@ final class ShoppingListViewController: UIViewController {
 
 extension ShoppingListViewController: UITableViewDataSource {
 
+    func numberOfSections(in tableView: UITableView) -> Int {
+        sections.count
+    }
+
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        items.count
+        sections.indices.contains(section) ? sections[section].items.count : 0
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: ShoppingListCell.reuseIdentifier, for: indexPath)
-        if let shoppingCell = cell as? ShoppingListCell, items.indices.contains(indexPath.row) {
-            shoppingCell.configure(with: items[indexPath.row])
+        if let shoppingCell = cell as? ShoppingListCell, let item = item(at: indexPath) {
+            shoppingCell.configure(with: item)
         }
         return cell
     }
@@ -252,9 +311,25 @@ extension ShoppingListViewController: UITableViewDataSource {
 
 extension ShoppingListViewController: UITableViewDelegate {
 
+    /// 日期在左、當天小計在右，每天一張卡片。
+    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+        guard sections.indices.contains(section) else { return nil }
+        let header = tableView.dequeueReusableHeaderFooterView(withIdentifier: Constants.sectionHeaderIdentifier)
+        var configuration = UIListContentConfiguration.groupedHeader()
+        configuration.text = sections[section].title
+        configuration.secondaryText = sections[section].subtotal
+        configuration.prefersSideBySideTextAndSecondaryText = true
+        configuration.textProperties.font = AppStyle.Font.labelEmphasis
+        configuration.textProperties.color = AppColor.textPrimary
+        configuration.secondaryTextProperties.font = AppStyle.Font.label
+        configuration.secondaryTextProperties.color = AppColor.textSecondary
+        header?.contentConfiguration = configuration
+        return header
+    }
+
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
         guard editingStyle == .delete else { return }
-        confirmDelete(at: indexPath.row)
+        confirmDelete(at: indexPath)
     }
 
     func tableView(_ tableView: UITableView, titleForDeleteConfirmationButtonForRowAt indexPath: IndexPath) -> String? {
@@ -263,6 +338,6 @@ extension ShoppingListViewController: UITableViewDelegate {
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        viewModel.input.itemSelected(at: indexPath.row)
+        viewModel.input.itemSelected(at: indexPath)
     }
 }

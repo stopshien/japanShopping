@@ -292,6 +292,23 @@ final class DetailViewModelTests: XCTestCase {
         XCTAssertEqual(listRepository.storedItems.map(\.productName), ["舊項目", "抹茶"])
     }
 
+    func testSaveStampsThePurchaseDate() {
+        let now = Date(timeIntervalSince1970: 1_790_000_000)
+        viewModel = DetailViewModel(
+            item: ShoppingItem(productName: "", price: 1000, payType: "", taxState: "未稅"),
+            cardRepository: cardRepository,
+            shoppingListRepository: listRepository,
+            imageStore: imageStore,
+            now: { now }
+        )
+
+        viewModel.input.viewDidLoad()
+        viewModel.input.productNameChanged("抹茶")
+        viewModel.input.saveTapped()
+
+        XCTAssertEqual(listRepository.storedItems.last?.purchasedAt, now)
+    }
+
     func testSaveIsIgnoredWhenProductNameIsEmpty() {
         var routes: [DetailRoute] = []
         viewModel.output.route.sink { routes.append($0) }.store(in: &cancellables)

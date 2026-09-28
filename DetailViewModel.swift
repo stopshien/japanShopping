@@ -89,6 +89,7 @@ final class DetailViewModel: DetailViewModelType {
     private let cardRepository: CardRepository
     private let shoppingListRepository: ShoppingListRepository
     private let imageStore: ImageStore
+    private let now: () -> Date
 
     private var item: ShoppingItem
     private var cards: [Card] = []
@@ -110,12 +111,14 @@ final class DetailViewModel: DetailViewModelType {
         item: ShoppingItem,
         cardRepository: CardRepository,
         shoppingListRepository: ShoppingListRepository,
-        imageStore: ImageStore
+        imageStore: ImageStore,
+        now: @escaping () -> Date = Date.init
     ) {
         self.item = item
         self.cardRepository = cardRepository
         self.shoppingListRepository = shoppingListRepository
         self.imageStore = imageStore
+        self.now = now
         // 畫面上的 picker 預設停在「現金」，所以付款方式的初始值也是現金。
         self.item.payType = "現金"
     }
@@ -224,6 +227,8 @@ extension DetailViewModel: DetailViewModelInput {
         if let photoData {
             item.photoURL = try? imageStore.save(photoData)
         }
+        // 消費紀錄依這個日期分區。
+        item.purchasedAt = now()
 
         do {
             var items = try shoppingListRepository.load()
