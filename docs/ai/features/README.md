@@ -36,9 +36,12 @@ docs/ai/features/<feature>/
 - keep detailed supporting material here
 - examples: tax and feedback formulas, field dictionaries, terminology
 
+## Existing Features
+
+- `credit_card_feedback/` — card creation, feedback calculation, remaining-limit tracking
+
 ## Candidate Features
 
-No feature directory exists yet. Create one when work touches a non-trivial area, for example:
+Create a directory when work touches a non-trivial area, for example:
 - `exchange_rate/` — rate fetch, date conversion, tax calculation
-- `credit_card_feedback/` — card creation, feedback calculation, remaining-limit tracking
 - `shopping_list/` — list persistence, photo storage, total spend
