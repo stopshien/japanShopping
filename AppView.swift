@@ -142,15 +142,18 @@ enum AppView {
         return textField
     }
 
+    /// 選中的分段是淡綠底上的白色膠囊，不用實心強調色 ——
+    /// 分段多半和主要按鈕放在同一張卡片，兩者都實心會分不出哪個才是主要動作。
+    /// 選中的字改粗體，不只靠顏色區分。
     static func segmentedControl(items: [String]) -> UISegmentedControl {
         let control = UISegmentedControl(items: items)
-        control.selectedSegmentTintColor = AppColor.accent
-        control.backgroundColor = AppColor.surface
+        control.selectedSegmentTintColor = AppColor.surface
+        control.backgroundColor = AppColor.accentSoft
         control.setTitleTextAttributes(
-            [.foregroundColor: AppColor.textPrimary, .font: AppStyle.Font.label], for: .normal
+            [.foregroundColor: AppColor.textSecondary, .font: AppStyle.Font.label], for: .normal
         )
         control.setTitleTextAttributes(
-            [.foregroundColor: UIColor.white, .font: AppStyle.Font.label], for: .selected
+            [.foregroundColor: AppColor.accent, .font: AppStyle.Font.labelEmphasis], for: .selected
         )
         control.translatesAutoresizingMaskIntoConstraints = false
         return control

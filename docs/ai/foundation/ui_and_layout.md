@@ -76,6 +76,7 @@ final class ShoppingListViewController: UIViewController {
 - Use `PhotoButton` for any tap-to-pick photo area. Never `setImage` a photo onto a system `UIButton`: it renders the image as a template and the photo becomes a solid tint-coloured block.
 - **One primary button per screen.** It is the action the screen exists for. Everything else is secondary or plain.
 - Secondary buttons use a tinted background, never white — they usually sit on a white card, where a white fill makes them look like plain text.
+- The solid `accent` fill is reserved for the primary button. A segmented control's selected segment is a white pill on an `accentSoft` track with bold `accent` text; a solid selected segment competes with the primary button in the same card.
 - Group related controls into a `card`. A screen should read as a few blocks, not a flat list of controls.
 - `AppAppearance` configures the navigation bar once, from `SceneDelegate`.
 - Navigation that is available but not the point of the screen belongs in the navigation bar, via `AppView.barButton`, not in the content stack. Every bar button needs an `accessibilityLabel` — VoiceOver otherwise reads the SF Symbol name.

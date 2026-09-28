@@ -42,6 +42,7 @@ enum AppStyle {
         static let body = scaled(.systemFont(ofSize: 17), as: .body, maximum: 30)
         static let bodyEmphasis = scaled(.systemFont(ofSize: 17, weight: .semibold), as: .body, maximum: 30)
         static let label = scaled(.systemFont(ofSize: 15, weight: .medium), as: .subheadline, maximum: 26)
+        static let labelEmphasis = scaled(.systemFont(ofSize: 15, weight: .semibold), as: .subheadline, maximum: 26)
         static let caption = scaled(.systemFont(ofSize: 13), as: .caption1, maximum: 22)
 
         private static func scaled(_ font: UIFont, as style: UIFont.TextStyle, maximum: CGFloat) -> UIFont {
