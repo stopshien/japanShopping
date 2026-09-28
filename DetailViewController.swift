@@ -289,7 +289,7 @@ final class DetailViewController: UIViewController {
     private func navigate(to route: DetailRoute) {
         switch route {
         case .addCard:
-            let controller = factory.makeCardSet { [weak self] in
+            let controller = factory.makeCardSet(editing: nil) { [weak self] in
                 self?.viewModel.input.reloadCards()
             }
             navigationController?.pushViewController(controller, animated: true)

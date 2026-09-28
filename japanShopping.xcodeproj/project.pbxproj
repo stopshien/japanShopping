@@ -66,6 +66,7 @@
 		EA0000042A00000100EA0001 /* TripRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA0000032A00000100EA0001 /* TripRepository.swift */; };
 		EA0000062A00000100EA0001 /* TripContentStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA0000052A00000100EA0001 /* TripContentStore.swift */; };
 		EA0000082A00000100EA0001 /* TripMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA0000072A00000100EA0001 /* TripMigration.swift */; };
+		B677D547742BED9465DDE76D /* IdentityMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80F7F6456B6EF87E16377A5F /* IdentityMigration.swift */; };
 		EC0000022A00000100EC0001 /* ItemEditorViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC0000012A00000100EC0001 /* ItemEditorViewModel.swift */; };
 		EC0000042A00000100EC0001 /* ItemEditorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC0000032A00000100EC0001 /* ItemEditorViewController.swift */; };
 		EC0000062A00000100EC0001 /* ItemEditorViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC0000052A00000100EC0001 /* ItemEditorViewModelTests.swift */; };
@@ -81,6 +82,7 @@
 		EA0000102A00000100EA0001 /* TripListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA00000F2A00000100EA0001 /* TripListViewController.swift */; };
 		EA0000122A00000100EA0001 /* TripListCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA0000112A00000100EA0001 /* TripListCell.swift */; };
 		EB0000022A00000100EB0001 /* TripTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB0000012A00000100EB0001 /* TripTests.swift */; };
+		EFF37CDA74A919C01C856BBE /* IdentityMigrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AE24660DB56AF100A9D852A /* IdentityMigrationTests.swift */; };
 		FA0000022A00000100FA0001 /* AppTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0000012A00000100FA0001 /* AppTextField.swift */; };
 /* End PBXBuildFile section */
 
@@ -157,6 +159,7 @@
 		EA0000032A00000100EA0001 /* TripRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripRepository.swift; sourceTree = "<group>"; };
 		EA0000052A00000100EA0001 /* TripContentStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripContentStore.swift; sourceTree = "<group>"; };
 		EA0000072A00000100EA0001 /* TripMigration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripMigration.swift; sourceTree = "<group>"; };
+		80F7F6456B6EF87E16377A5F /* IdentityMigration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdentityMigration.swift; sourceTree = "<group>"; };
 		EC0000012A00000100EC0001 /* ItemEditorViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemEditorViewModel.swift; sourceTree = "<group>"; };
 		EC0000032A00000100EC0001 /* ItemEditorViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemEditorViewController.swift; sourceTree = "<group>"; };
 		EC0000052A00000100EC0001 /* ItemEditorViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemEditorViewModelTests.swift; sourceTree = "<group>"; };
@@ -172,6 +175,7 @@
 		EA00000F2A00000100EA0001 /* TripListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripListViewController.swift; sourceTree = "<group>"; };
 		EA0000112A00000100EA0001 /* TripListCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripListCell.swift; sourceTree = "<group>"; };
 		EB0000012A00000100EB0001 /* TripTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripTests.swift; sourceTree = "<group>"; };
+		2AE24660DB56AF100A9D852A /* IdentityMigrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdentityMigrationTests.swift; sourceTree = "<group>"; };
 		FA0000012A00000100FA0001 /* AppTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTextField.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -199,6 +203,7 @@
 				AB0000022A00000100AB0001 /* PersistenceFormatTests.swift */,
 				AB0000032A00000100AB0001 /* ExchangeRateDecodingTests.swift */,
 				EB0000012A00000100EB0001 /* TripTests.swift */,
+				2AE24660DB56AF100A9D852A /* IdentityMigrationTests.swift */,
 				EC0000052A00000100EC0001 /* ItemEditorViewModelTests.swift */,
 				DD0000012A00000100DD0001 /* OnboardingAndSettingsTests.swift */,
 				DB0000012A00000100DB0001 /* WelcomeViewModelTests.swift */,
@@ -260,6 +265,7 @@
 				EA0000032A00000100EA0001 /* TripRepository.swift */,
 				EA0000052A00000100EA0001 /* TripContentStore.swift */,
 				EA0000072A00000100EA0001 /* TripMigration.swift */,
+				80F7F6456B6EF87E16377A5F /* IdentityMigration.swift */,
 				EA0000092A00000100EA0001 /* TripEditorViewModel.swift */,
 				EC00000B2A00000100EC0001 /* SettingsViewController.swift */,
 				EC0000092A00000100EC0001 /* SettingsViewModel.swift */,
@@ -404,6 +410,7 @@
 				AB0000042A00000100AB0001 /* PersistenceFormatTests.swift in Sources */,
 				AB0000052A00000100AB0001 /* ExchangeRateDecodingTests.swift in Sources */,
 				EB0000022A00000100EB0001 /* TripTests.swift in Sources */,
+				EFF37CDA74A919C01C856BBE /* IdentityMigrationTests.swift in Sources */,
 				EC0000062A00000100EC0001 /* ItemEditorViewModelTests.swift in Sources */,
 				DD0000022A00000100DD0001 /* OnboardingAndSettingsTests.swift in Sources */,
 				DB0000022A00000100DB0001 /* WelcomeViewModelTests.swift in Sources */,
@@ -442,6 +449,7 @@
 				EC0000042A00000100EC0001 /* ItemEditorViewController.swift in Sources */,
 				EC0000022A00000100EC0001 /* ItemEditorViewModel.swift in Sources */,
 				EA0000082A00000100EA0001 /* TripMigration.swift in Sources */,
+				B677D547742BED9465DDE76D /* IdentityMigration.swift in Sources */,
 				EA0000062A00000100EA0001 /* TripContentStore.swift in Sources */,
 				EA0000042A00000100EA0001 /* TripRepository.swift in Sources */,
 				EA0000022A00000100EA0001 /* Trip.swift in Sources */,

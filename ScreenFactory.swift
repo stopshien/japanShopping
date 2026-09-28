@@ -25,7 +25,8 @@ protocol ScreenFactory {
     /// `allowsBack` 為 false 時隱藏返回鍵並停用滑動返回，只能按「完成」回到首頁。
     func makeShoppingList(allowsBack: Bool) -> UIViewController
     func makeItemEditor(item: ShoppingItem, photoData: Data?, onSave: @escaping (ItemEdit) -> Void) -> UIViewController
-    func makeCardSet(onFinish: @escaping () -> Void) -> UIViewController
+    /// `card` 為 nil 時是新增，否則是編輯那張卡。
+    func makeCardSet(editing card: Card?, onFinish: @escaping () -> Void) -> UIViewController
     func makeCardList() -> UIViewController
 }
 
@@ -58,6 +59,12 @@ final class AppScreenFactory: ScreenFactory {
 
         // 舊版的單一清單轉成第一個專案，只會執行一次。
         TripMigration.run(tripRepository: tripRepository)
+        // 替沒有識別碼的卡片與消費補上 id，之後的回饋明細靠它對應。
+        IdentityMigration.run(
+            cardRepository: cardRepository,
+            tripRepository: tripRepository,
+            tripContentStore: tripContentStore
+        )
     }
 
     /// 目前使用中的專案。沒有選中時退回最新建立的一個。
@@ -175,8 +182,10 @@ final class AppScreenFactory: ScreenFactory {
         return controller
     }
 
-    func makeCardSet(onFinish: @escaping () -> Void) -> UIViewController {
-        let controller = CardSetViewController(viewModel: CardSetViewModel(repository: cardRepository))
+    func makeCardSet(editing card: Card?, onFinish: @escaping () -> Void) -> UIViewController {
+        let controller = CardSetViewController(
+            viewModel: CardSetViewModel(editingCard: card, repository: cardRepository)
+        )
         controller.onFinish = { [weak controller] in
             onFinish()
             controller?.navigationController?.popViewController(animated: true)

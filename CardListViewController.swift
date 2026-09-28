@@ -134,7 +134,9 @@ final class CardListViewController: UIViewController {
             .sink { [weak self] route in
                 switch route {
                 case .createCard:
-                    self?.presentCardSet()
+                    self?.presentCardSet(editing: nil)
+                case .editCard(let card):
+                    self?.presentCardSet(editing: card)
                 }
             }
             .store(in: &cancellables)
@@ -157,9 +159,9 @@ final class CardListViewController: UIViewController {
         viewModel.input.createTapped()
     }
 
-    private func presentCardSet() {
-        let controller = factory.makeCardSet { [weak self] in
-            self?.viewModel.input.reloadAfterAddingCard()
+    private func presentCardSet(editing card: Card?) {
+        let controller = factory.makeCardSet(editing: card) { [weak self] in
+            self?.viewModel.input.reloadAfterCardSaved()
         }
         navigationController?.pushViewController(controller, animated: true)
     }
@@ -193,6 +195,11 @@ extension CardListViewController: UITableViewDataSource {
 // MARK: - UITableViewDelegate
 
 extension CardListViewController: UITableViewDelegate {
+
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        viewModel.input.cardSelected(at: indexPath.row)
+    }
 
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
         guard editingStyle == .delete else { return }

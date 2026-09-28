@@ -107,7 +107,7 @@ final class CardListViewModelTests: XCTestCase {
 
         viewModel.input.viewDidLoad()
         repository.storedCards.append(Card(name: "C卡", percent: 1, limit: 100, feedbackRemaining: 100))
-        viewModel.input.reloadAfterAddingCard()
+        viewModel.input.reloadAfterCardSaved()
 
         XCTAssertEqual(items.map(\.name), ["A卡", "B卡", "C卡"])
     }
@@ -123,7 +123,7 @@ final class CardListViewModelTests: XCTestCase {
         XCTAssertEqual(items.map(\.name), ["B卡"])
 
         repository.storedCards.append(Card(name: "C卡", percent: 1, limit: 100, feedbackRemaining: 100))
-        viewModel.input.reloadAfterAddingCard()
+        viewModel.input.reloadAfterCardSaved()
 
         XCTAssertEqual(items.map(\.name), ["B卡", "C卡"], "A卡的刪除要保留")
 
@@ -137,7 +137,49 @@ final class CardListViewModelTests: XCTestCase {
 
         viewModel.input.viewDidLoad()
         viewModel.input.deleteCard(at: 0)
-        viewModel.input.reloadAfterAddingCard()
+        viewModel.input.reloadAfterCardSaved()
+
+        XCTAssertEqual(items.map(\.name), ["B卡"])
+    }
+
+    // MARK: - 編輯
+
+    func testSelectingACardRoutesToEditIt() {
+        repository.storedCards[0].id = UUID()
+        var routes: [CardListRoute] = []
+        viewModel.output.route.sink { routes.append($0) }.store(in: &cancellables)
+
+        viewModel.input.viewDidLoad()
+        viewModel.input.cardSelected(at: 0)
+        viewModel.input.cardSelected(at: 99)
+
+        XCTAssertEqual(routes, [.editCard(repository.storedCards[0])])
+    }
+
+    func testReloadReplacesAnEditedCardInPlace() {
+        let id = UUID()
+        repository.storedCards[0].id = id
+        var items: [CardListItem] = []
+        viewModel.output.items.sink { items = $0 }.store(in: &cancellables)
+
+        viewModel.input.viewDidLoad()
+        repository.storedCards[0] = Card(name: "A卡改名", percent: 4, limit: 1000, feedbackRemaining: 1000, id: id)
+        viewModel.input.reloadAfterCardSaved()
+
+        XCTAssertEqual(items.map(\.name), ["A卡改名", "B卡"], "編輯過的卡片留在原位，不會多一張")
+    }
+
+    /// 刪掉一張卡之後，就算它在別處被編輯過，尚未套用的刪除也要保留。
+    func testReloadKeepsAPendingDeletionOfAnEditedCard() {
+        let id = UUID()
+        repository.storedCards[0].id = id
+        var items: [CardListItem] = []
+        viewModel.output.items.sink { items = $0 }.store(in: &cancellables)
+
+        viewModel.input.viewDidLoad()
+        viewModel.input.deleteCard(at: 0)
+        repository.storedCards[0] = Card(name: "A卡改名", percent: 4, limit: 1000, feedbackRemaining: 1000, id: id)
+        viewModel.input.reloadAfterCardSaved()
 
         XCTAssertEqual(items.map(\.name), ["B卡"])
     }

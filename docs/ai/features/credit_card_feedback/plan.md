@@ -46,11 +46,12 @@ ShoppingItem (new optional fields)
 
 Each phase ships on its own, keeps the app working, and updates tests plus the behavior contract.
 
-### Phase 1 — Identity and editing (low risk)
+### Phase 1 — Identity and editing (low risk) — done 2026-09-29
 
 - Add `Card.id` and `ShoppingItem.id` (optional). A one-time migration assigns them.
 - Add an edit mode to the card screen (name, rate, limit), reached by tapping a row in 管理信用卡.
 - No change to how feedback is calculated.
+- As built: `IdentityMigration` runs at every launch in `AppScreenFactory.init` and writes only when an `id` is missing. A new purchase gets its `id` in `DetailViewModel.saveTapped`. Editing keeps the used amount (`limit - feedbackRemaining`).
 
 ### Phase 2 — Feedback ledger
 

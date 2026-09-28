@@ -58,7 +58,7 @@ final class CardSetViewModelTests: XCTestCase {
 
     func testAddTappedAppendsCardWithRemainingEqualToLimit() {
         var didAdd = false
-        viewModel.output.didAddCard.sink { didAdd = true }.store(in: &cancellables)
+        viewModel.output.didSave.sink { didAdd = true }.store(in: &cancellables)
 
         fillValidCard()
         viewModel.input.addTapped()
@@ -72,6 +72,7 @@ final class CardSetViewModelTests: XCTestCase {
         XCTAssertEqual(card?.limit, 5000)
         XCTAssertEqual(card?.feedbackRemaining, 5000, "新卡的剩餘回饋額度應等於上限")
         XCTAssertEqual(card?.feedbackMoney, 0, "新卡尚未產生回饋金額")
+        XCTAssertNotNil(card?.id, "新卡一建立就有識別碼")
     }
 
     func testAddTappedKeepsExistingCards() {
@@ -81,6 +82,79 @@ final class CardSetViewModelTests: XCTestCase {
         viewModel.input.addTapped()
 
         XCTAssertEqual(repository.storedCards.map(\.name), ["舊卡", "測試卡"])
+    }
+
+    // MARK: - 編輯
+
+    private func makeEditingViewModel(for card: Card) -> CardSetViewModel {
+        CardSetViewModel(editingCard: card, repository: repository)
+    }
+
+    func testEditingPrefillsTheFieldsAndIsReadyToSave() {
+        let card = Card(name: "玉山", percent: 3.5, limit: 500, feedbackRemaining: 200, id: UUID())
+        viewModel = makeEditingViewModel(for: card)
+        var isEnabled = false
+        viewModel.output.isAddEnabled.sink { isEnabled = $0 }.store(in: &cancellables)
+
+        XCTAssertEqual(viewModel.output.prefill, CardSetPrefill(name: "玉山", percent: "3.5", limit: "500"))
+        XCTAssertEqual(viewModel.output.title, "編輯信用卡")
+        XCTAssertEqual(viewModel.output.confirmTitle, "儲存")
+        XCTAssertTrue(isEnabled)
+    }
+
+    func testAddingHasNoPrefill() {
+        XCTAssertNil(viewModel.output.prefill)
+        XCTAssertEqual(viewModel.output.title, "新增信用卡")
+    }
+
+    /// 已用掉 300，上限改成 1000 後剩 700；id 不變，其他卡不受影響。
+    func testEditReplacesTheCardAndKeepsTheUsedAmount() {
+        let id = UUID()
+        let card = Card(name: "玉山", percent: 3.5, limit: 500, feedbackRemaining: 200, id: id)
+        let other = Card(name: "台新", percent: 3.3, limit: 0, feedbackRemaining: 0, id: UUID())
+        repository.storedCards = [card, other]
+        viewModel = makeEditingViewModel(for: card)
+        var didSave = false
+        viewModel.output.didSave.sink { didSave = true }.store(in: &cancellables)
+
+        viewModel.input.nameChanged("玉山熊本熊")
+        viewModel.input.percentChanged("8.5")
+        viewModel.input.limitChanged("1000")
+        viewModel.input.addTapped()
+
+        XCTAssertTrue(didSave)
+        XCTAssertEqual(repository.storedCards.count, 2)
+        let edited = repository.storedCards[0]
+        XCTAssertEqual(edited.id, id)
+        XCTAssertEqual(edited.name, "玉山熊本熊")
+        XCTAssertEqual(edited.percent, 8.5)
+        XCTAssertEqual(edited.limit, 1000)
+        XCTAssertEqual(edited.feedbackRemaining, 700)
+        XCTAssertEqual(repository.storedCards[1], other)
+    }
+
+    func testLoweringTheLimitBelowTheUsedAmountLeavesZero() {
+        let card = Card(name: "玉山", percent: 3.5, limit: 500, feedbackRemaining: 200, id: UUID())
+        repository.storedCards = [card]
+        viewModel = makeEditingViewModel(for: card)
+
+        viewModel.input.limitChanged("100")
+        viewModel.input.addTapped()
+
+        XCTAssertEqual(repository.storedCards.first?.feedbackRemaining, 0)
+    }
+
+    func testEditingACardThatNoLongerExistsReportsAnError() {
+        let card = Card(name: "玉山", percent: 3.5, limit: 500, feedbackRemaining: 200, id: UUID())
+        repository.storedCards = []
+        viewModel = makeEditingViewModel(for: card)
+        var message: String?
+        viewModel.output.errorMessage.sink { message = $0 }.store(in: &cancellables)
+
+        viewModel.input.addTapped()
+
+        XCTAssertEqual(message, "找不到這張信用卡，可能已被刪除")
+        XCTAssertEqual(repository.saveCallCount, 0)
     }
 
     // MARK: - 驗證與錯誤
@@ -124,7 +198,7 @@ final class CardSetViewModelTests: XCTestCase {
         repository.saveError = StubError.failure
         var didAdd = false
         var message: String?
-        viewModel.output.didAddCard.sink { didAdd = true }.store(in: &cancellables)
+        viewModel.output.didSave.sink { didAdd = true }.store(in: &cancellables)
         viewModel.output.errorMessage.sink { message = $0 }.store(in: &cancellables)
 
         fillValidCard()

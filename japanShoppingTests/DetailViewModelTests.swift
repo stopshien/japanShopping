@@ -307,6 +307,7 @@ final class DetailViewModelTests: XCTestCase {
         viewModel.input.saveTapped()
 
         XCTAssertEqual(listRepository.storedItems.last?.purchasedAt, now)
+        XCTAssertNotNil(listRepository.storedItems.last?.id, "新的消費一存檔就有識別碼")
     }
 
     func testSaveIsIgnoredWhenProductNameIsEmpty() {

@@ -28,7 +28,7 @@ final class CardSetViewController: UIViewController {
     private let moneyBackTextField = CardSetViewController.makeTextField(placeholder: "回饋趴數（例如 3.5）", keyboardType: .decimalPad)
     private let limitTextField = CardSetViewController.makeTextField(placeholder: "回饋上限金額", keyboardType: .decimalPad)
 
-    private let addButton = AppView.primaryButton(title: "新增信用卡")
+    private let addButton: UIButton
 
     private let stackView: UIStackView = {
         let stackView = UIStackView()
@@ -40,6 +40,7 @@ final class CardSetViewController: UIViewController {
 
     init(viewModel: CardSetViewModelType) {
         self.viewModel = viewModel
+        self.addButton = AppView.primaryButton(title: viewModel.output.confirmTitle)
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -60,7 +61,12 @@ final class CardSetViewController: UIViewController {
     // MARK: - Setup
 
     private func setupViews() {
-        title = "新增信用卡"
+        title = viewModel.output.title
+        if let prefill = viewModel.output.prefill {
+            cardNameTextField.text = prefill.name
+            moneyBackTextField.text = prefill.percent
+            limitTextField.text = prefill.limit
+        }
         view.backgroundColor = AppColor.brand
         addTapToDismissKeyboard()
 
@@ -109,7 +115,7 @@ final class CardSetViewController: UIViewController {
             }
             .store(in: &cancellables)
 
-        viewModel.output.didAddCard
+        viewModel.output.didSave
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
                 self?.onFinish?()

@@ -44,6 +44,8 @@ final class CardListCell: UITableViewCell {
     private func setupViews() {
         backgroundColor = AppColor.surface
         selectionStyle = .none
+        // 點一下可以編輯，和消費紀錄的列一樣用箭頭提示。
+        accessoryType = .disclosureIndicator
 
         contentView.addSubview(nameLabel)
         contentView.addSubview(percentBadge)

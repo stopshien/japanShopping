@@ -18,6 +18,7 @@ struct CardListItem: Equatable {
 
 enum CardListRoute: Equatable {
     case createCard
+    case editCard(Card)
 }
 
 protocol CardListViewModelType {
@@ -28,8 +29,9 @@ protocol CardListViewModelType {
 protocol CardListViewModelInput {
     func viewDidLoad()
     func createTapped()
-    /// 從新增卡片頁返回後呼叫。
-    func reloadAfterAddingCard()
+    func cardSelected(at index: Int)
+    /// 從新增或編輯卡片頁存檔後呼叫。
+    func reloadAfterCardSaved()
     func deleteCard(at index: Int)
     func finishTapped()
 }
@@ -95,16 +97,34 @@ extension CardListViewModel: CardListViewModelInput {
         routeSubject.send(.createCard)
     }
 
-    /// 只把新出現的卡片加進來，不重載整份清單 ——
-    /// 否則使用者在這頁做過但尚未按下「完成」的刪除會被沖掉。
-    func reloadAfterAddingCard() {
-        let stored = (try? repository.load()) ?? []
-        let added = stored.filter { card in !loadedCards.contains(card) }
-        guard !added.isEmpty else { return }
+    func cardSelected(at index: Int) {
+        guard cards.indices.contains(index) else { return }
+        routeSubject.send(.editCard(cards[index]))
+    }
 
-        cards.append(contentsOf: added)
-        loadedCards.append(contentsOf: added)
-        publishItems()
+    /// 只套用新增或編輯過的卡片，不重載整份清單 ——
+    /// 否則使用者在這頁做過但尚未按下「完成」的刪除會被沖掉。
+    func reloadAfterCardSaved() {
+        let stored = (try? repository.load()) ?? []
+        var changed = false
+
+        for card in stored where !loadedCards.contains(card) {
+            if let id = card.id, let index = loadedCards.firstIndex(where: { $0.id == id }) {
+                // 編輯過的卡片：已刪除的就維持刪除，否則換成新的內容。
+                loadedCards[index] = card
+                if let current = cards.firstIndex(where: { $0.id == id }) {
+                    cards[current] = card
+                }
+            } else {
+                cards.append(card)
+                loadedCards.append(card)
+            }
+            changed = true
+        }
+
+        if changed {
+            publishItems()
+        }
     }
 
     func deleteCard(at index: Int) {

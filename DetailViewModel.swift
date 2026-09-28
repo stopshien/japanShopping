@@ -229,6 +229,9 @@ extension DetailViewModel: DetailViewModelInput {
         }
         // 消費紀錄依這個日期分區。
         item.purchasedAt = now()
+        if item.id == nil {
+            item.id = UUID()
+        }
 
         do {
             var items = try shoppingListRepository.load()

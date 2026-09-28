@@ -73,6 +73,26 @@ final class PersistenceFormatTests: XCTestCase {
 
     // MARK: - Card
 
+    /// 加入 id 前存下的卡片沒有這個鍵，必須仍能讀取。
+    func testCardSavedBeforeIDExistedStillDecodes() throws {
+        let legacy: [String: Any] = [
+            "name": "舊卡", "percent": 3.5, "limit": 500.0, "feedbackMoney": 0.0, "feedbackRemaining": 200.0
+        ]
+        let data = try PropertyListSerialization.data(fromPropertyList: legacy, format: .xml, options: 0)
+
+        let decoded = try PropertyListDecoder().decode(Card.self, from: data)
+
+        XCTAssertEqual(decoded.name, "舊卡")
+        XCTAssertEqual(decoded.feedbackRemaining, 200)
+        XCTAssertNil(decoded.id)
+    }
+
+    func testCardKeepsItsID() throws {
+        let original = Card(name: "新卡", percent: 3, limit: 100, feedbackRemaining: 100, id: UUID())
+
+        XCTAssertEqual(try roundTrip(original).id, original.id)
+    }
+
     func testCardSurvivesPropertyListRoundTrip() throws {
         let original = Card(name: "測試卡", percent: 3.5, limit: 5000, feedbackMoney: 120, feedbackRemaining: 4880)
 
