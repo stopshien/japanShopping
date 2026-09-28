@@ -29,28 +29,35 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         window.makeKeyAndVisible()
         self.window = window
 
-        if factory.needsOnboarding {
-            window.rootViewController = factory.makeOnboarding { [weak self] in
-                self?.showMain(animated: true)
-            }
-        } else {
-            showMain(animated: false)
+        let initialRoot = factory.needsOnboarding
+            ? factory.makeOnboarding { [weak self] in self?.showMain() }
+            : makeMain(factory: factory)
+
+        // 首頁在啟動動畫播放時就先載入，匯率下載等初始化不必等動畫結束。
+        initialRoot.loadViewIfNeeded()
+        (initialRoot as? UINavigationController)?.topViewController?.loadViewIfNeeded()
+
+        window.rootViewController = SplashViewController { [weak self] in
+            self?.setRoot(initialRoot)
         }
     }
 
     /// 引導流程完成後換掉 root，引導頁隨之釋放，返回手勢也不會回到它。
-    private func showMain(animated: Bool) {
-        guard let window, let factory else { return }
+    private func showMain() {
+        guard let factory else { return }
+        setRoot(makeMain(factory: factory))
+    }
 
+    private func makeMain(factory: ScreenFactory) -> UIViewController {
         let navigationController = UINavigationController(rootViewController: factory.makeCompute())
         AppAppearance.apply(to: navigationController.navigationBar)
+        return navigationController
+    }
 
-        guard animated else {
-            window.rootViewController = navigationController
-            return
-        }
+    private func setRoot(_ viewController: UIViewController) {
+        guard let window else { return }
         UIView.transition(with: window, duration: 0.3, options: .transitionCrossDissolve) {
-            window.rootViewController = navigationController
+            window.rootViewController = viewController
         }
     }
 

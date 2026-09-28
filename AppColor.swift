@@ -39,4 +39,15 @@ enum AppColor {
 
     /// 卡片與控制項的分隔線。
     static let separator = UIColor(displayP3Red: 0.13, green: 0.17, blue: 0.06, alpha: 0.12)
+
+    // 以下只用於啟動動畫的插圖，上面不放文字，因此不受對比度規則約束。
+
+    /// 啟動動畫的地球大陸與軌跡線。
+    static let splashGreen = UIColor(displayP3Red: 0.60, green: 0.69, blue: 0.42, alpha: 1)
+
+    /// 啟動動畫的地球底色，比畫面底色略亮。
+    static let splashGlobe = UIColor(displayP3Red: 0.98, green: 0.98, blue: 0.95, alpha: 1)
+
+    /// 啟動動畫的金幣。
+    static let splashGold = UIColor(displayP3Red: 0.91, green: 0.75, blue: 0.33, alpha: 1)
 }

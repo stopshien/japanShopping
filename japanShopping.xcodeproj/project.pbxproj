@@ -69,6 +69,9 @@
 		EC0000022A00000100EC0001 /* ItemEditorViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC0000012A00000100EC0001 /* ItemEditorViewModel.swift */; };
 		EC0000042A00000100EC0001 /* ItemEditorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC0000032A00000100EC0001 /* ItemEditorViewController.swift */; };
 		EC0000062A00000100EC0001 /* ItemEditorViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC0000052A00000100EC0001 /* ItemEditorViewModelTests.swift */; };
+		EC0000602A00000100EC0001 /* OrbitPath.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC0000502A00000100EC0001 /* OrbitPath.swift */; };
+		EC0000612A00000100EC0001 /* SplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC0000512A00000100EC0001 /* SplashView.swift */; };
+		EC0000622A00000100EC0001 /* SplashViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC0000522A00000100EC0001 /* SplashViewController.swift */; };
 		EC0000082A00000100EC0001 /* PhotoButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC0000072A00000100EC0001 /* PhotoButton.swift */; };
 		EC00000A2A00000100EC0001 /* SettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC0000092A00000100EC0001 /* SettingsViewModel.swift */; };
 		EC00000C2A00000100EC0001 /* SettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC00000B2A00000100EC0001 /* SettingsViewController.swift */; };
@@ -157,6 +160,9 @@
 		EC0000012A00000100EC0001 /* ItemEditorViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemEditorViewModel.swift; sourceTree = "<group>"; };
 		EC0000032A00000100EC0001 /* ItemEditorViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemEditorViewController.swift; sourceTree = "<group>"; };
 		EC0000052A00000100EC0001 /* ItemEditorViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemEditorViewModelTests.swift; sourceTree = "<group>"; };
+		EC0000502A00000100EC0001 /* OrbitPath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrbitPath.swift; sourceTree = "<group>"; };
+		EC0000512A00000100EC0001 /* SplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashView.swift; sourceTree = "<group>"; };
+		EC0000522A00000100EC0001 /* SplashViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashViewController.swift; sourceTree = "<group>"; };
 		EC0000072A00000100EC0001 /* PhotoButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoButton.swift; sourceTree = "<group>"; };
 		EC0000092A00000100EC0001 /* SettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewModel.swift; sourceTree = "<group>"; };
 		EC00000B2A00000100EC0001 /* SettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewController.swift; sourceTree = "<group>"; };
@@ -258,6 +264,9 @@
 				EC00000B2A00000100EC0001 /* SettingsViewController.swift */,
 				EC0000092A00000100EC0001 /* SettingsViewModel.swift */,
 				EC0000072A00000100EC0001 /* PhotoButton.swift */,
+				EC0000522A00000100EC0001 /* SplashViewController.swift */,
+				EC0000512A00000100EC0001 /* SplashView.swift */,
+				EC0000502A00000100EC0001 /* OrbitPath.swift */,
 				EC0000032A00000100EC0001 /* ItemEditorViewController.swift */,
 				EC0000012A00000100EC0001 /* ItemEditorViewModel.swift */,
 				EA00000B2A00000100EA0001 /* TripEditorViewController.swift */,
@@ -427,6 +436,9 @@
 				EC00000C2A00000100EC0001 /* SettingsViewController.swift in Sources */,
 				EC00000A2A00000100EC0001 /* SettingsViewModel.swift in Sources */,
 				EC0000082A00000100EC0001 /* PhotoButton.swift in Sources */,
+				EC0000622A00000100EC0001 /* SplashViewController.swift in Sources */,
+				EC0000612A00000100EC0001 /* SplashView.swift in Sources */,
+				EC0000602A00000100EC0001 /* OrbitPath.swift in Sources */,
 				EC0000042A00000100EC0001 /* ItemEditorViewController.swift in Sources */,
 				EC0000022A00000100EC0001 /* ItemEditorViewModel.swift in Sources */,
 				EA0000082A00000100EA0001 /* TripMigration.swift in Sources */,
