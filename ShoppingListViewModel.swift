@@ -32,6 +32,7 @@ protocol ShoppingListViewModelType {
 
 protocol ShoppingListViewModelInput {
     func viewDidLoad()
+    /// 刪除會立即寫檔，呼叫前畫面須先向使用者確認。
     func deleteItem(at index: Int)
     func itemSelected(at index: Int)
     func itemEdited(at index: Int, _ edit: ItemEdit)
@@ -53,20 +54,12 @@ protocol ShoppingListViewModelOutput {
 
 final class ShoppingListViewModel: ShoppingListViewModelType {
 
-    /// 清單中的一筆，加上編輯後尚未寫檔的新照片。
-    private struct Row {
-        var item: ShoppingItem
-        var newPhotoData: Data?
-    }
-
     private let repository: ShoppingListRepository
     private let imageStore: ImageStore
     /// 歡迎頁設定的稱呼。沒有設定時總金額就用不帶稱呼的句子。
     private let userName: String?
 
-    private var rows: [Row] = []
-    /// 已從清單移除或被新照片取代、待按下 Done 時一併刪除的圖片檔名。
-    private var removedPhotoNames: [String] = []
+    private var rows: [ShoppingItem] = []
 
     private let itemsSubject = CurrentValueSubject<[ShoppingListItem], Never>([])
     private let totalAmountSubject = CurrentValueSubject<String, Never>("")
@@ -92,22 +85,18 @@ final class ShoppingListViewModel: ShoppingListViewModelType {
 
     private func publish() {
         itemsSubject.send(rows.map(makeDisplayItem))
-        totalAmountSubject.send(PriceText.twd(rows.reduce(0) { $0 + $1.item.price }))
+        totalAmountSubject.send(PriceText.twd(rows.reduce(0) { $0 + $1.price }))
         totalSummarySubject.send(makeTotalSummary())
     }
 
-    private func makeDisplayItem(from row: Row) -> ShoppingListItem {
+    private func makeDisplayItem(from item: ShoppingItem) -> ShoppingListItem {
         ShoppingListItem(
-            productName: row.item.productName,
-            amount: PriceText.twd(row.item.price),
-            taxState: row.item.taxState,
-            payType: row.item.payType,
-            imageData: photoData(for: row)
+            productName: item.productName,
+            amount: PriceText.twd(item.price),
+            taxState: item.taxState,
+            payType: item.payType,
+            imageData: loadImageData(named: item.photoURL)
         )
-    }
-
-    private func photoData(for row: Row) -> Data? {
-        row.newPhotoData ?? loadImageData(named: row.item.photoURL)
     }
 
     private func loadImageData(named filename: String?) -> Data? {
@@ -121,6 +110,17 @@ final class ShoppingListViewModel: ShoppingListViewModelType {
         guard let userName, !userName.isEmpty else { return count }
         return "\(count)・\(userName)"
     }
+
+    /// 寫入整份清單。失敗時回報錯誤並回傳 false，由呼叫端還原畫面上的資料。
+    private func persist(_ items: [ShoppingItem]) -> Bool {
+        do {
+            try repository.save(items)
+            return true
+        } catch {
+            errorMessageSubject.send("消費紀錄儲存失敗，請再試一次")
+            return false
+        }
+    }
 }
 
 // MARK: - ShoppingListViewModelInput
@@ -129,7 +129,7 @@ extension ShoppingListViewModel: ShoppingListViewModelInput {
 
     func viewDidLoad() {
         do {
-            rows = try repository.load().map { Row(item: $0) }
+            rows = try repository.load()
         } catch {
             rows = []
             errorMessageSubject.send("消費紀錄讀取失敗")
@@ -137,76 +137,65 @@ extension ShoppingListViewModel: ShoppingListViewModelInput {
         publish()
     }
 
+    /// 刪除立即寫檔；誤刪的保護由畫面上的確認提示負責。
     func deleteItem(at index: Int) {
         guard rows.indices.contains(index) else { return }
-        let removed = rows.remove(at: index)
-        if let photoName = removed.item.photoURL {
-            removedPhotoNames.append(photoName)
+        var updated = rows
+        let removed = updated.remove(at: index)
+        guard persist(updated) else { return }
+        rows = updated
+        // 存檔成功後才刪圖片，避免存檔失敗卻已刪除圖片。
+        if let photoName = removed.photoURL {
+            try? imageStore.remove(named: photoName)
         }
         publish()
     }
 
     func itemSelected(at index: Int) {
         guard rows.indices.contains(index) else { return }
-        let row = rows[index]
+        let item = rows[index]
         editRequestSubject.send(
-            ShoppingListEditRequest(index: index, item: row.item, photoData: photoData(for: row))
+            ShoppingListEditRequest(index: index, item: item, photoData: loadImageData(named: item.photoURL))
         )
     }
 
-    /// 編輯和刪除一樣先留在記憶體，按下 Done 才寫檔。
+    /// 編輯頁按下「儲存」就立即寫檔，新照片取代舊照片。
     func itemEdited(at index: Int, _ edit: ItemEdit) {
         guard rows.indices.contains(index) else { return }
         var item = edit.item
+        let oldPhotoName = rows[index].photoURL
         // 照片檔名由清單管理，編輯頁不能改掉它。
-        item.photoURL = rows[index].item.photoURL
-        rows[index].item = item
+        item.photoURL = oldPhotoName
+
+        var newPhotoName: String?
         if let data = edit.newPhotoData {
-            rows[index].newPhotoData = data
+            do {
+                newPhotoName = try imageStore.save(data)
+                item.photoURL = newPhotoName
+            } catch {
+                errorMessageSubject.send("照片儲存失敗，請再試一次")
+                return
+            }
+        }
+
+        var updated = rows
+        updated[index] = item
+        guard persist(updated) else {
+            // 清單沒存成功，剛寫入的新照片沒有人引用，一併移除；舊照片保留。
+            if let newPhotoName {
+                try? imageStore.remove(named: newPhotoName)
+            }
+            return
+        }
+        rows = updated
+        if newPhotoName != nil, let oldPhotoName {
+            try? imageStore.remove(named: oldPhotoName)
         }
         publish()
     }
 
-    /// 刪除與編輯都不會立即寫檔，只有按下 Done 才儲存，
-    /// 這樣誤刪或改錯時可以直接返回而不套用變更。
+    /// 變更都已即時寫檔，「完成」只負責回到首頁。
     func doneTapped() {
-        var savedPhotoNames: [String] = []
-        var replacedPhotoNames: [String] = []
-        var items: [ShoppingItem] = []
-
-        for row in rows {
-            var item = row.item
-            if let data = row.newPhotoData {
-                do {
-                    let name = try imageStore.save(data)
-                    savedPhotoNames.append(name)
-                    if let oldName = item.photoURL {
-                        replacedPhotoNames.append(oldName)
-                    }
-                    item.photoURL = name
-                } catch {
-                    savedPhotoNames.forEach { try? imageStore.remove(named: $0) }
-                    errorMessageSubject.send("照片儲存失敗，請再試一次")
-                    return
-                }
-            }
-            items.append(item)
-        }
-
-        do {
-            try repository.save(items)
-        } catch {
-            // 清單沒存成功，剛寫入的新照片沒有人引用，一併移除。
-            savedPhotoNames.forEach { try? imageStore.remove(named: $0) }
-            errorMessageSubject.send("消費紀錄儲存失敗，請再試一次")
-            return
-        }
-        rows = items.map { Row(item: $0) }
-
-        // 存檔成功後才清掉圖片，避免存檔失敗卻已刪除圖片。
-        (removedPhotoNames + replacedPhotoNames).forEach { try? imageStore.remove(named: $0) }
-        removedPhotoNames.removeAll()
-
         didFinishSubject.send(())
     }
 }

@@ -13,7 +13,6 @@ final class ShoppingListViewController: UIViewController {
     private enum Constants {
         static let estimatedRowHeight: CGFloat = 130
         static let horizontalInset: CGFloat = AppStyle.Spacing.normal
-        static let bottomBarHeight: CGFloat = 56
     }
 
     private let viewModel: ShoppingListViewModelType
@@ -46,16 +45,6 @@ final class ShoppingListViewController: UIViewController {
     }()
     private let totalSummaryLabel = AppView.label(font: AppStyle.Font.caption, color: AppColor.textSecondary)
 
-    private lazy var totalStackView: UIStackView = {
-        let stackView = UIStackView(arrangedSubviews: [totalAmountLabel, totalSummaryLabel])
-        stackView.axis = .vertical
-        stackView.spacing = 0
-        return stackView
-    }()
-
-    /// 底部列在綠色底上，次要按鈕的淡色底幾乎融進背景、看起來像停用，所以維持實心。
-    private let doneButton = AppView.primaryButton(title: "完成並儲存")
-
     /// 底部摘要做成浮起的卡片，和清單、其他頁的卡片語言一致；
     /// 直接坐在綠色背景上會顯得單薄。
     private let bottomCard = AppView.card()
@@ -66,14 +55,6 @@ final class ShoppingListViewController: UIViewController {
         color: AppColor.textSecondary,
         alignment: .center
     )
-
-    private let bottomBarStackView: UIStackView = {
-        let stackView = UIStackView()
-        stackView.alignment = .center
-        stackView.spacing = AppStyle.Spacing.normal
-        stackView.translatesAutoresizingMaskIntoConstraints = false
-        return stackView
-    }()
 
     init(viewModel: ShoppingListViewModelType, factory: ScreenFactory, allowsBack: Bool) {
         self.viewModel = viewModel
@@ -97,14 +78,6 @@ final class ShoppingListViewController: UIViewController {
         viewModel.input.viewDidLoad()
     }
 
-    /// 大字級時總金額與「完成」並排會互相擠壓，改成上下排列。
-    /// 專案支援 iOS 15，所以用 traitCollectionDidChange 而不是 iOS 17 的 registerForTraitChanges。
-    override func traitCollectionDidChange(_ previous: UITraitCollection?) {
-        super.traitCollectionDidChange(previous)
-        guard traitCollection.preferredContentSizeCategory != previous?.preferredContentSizeCategory else { return }
-        updateBottomBarAxis()
-    }
-
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         if !allowsBack {
@@ -123,25 +96,25 @@ final class ShoppingListViewController: UIViewController {
     private func setupViews() {
         title = "消費紀錄"
         navigationItem.hidesBackButton = !allowsBack
+        // 新增消費後進來時沒有返回鍵，由右上角「完成」回到首頁。
+        if !allowsBack {
+            navigationItem.rightBarButtonItem = UIBarButtonItem(
+                title: "完成", style: .done, target: self, action: #selector(doneTapped)
+            )
+        }
         view.backgroundColor = AppColor.brand
 
         tableView.dataSource = self
         tableView.delegate = self
         tableView.register(ShoppingListCell.self, forCellReuseIdentifier: ShoppingListCell.reuseIdentifier)
 
-        doneButton.addTarget(self, action: #selector(doneTapped), for: .touchUpInside)
-
         totalAmountLabel.setContentCompressionResistancePriority(.required, for: .vertical)
-        bottomBarStackView.addArrangedSubview(totalStackView)
-        bottomBarStackView.addArrangedSubview(doneButton)
-
         let bottomStack = AppView.cardStack(in: bottomCard, spacing: 0)
-        bottomStack.addArrangedSubview(bottomBarStackView)
+        [totalAmountLabel, totalSummaryLabel].forEach(bottomStack.addArrangedSubview)
 
         view.addSubview(tableView)
         view.addSubview(emptyStateLabel)
         view.addSubview(bottomCard)
-        updateBottomBarAxis()
     }
 
     private func setupConstraints() {
@@ -164,9 +137,7 @@ final class ShoppingListViewController: UIViewController {
             bottomCard.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalInset),
             bottomCard.bottomAnchor.constraint(
                 equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -AppStyle.Spacing.tight
-            ),
-            // 大字級時總金額會換行，底部列要能長高。
-            bottomBarStackView.heightAnchor.constraint(greaterThanOrEqualToConstant: Constants.bottomBarHeight)
+            )
         ])
     }
 
@@ -225,12 +196,6 @@ final class ShoppingListViewController: UIViewController {
         viewModel.input.doneTapped()
     }
 
-    private func updateBottomBarAxis() {
-        let isAccessibilitySize = traitCollection.preferredContentSizeCategory.isAccessibilityCategory
-        bottomBarStackView.axis = isAccessibilitySize ? .vertical : .horizontal
-        bottomBarStackView.alignment = isAccessibilitySize ? .fill : .center
-    }
-
     // MARK: - Navigation
 
     private func showEditor(for request: ShoppingListEditRequest) {
@@ -241,6 +206,23 @@ final class ShoppingListViewController: UIViewController {
     }
 
     // MARK: - Private
+
+    /// 刪除會立即寫檔且無法復原，先確認；取消時收起滑出的刪除鍵。
+    private func confirmDelete(at index: Int) {
+        let name = items.indices.contains(index) ? items[index].productName : ""
+        let alert = UIAlertController(
+            title: "刪除這筆消費？",
+            message: name.isEmpty ? "刪除後無法復原。" : "「\(name)」刪除後無法復原。",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "取消", style: .cancel) { [weak self] _ in
+            self?.tableView.setEditing(false, animated: true)
+        })
+        alert.addAction(UIAlertAction(title: "刪除", style: .destructive) { [weak self] _ in
+            self?.viewModel.input.deleteItem(at: index)
+        })
+        present(alert, animated: true)
+    }
 
     private func presentError(_ message: String) {
         let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
@@ -272,7 +254,11 @@ extension ShoppingListViewController: UITableViewDelegate {
 
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
         guard editingStyle == .delete else { return }
-        viewModel.input.deleteItem(at: indexPath.row)
+        confirmDelete(at: indexPath.row)
+    }
+
+    func tableView(_ tableView: UITableView, titleForDeleteConfirmationButtonForRowAt indexPath: IndexPath) -> String? {
+        "刪除"
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {

@@ -139,16 +139,11 @@ final class ShoppingListViewModelTests: XCTestCase {
         XCTAssertEqual(text, "共 2 筆", "沒有稱呼時只顯示筆數")
     }
 
-    // MARK: - 刪除與存檔時機
+    // MARK: - 刪除
 
-    func testDeleteDoesNotPersistUntilDoneIsTapped() {
+    func testDeletePersistsImmediately() {
         viewModel.input.viewDidLoad()
         viewModel.input.deleteItem(at: 0)
-
-        XCTAssertEqual(repository.saveCallCount, 0)
-        XCTAssertEqual(repository.storedItems.count, 2, "尚未按下 Done，存檔不應變動")
-
-        viewModel.input.doneTapped()
 
         XCTAssertEqual(repository.saveCallCount, 1)
         XCTAssertEqual(repository.storedItems.map(\.productName), ["咖啡"])
@@ -159,36 +154,31 @@ final class ShoppingListViewModelTests: XCTestCase {
 
         viewModel.input.deleteItem(at: 99)
         viewModel.input.deleteItem(at: -1)
-        viewModel.input.doneTapped()
 
+        XCTAssertEqual(repository.saveCallCount, 0)
         XCTAssertEqual(repository.storedItems.count, 2)
     }
 
-    // MARK: - 圖片清理
-
-    func testDoneRemovesImagesOfDeletedItems() {
+    func testDeleteRemovesTheImageOfTheDeletedItem() {
         viewModel.input.viewDidLoad()
         viewModel.input.deleteItem(at: 0)
-        viewModel.input.doneTapped()
 
         XCTAssertEqual(imageStore.removedNames, ["photo-1"])
     }
 
-    func testDeletingWithoutTappingDoneKeepsTheImage() {
-        viewModel.input.viewDidLoad()
-        viewModel.input.deleteItem(at: 0)
-
-        XCTAssertTrue(imageStore.removedNames.isEmpty, "沒按 Done 就不該動到圖片")
-    }
-
-    func testImagesAreKeptWhenSaveFails() {
+    func testFailedDeleteKeepsTheItemAndItsImage() {
         repository.saveError = StubError.failure
+        var items: [ShoppingListItem] = []
+        var message: String?
+        viewModel.output.items.sink { items = $0 }.store(in: &cancellables)
+        viewModel.output.errorMessage.sink { message = $0 }.store(in: &cancellables)
 
         viewModel.input.viewDidLoad()
         viewModel.input.deleteItem(at: 0)
-        viewModel.input.doneTapped()
 
+        XCTAssertEqual(items.count, 2, "存檔失敗時清單不該少一筆")
         XCTAssertTrue(imageStore.removedNames.isEmpty, "存檔失敗時不該刪掉圖片")
+        XCTAssertEqual(message, "消費紀錄儲存失敗，請再試一次")
     }
 
     // MARK: - 編輯
@@ -222,7 +212,7 @@ final class ShoppingListViewModelTests: XCTestCase {
         XCTAssertNil(request)
     }
 
-    func testEditUpdatesTheListAndTotalButPersistsOnlyOnDone() {
+    func testEditPersistsImmediatelyAndUpdatesTheTotal() {
         var items: [ShoppingListItem] = []
         var total: String?
         viewModel.output.items.sink { items = $0 }.store(in: &cancellables)
@@ -235,52 +225,44 @@ final class ShoppingListViewModelTests: XCTestCase {
         XCTAssertEqual(items.first?.amount, "NT$ 150")
         XCTAssertEqual(items.first?.payType, "玉山")
         XCTAssertEqual(total, "NT$ 400")
-        XCTAssertEqual(repository.saveCallCount, 0, "尚未按下 Done，存檔不應變動")
-
-        viewModel.input.doneTapped()
-
+        XCTAssertEqual(repository.saveCallCount, 1)
         XCTAssertEqual(repository.storedItems.first?.productName, "焙茶")
         XCTAssertEqual(repository.storedItems.first?.photoURL, "photo-1", "沒換照片就保留原本的檔名")
+        XCTAssertTrue(imageStore.removedNames.isEmpty)
     }
 
-    func testNewPhotoIsWrittenOnDoneAndReplacesTheOldFile() {
+    func testNewPhotoIsWrittenOnSaveAndReplacesTheOldFile() {
+        var items: [ShoppingListItem] = []
+        viewModel.output.items.sink { items = $0 }.store(in: &cancellables)
         let newPhoto = Data("new".utf8)
 
         viewModel.input.viewDidLoad()
         viewModel.input.itemEdited(at: 0, edit("抹茶", price: 100, photo: newPhoto))
-        XCTAssertEqual(imageStore.storedImages.count, 1, "按下 Done 前不寫檔")
-
-        viewModel.input.doneTapped()
 
         let newName = repository.storedItems.first?.photoURL
         XCTAssertNotNil(newName)
         XCTAssertNotEqual(newName, "photo-1")
         XCTAssertEqual(newName.flatMap { imageStore.storedImages[$0] }, newPhoto)
         XCTAssertEqual(imageStore.removedNames, ["photo-1"])
+        XCTAssertEqual(items.first?.imageData, newPhoto)
     }
 
-    func testNewPhotoIsShownBeforeDone() {
-        var items: [ShoppingListItem] = []
-        viewModel.output.items.sink { items = $0 }.store(in: &cancellables)
-        let newPhoto = Data("new".utf8)
-
-        viewModel.input.viewDidLoad()
-        viewModel.input.itemEdited(at: 1, edit("咖啡", price: 250, photo: newPhoto))
-
-        XCTAssertEqual(items.last?.imageData, newPhoto)
-    }
-
-    func testNewPhotoIsRemovedWhenSaveFails() {
+    func testFailedEditKeepsTheOldItemAndPhoto() {
         repository.saveError = StubError.failure
+        var items: [ShoppingListItem] = []
+        var message: String?
+        viewModel.output.items.sink { items = $0 }.store(in: &cancellables)
+        viewModel.output.errorMessage.sink { message = $0 }.store(in: &cancellables)
 
         viewModel.input.viewDidLoad()
-        viewModel.input.itemEdited(at: 0, edit("抹茶", price: 100, photo: Data("new".utf8)))
-        viewModel.input.doneTapped()
+        viewModel.input.itemEdited(at: 0, edit("焙茶", price: 150, photo: Data("new".utf8)))
 
+        XCTAssertEqual(items.first?.productName, "抹茶", "存檔失敗時畫面維持原本的資料")
         XCTAssertEqual(Array(imageStore.storedImages.keys), ["photo-1"], "存檔失敗時新照片不留、舊照片不刪")
+        XCTAssertEqual(message, "消費紀錄儲存失敗，請再試一次")
     }
 
-        // MARK: - 錯誤
+    // MARK: - 錯誤
 
     func testLoadFailureReportsErrorAndShowsEmptyList() {
         repository.loadError = StubError.failure
@@ -295,21 +277,7 @@ final class ShoppingListViewModelTests: XCTestCase {
         XCTAssertTrue(items.isEmpty)
     }
 
-    func testSaveFailureReportsErrorAndDoesNotFinish() {
-        repository.saveError = StubError.failure
-        var didFinish = false
-        var message: String?
-        viewModel.output.didFinish.sink { didFinish = true }.store(in: &cancellables)
-        viewModel.output.errorMessage.sink { message = $0 }.store(in: &cancellables)
-
-        viewModel.input.viewDidLoad()
-        viewModel.input.doneTapped()
-
-        XCTAssertFalse(didFinish)
-        XCTAssertEqual(message, "消費紀錄儲存失敗，請再試一次")
-    }
-
-    func testDonePublishesDidFinish() {
+    func testDonePublishesDidFinishWithoutSaving() {
         var didFinish = false
         viewModel.output.didFinish.sink { didFinish = true }.store(in: &cancellables)
 
@@ -317,6 +285,7 @@ final class ShoppingListViewModelTests: XCTestCase {
         viewModel.input.doneTapped()
 
         XCTAssertTrue(didFinish)
+        XCTAssertEqual(repository.saveCallCount, 0, "變更已即時寫檔，完成不需要再存一次")
     }
 
     func testTotalSummaryCountsTheItemsAndShowsTheName() {
