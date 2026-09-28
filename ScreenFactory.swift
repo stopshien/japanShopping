@@ -12,7 +12,7 @@ import UIKit
 protocol ScreenFactory {
     /// 尚未完成引導流程時為 true。
     var needsOnboarding: Bool { get }
-    /// 引導流程：輸入稱呼 → 建立第一個專案。兩者齊備才算完成。
+    /// 引導流程：輸入稱呼 →（可選）新增信用卡 → 建立第一個專案。稱呼與專案齊備才算完成。
     func makeOnboarding(onFinish: @escaping () -> Void) -> UIViewController
     /// 設定選項列表。
     func makeSettings() -> UIViewController
@@ -83,8 +83,8 @@ final class AppScreenFactory: ScreenFactory {
         AppAppearance.apply(to: navigationController.navigationBar)
 
         let welcome = WelcomeViewController(viewModel: WelcomeViewModel())
-        welcome.bindFinish { [weak navigationController] name in
-            // 名字先寫入，專案由下一步建立；兩者齊備才算完成引導。
+        welcome.bindFinish { [weak navigationController, weak welcome] name, addsCardFirst in
+            // 名字先寫入，專案由最後一步建立；兩者齊備才算完成引導。
             try? self.userProfileRepository.save(UserProfile(name: name))
 
             let editor = TripEditorViewController(
@@ -92,7 +92,21 @@ final class AppScreenFactory: ScreenFactory {
                 presentation: .onboarding
             )
             editor.bindFinish(onFinish)
-            navigationController?.pushViewController(editor, animated: true)
+
+            guard addsCardFirst, let welcome else {
+                navigationController?.pushViewController(editor, animated: true)
+                return
+            }
+
+            // 新增或略過信用卡後以建立專案取代信用卡頁，返回時直接回到輸入稱呼，
+            // 不會回到已新增過的信用卡表單而重複新增。
+            let showEditor: () -> Void = { [weak navigationController] in
+                navigationController?.setViewControllers([welcome, editor], animated: true)
+            }
+            let cardSet = CardSetViewController(viewModel: CardSetViewModel(repository: self.cardRepository))
+            cardSet.onFinish = showEditor
+            cardSet.onSkip = showEditor
+            navigationController?.pushViewController(cardSet, animated: true)
         }
         navigationController.setViewControllers([welcome], animated: false)
         return navigationController
@@ -163,7 +177,10 @@ final class AppScreenFactory: ScreenFactory {
 
     func makeCardSet(onFinish: @escaping () -> Void) -> UIViewController {
         let controller = CardSetViewController(viewModel: CardSetViewModel(repository: cardRepository))
-        controller.onFinish = onFinish
+        controller.onFinish = { [weak controller] in
+            onFinish()
+            controller?.navigationController?.popViewController(animated: true)
+        }
         return controller
     }
 

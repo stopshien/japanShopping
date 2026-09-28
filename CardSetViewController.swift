@@ -15,8 +15,10 @@ final class CardSetViewController: UIViewController {
         static let fieldHeight: CGFloat = 48
     }
 
-    /// 新增成功並返回前呼叫，讓上一頁知道資料已變更。
+    /// 新增成功後呼叫。之後要返回還是前往下一步由呼叫端決定。
     var onFinish: (() -> Void)?
+    /// 有設定時導覽列顯示「略過」，用於引導流程中可跳過的情境。
+    var onSkip: (() -> Void)?
 
     private let viewModel: CardSetViewModelType
     private var cancellables = Set<AnyCancellable>()
@@ -71,6 +73,12 @@ final class CardSetViewController: UIViewController {
         moneyBackTextField.addTarget(self, action: #selector(percentChanged), for: .editingChanged)
         limitTextField.addTarget(self, action: #selector(limitChanged), for: .editingChanged)
         addButton.addTarget(self, action: #selector(addTapped), for: .touchUpInside)
+
+        if onSkip != nil {
+            navigationItem.rightBarButtonItem = UIBarButtonItem(
+                title: "略過", style: .plain, target: self, action: #selector(skipTapped)
+            )
+        }
     }
 
     private func setupConstraints() {
@@ -105,7 +113,6 @@ final class CardSetViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
                 self?.onFinish?()
-                self?.navigationController?.popViewController(animated: true)
             }
             .store(in: &cancellables)
     }
@@ -127,6 +134,11 @@ final class CardSetViewController: UIViewController {
     @objc private func addTapped() {
         view.endEditing(true)
         viewModel.input.addTapped()
+    }
+
+    @objc private func skipTapped() {
+        view.endEditing(true)
+        onSkip?()
     }
 
     // MARK: - Private

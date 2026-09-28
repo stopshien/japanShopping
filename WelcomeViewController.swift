@@ -6,7 +6,7 @@
 import Combine
 import UIKit
 
-/// 首次啟動時顯示，請使用者輸入稱呼。
+/// 首次啟動時顯示，請使用者輸入稱呼，並詢問是否先新增信用卡。
 /// 完成後由 SceneDelegate 換掉 root，之後不會再出現。
 final class WelcomeViewController: UIViewController {
 
@@ -134,13 +134,15 @@ final class WelcomeViewController: UIViewController {
 
     }
 
-    /// 帶著輸入的名字進入下一步。收鍵盤避免推頁時殘留。
-    func bindFinish(_ handler: @escaping (String) -> Void) {
+    /// 帶著輸入的名字與「是否先新增信用卡」的選擇進入下一步。收鍵盤避免推頁時殘留。
+    func bindFinish(_ handler: @escaping (_ name: String, _ addsCardFirst: Bool) -> Void) {
         viewModel.output.didFinish
             .receive(on: DispatchQueue.main)
             .sink { [weak self] name in
                 self?.view.endEditing(true)
-                handler(name)
+                self?.askToAddCard { addsCardFirst in
+                    handler(name, addsCardFirst)
+                }
             }
             .store(in: &cancellables)
     }
@@ -157,4 +159,17 @@ final class WelcomeViewController: UIViewController {
 
     // MARK: - Private
 
+    /// 信用卡不是必要步驟，所以用詢問而不是直接推頁；之後也能在設定裡新增。
+    private func askToAddCard(_ completion: @escaping (Bool) -> Void) {
+        let alert = UIAlertController(
+            title: "要先新增信用卡嗎？",
+            message: "記下回饋趴數與上限，刷卡時就能自動計算回饋。之後也可以在設定裡新增。",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "稍後再說", style: .cancel) { _ in completion(false) })
+        let addAction = UIAlertAction(title: "新增信用卡", style: .default) { _ in completion(true) }
+        alert.addAction(addAction)
+        alert.preferredAction = addAction
+        present(alert, animated: true)
+    }
 }
