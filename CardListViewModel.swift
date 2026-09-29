@@ -49,6 +49,8 @@ final class CardListViewModel: CardListViewModelType {
 
     private let repository: CardRepository
     private let ledgerRepository: FeedbackLedgerRepository
+    private let now: () -> Date
+    private let calendar: Calendar
 
     private var cards: [Card] = []
     /// 回饋明細，用來算剩餘額度。
@@ -61,9 +63,16 @@ final class CardListViewModel: CardListViewModelType {
     private let errorMessageSubject = PassthroughSubject<String, Never>()
     private let didFinishSubject = PassthroughSubject<Void, Never>()
 
-    init(repository: CardRepository, ledgerRepository: FeedbackLedgerRepository) {
+    init(
+        repository: CardRepository,
+        ledgerRepository: FeedbackLedgerRepository,
+        now: @escaping () -> Date = Date.init,
+        calendar: Calendar = .current
+    ) {
         self.repository = repository
         self.ledgerRepository = ledgerRepository
+        self.now = now
+        self.calendar = calendar
     }
 
     var input: CardListViewModelInput { self }
@@ -85,7 +94,7 @@ final class CardListViewModel: CardListViewModelType {
         return CardListItem(
             name: card.name,
             percentBadge: Self.rateText(for: plan),
-            limitDescription: limitDescription(for: plan)
+            limitDescription: limitDescription(for: plan, closingDay: card.statementClosingDay)
         )
     }
 
@@ -97,14 +106,24 @@ final class CardListViewModel: CardListViewModelType {
         return text
     }
 
-    /// 例如「上限 500　剩餘 499.1」、「加碼上限 500　剩餘 320」；都沒有上限時為「回饋無上限」。
-    private func limitDescription(for plan: CardPlan) -> String {
+    /// 例如「上限 500　剩餘 499.1」、「每月加碼上限 500　本月剩餘 320」；都沒有上限時為「回饋無上限」。
+    private func limitDescription(for plan: CardPlan, closingDay: Int?) -> String {
         var parts: [String] = []
-        if let cap = plan.baseCap, let remaining = FeedbackCalculator.remainingBase(of: plan, in: entries) {
-            parts.append("上限 \(PriceText.amount(cap))　剩餘 \(PriceText.amount(remaining))")
+        if let cap = plan.baseCap, let remaining = FeedbackCalculator.remainingBase(
+            of: plan, in: entries, closingDay: closingDay, at: now(), calendar: calendar
+        ) {
+            let period = plan.baseCapPeriod ?? .campaign
+            parts.append(
+                "\(period.capPrefix)上限 \(PriceText.amount(cap))　\(period.currentPrefix)剩餘 \(PriceText.amount(remaining))"
+            )
         }
-        if let cap = plan.bonus?.cap, let remaining = FeedbackCalculator.remainingBonus(of: plan, in: entries) {
-            parts.append("加碼上限 \(PriceText.amount(cap))　剩餘 \(PriceText.amount(remaining))")
+        if let cap = plan.bonus?.cap, let remaining = FeedbackCalculator.remainingBonus(
+            of: plan, in: entries, closingDay: closingDay, at: now(), calendar: calendar
+        ) {
+            let period = plan.bonus?.capPeriod ?? .campaign
+            parts.append(
+                "\(period.capPrefix)加碼上限 \(PriceText.amount(cap))　\(period.currentPrefix)剩餘 \(PriceText.amount(remaining))"
+            )
         }
         return parts.isEmpty ? "回饋無上限" : parts.joined(separator: "\n")
     }

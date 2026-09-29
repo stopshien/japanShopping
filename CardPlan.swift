@@ -19,6 +19,8 @@ struct CardPlan: Codable, Equatable {
         var cap: Double?
         /// 「符合加碼」開關旁的說明，例如「指定店家」。
         var label: String
+        /// 加碼上限多久重新計算；nil 為不重置。
+        var capPeriod: CapPeriod? = nil
     }
 
     var id: UUID
@@ -31,4 +33,6 @@ struct CardPlan: Codable, Equatable {
     var bonus: Bonus?
     /// App 無法判斷的條件，只給使用者看。
     var note: String
+    /// 基本回饋上限多久重新計算；nil 為不重置（舊資料都是這種）。
+    var baseCapPeriod: CapPeriod? = nil
 }

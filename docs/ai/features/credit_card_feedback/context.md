@@ -8,9 +8,10 @@ When the user pays by credit card, the app shows how much feedback (回饋) that
 
 ## Main Files
 
-- `Card.swift` — the stored card: `name`, `id`, and `plans`. `percent`, `limit`, `feedbackMoney`, `feedbackRemaining` are legacy fields kept for decoding.
+- `Card.swift` — the stored card: `name`, `id`, `plans`, and an optional `statementClosingDay`. `percent`, `limit`, `feedbackMoney`, `feedbackRemaining` are legacy fields kept for decoding.
 - `CardPlan.swift` — a plan: name, base rate, optional base cap, optional bonus (rate, cap, label), note.
-- `FeedbackCalculator.swift` — pure quote and remaining-amount functions; the 1.5% fee constant.
+- `FeedbackCalculator.swift` — pure quote and remaining-amount functions; counts only entries in the current cap period; the 1.5% fee constant.
+- `FeedbackPeriod.swift` — `CapPeriod` (campaign, calendarMonth, statementCycle, quarter) and the pure function that returns the period containing a date.
 - `CardPlanMigration.swift` — at launch, turns a card without plans into one plan and attaches its entries to it.
 - `CardRepository.swift` — `FileCardRepository`, a property list file named `cards` in Documents. One file shared by every trip.
 - `CardSetViewModel.swift` / `CardSetViewController.swift` — add or edit a card: its name and one block per plan (base, base cap, bonus switch with rate, cap and condition, note). Blocks are rebuilt only when a plan is added or removed or a bonus is switched.
@@ -31,7 +32,7 @@ When the user pays by credit card, the app shows how much feedback (回饋) that
 
 ## Known Limits Of The Current Model
 
-- Every entry counts against its cap forever; there are no cap periods yet, so a monthly or per-statement cap cannot be represented.
+- Periods are cut by purchase date; banks often use the posting date, so purchases near a boundary may be counted in a different period than the bank does.
 - There is no validity period. A card keeps earning at its rate after the bank's campaign ends.
 - Purchases saved before the ledger have no entry, so deleting them gives nothing back.
 - Entries recorded before plans hold the **net** amount (after subtracting 1.5), so old usage counts slightly lower than a bank would count it.

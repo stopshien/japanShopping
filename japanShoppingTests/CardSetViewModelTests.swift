@@ -235,6 +235,87 @@ final class CardSetViewModelTests: XCTestCase {
         XCTAssertEqual(repository.saveCallCount, 0)
     }
 
+    // MARK: - 上限週期
+
+    private var showsClosingDay: Bool {
+        var shows = false
+        viewModel.output.showsClosingDay.sink { shows = $0 }.store(in: &cancellables)
+        return shows
+    }
+
+    func testCapPeriodsAreSavedAndCampaignIsStoredAsNil() {
+        fillValidCard()
+        viewModel.input.capPeriodChanged(.base, at: 0, period: .calendarMonth)
+        viewModel.input.bonusToggled(at: 0, isOn: true)
+        viewModel.input.planFieldChanged(.bonusRate, at: 0, text: "6")
+        viewModel.input.capPeriodChanged(.bonus, at: 0, period: .quarter)
+        viewModel.input.addTapped()
+
+        let plan = repository.storedCards.first?.plans?.first
+        XCTAssertEqual(plan?.baseCapPeriod, .calendarMonth)
+        XCTAssertEqual(plan?.bonus?.capPeriod, .quarter)
+
+        viewModel = CardSetViewModel(repository: repository)
+        fillValidCard()
+        viewModel.input.addTapped()
+        XCTAssertNil(repository.storedCards.last?.plans?.first?.baseCapPeriod, "不重置存成 nil，和舊資料一致")
+    }
+
+    /// 選了「每期帳單」才需要結帳日，而且必須填。
+    func testAStatementCycleNeedsAClosingDay() {
+        fillValidCard()
+        XCTAssertFalse(showsClosingDay)
+
+        viewModel.input.capPeriodChanged(.base, at: 0, period: .statementCycle)
+        XCTAssertTrue(showsClosingDay)
+        XCTAssertFalse(isEnabled)
+
+        viewModel.input.closingDayChanged("15")
+        XCTAssertTrue(isEnabled)
+        viewModel.input.addTapped()
+
+        XCTAssertEqual(repository.storedCards.first?.statementClosingDay, 15)
+    }
+
+    func testAnInvalidClosingDayReportsAnError() {
+        var message: String?
+        viewModel.output.errorMessage.sink { message = $0 }.store(in: &cancellables)
+
+        fillValidCard()
+        viewModel.input.capPeriodChanged(.base, at: 0, period: .statementCycle)
+        viewModel.input.closingDayChanged("32")
+        viewModel.input.addTapped()
+
+        XCTAssertEqual(message, "帳單結帳日請輸入 1 到 31 的數字")
+        XCTAssertTrue(repository.storedCards.isEmpty)
+    }
+
+    /// 加碼關掉時，它的週期不再需要結帳日。
+    func testATurnedOffBonusDoesNotNeedAClosingDay() {
+        fillValidCard()
+        viewModel.input.bonusToggled(at: 0, isOn: true)
+        viewModel.input.capPeriodChanged(.bonus, at: 0, period: .statementCycle)
+        XCTAssertTrue(showsClosingDay)
+
+        viewModel.input.bonusToggled(at: 0, isOn: false)
+        XCTAssertFalse(showsClosingDay)
+    }
+
+    func testEditingPrefillsThePeriodsAndClosingDay() {
+        var card = Card.withPlan(
+            name: "玉山", rate: 2.5, cap: 1000,
+            bonus: CardPlan.Bonus(rate: 6, cap: 500, label: "", capPeriod: .statementCycle)
+        )
+        card.plans?[0].baseCapPeriod = .calendarMonth
+        card.statementClosingDay = 20
+        viewModel = CardSetViewModel(editingCard: card, repository: repository)
+
+        XCTAssertEqual(forms[0].baseCapPeriod, .calendarMonth)
+        XCTAssertEqual(forms[0].bonusCapPeriod, .statementCycle)
+        XCTAssertEqual(viewModel.output.prefillClosingDay, "20")
+        XCTAssertTrue(showsClosingDay)
+    }
+
     // MARK: - 驗證與錯誤
 
     /// 遷移前這裡是 Double(text)! ，非數字輸入會直接崩潰。

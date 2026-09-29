@@ -375,6 +375,40 @@ final class DetailViewModelTests: XCTestCase {
         XCTAssertEqual(ledgerRepository.storedEntries.first?.bonusAmount, 0)
     }
 
+    /// 有週期的上限只算這一期，文字也說明是哪一期。
+    func testAMonthlyBonusCapShowsThisMonthsRemaining() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Asia/Taipei")!
+        let now = calendar.date(from: DateComponents(year: 2026, month: 9, day: 29, hour: 12))!
+        let lastMonth = calendar.date(from: DateComponents(year: 2026, month: 8, day: 20))!
+        cardRepository.storedCards = [
+            Card.withPlan(
+                name: "熊本熊", rate: 2.5, cap: nil,
+                bonus: CardPlan.Bonus(rate: 6, cap: 50, label: "指定店家", capPeriod: .calendarMonth),
+                id: cardAID, planID: planAID
+            )
+        ]
+        ledgerRepository.storedEntries = [
+            FeedbackEntry(id: UUID(), cardID: cardAID, date: lastMonth, amount: 50, shoppingItemID: nil,
+                          planID: planAID, baseAmount: 0, bonusAmount: 50)
+        ]
+        viewModel = DetailViewModel(
+            item: ShoppingItem(productName: "", price: 1000, payType: "", taxState: "未稅"),
+            cardRepository: cardRepository, shoppingListRepository: listRepository, imageStore: imageStore,
+            ledgerRepository: ledgerRepository, now: { now }, calendar: calendar
+        )
+        var subtitle: String?
+        var text: String?
+        viewModel.output.cardButtonSubtitle.sink { subtitle = $0 }.store(in: &cancellables)
+        viewModel.output.feedbackText.sink { text = $0 }.store(in: &cancellables)
+
+        selectCardA()
+        viewModel.input.bonusQualificationChanged(true)
+
+        XCTAssertEqual(subtitle, "本月加碼剩餘約 NT$ 50", "上個月用掉的不算")
+        XCTAssertEqual(text, "這筆回饋 NT$ 75\n海外手續費 NT$ 15")
+    }
+
     /// 多方案的卡片每個方案各佔一項，存進清單的付款方式包含方案名稱。
     func testEachPlanOfASwitchableCardIsItsOwnMenuItem() {
         let travel = CardPlan(id: UUID(), name: "玩旅刷", baseRate: 3.3, baseCap: nil, bonus: nil, note: "")

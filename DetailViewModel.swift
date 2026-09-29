@@ -108,6 +108,8 @@ final class DetailViewModel: DetailViewModelType {
     private let imageStore: ImageStore
     private let ledgerRepository: FeedbackLedgerRepository
     private let now: () -> Date
+    /// 上限週期以這個曆法與時區切分。
+    private let calendar: Calendar
 
     private var item: ShoppingItem
     private var cards: [Card] = []
@@ -138,7 +140,8 @@ final class DetailViewModel: DetailViewModelType {
         shoppingListRepository: ShoppingListRepository,
         imageStore: ImageStore,
         ledgerRepository: FeedbackLedgerRepository,
-        now: @escaping () -> Date = Date.init
+        now: @escaping () -> Date = Date.init,
+        calendar: Calendar = .current
     ) {
         self.item = item
         self.cardRepository = cardRepository
@@ -146,6 +149,7 @@ final class DetailViewModel: DetailViewModelType {
         self.imageStore = imageStore
         self.ledgerRepository = ledgerRepository
         self.now = now
+        self.calendar = calendar
         // 畫面上的 picker 預設停在「現金」，所以付款方式的初始值也是現金。
         self.item.payType = "現金"
     }
@@ -211,26 +215,36 @@ final class DetailViewModel: DetailViewModelType {
         return options[index]
     }
 
-    private func quote(for option: PlanOption) -> FeedbackQuote {
+    private func quote(for option: PlanOption, entries: [FeedbackEntry]) -> FeedbackQuote {
         FeedbackCalculator.quote(
-            plan: plan(of: option), price: item.price, qualifiesForBonus: qualifiesForBonus, entries: entries
+            plan: plan(of: option), price: item.price, qualifiesForBonus: qualifiesForBonus, entries: entries,
+            closingDay: card(of: option).statementClosingDay, at: now(), calendar: calendar
         )
     }
 
     /// 剩餘額度只是估算：銀行以請款入帳日認定期別，App 只知道刷卡日。
-    private func remainingText(for plan: CardPlan) -> String {
+    /// 有週期的上限只算這一期，例如「本月加碼剩餘約 NT$ 320」。
+    private func remainingText(for option: PlanOption) -> String {
+        let plan = plan(of: option)
+        let closingDay = card(of: option).statementClosingDay
         var parts: [String] = []
-        if let remaining = FeedbackCalculator.remainingBase(of: plan, in: entries) {
-            parts.append("剩餘回饋約 \(PriceText.twd(remaining))")
+        if let remaining = FeedbackCalculator.remainingBase(
+            of: plan, in: entries, closingDay: closingDay, at: now(), calendar: calendar
+        ) {
+            let prefix = (plan.baseCapPeriod ?? .campaign).currentPrefix
+            parts.append("\(prefix)剩餘回饋約 \(PriceText.twd(remaining))")
         }
-        if let remaining = FeedbackCalculator.remainingBonus(of: plan, in: entries) {
-            parts.append("加碼剩餘約 \(PriceText.twd(remaining))")
+        if let remaining = FeedbackCalculator.remainingBonus(
+            of: plan, in: entries, closingDay: closingDay, at: now(), calendar: calendar
+        ) {
+            let prefix = (plan.bonus?.capPeriod ?? .campaign).currentPrefix
+            parts.append("\(prefix)加碼剩餘約 \(PriceText.twd(remaining))")
         }
         return parts.isEmpty ? "回饋無上限" : parts.joined(separator: "・")
     }
 
     private func publishFeedback(for option: PlanOption) {
-        let quote = quote(for: option)
+        let quote = quote(for: option, entries: entries)
         // 手續費另起一行，數字不會被斷在兩行中間。
         feedbackTextSubject.send("這筆回饋 \(PriceText.twd(quote.total))\n海外手續費 \(PriceText.twd(quote.fee))")
     }
@@ -240,9 +254,7 @@ final class DetailViewModel: DetailViewModelType {
     private func recordSelectedPlanFeedback(for itemID: UUID?) {
         guard let option = selectedOption, let cardID = card(of: option).id else { return }
         var latest = (try? ledgerRepository.load()) ?? entries
-        let quote = FeedbackCalculator.quote(
-            plan: plan(of: option), price: item.price, qualifiesForBonus: qualifiesForBonus, entries: latest
-        )
+        let quote = quote(for: option, entries: latest)
         guard quote.total > 0 else { return }
         latest.append(
             FeedbackEntry(
@@ -306,7 +318,7 @@ extension DetailViewModel: DetailViewModelInput {
         })
 
         cardButtonTitleSubject.send(menuTitle(for: option))
-        cardButtonSubtitleSubject.send(remainingText(for: plan))
+        cardButtonSubtitleSubject.send(remainingText(for: option))
         publishFeedback(for: option)
     }
 

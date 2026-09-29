@@ -75,6 +75,31 @@ final class CardListViewModelTests: XCTestCase {
         XCTAssertEqual(items.first?.limitDescription, "加碼上限 500　剩餘 500")
     }
 
+    func testAPeriodicCapNamesItsPeriod() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Asia/Taipei")!
+        let now = calendar.date(from: DateComponents(year: 2026, month: 9, day: 29, hour: 12))!
+        let planID = UUID()
+        var card = Card.withPlan(name: "玉山", rate: 2.5, cap: 1000, planID: planID)
+        card.plans?[0].baseCapPeriod = .calendarMonth
+        repository.storedCards = [card]
+        ledgerRepository.storedEntries = [
+            FeedbackEntry(id: UUID(), cardID: card.id!, date: now, amount: 120, shoppingItemID: nil,
+                          planID: planID, baseAmount: 120, bonusAmount: 0),
+            FeedbackEntry(id: UUID(), cardID: card.id!, date: now.addingTimeInterval(-40 * 86_400), amount: 300,
+                          shoppingItemID: nil, planID: planID, baseAmount: 300, bonusAmount: 0)
+        ]
+        viewModel = CardListViewModel(
+            repository: repository, ledgerRepository: ledgerRepository, now: { now }, calendar: calendar
+        )
+        var items: [CardListItem] = []
+        viewModel.output.items.sink { items = $0 }.store(in: &cancellables)
+
+        viewModel.input.viewDidLoad()
+
+        XCTAssertEqual(items.first?.limitDescription, "每月上限 1000　本月剩餘 880")
+    }
+
     func testACardWithoutAnyCapSaysSo() {
         repository.storedCards = [Card.withPlan(name: "Richart", rate: 3.3, cap: nil)]
         var items: [CardListItem] = []
