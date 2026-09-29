@@ -224,11 +224,12 @@ extension TripListViewController: UITableViewDelegate {
     }
 
     /// 刪除專案會連同購物清單與照片一起消失，而且無法復原，所以先確認。
+    /// 信用卡回饋是實際拿到的，刪旅程不會退回額度；和刪除單筆消費不同，所以要先說。
     private func confirmDelete(at index: Int) {
         let name = items[index].name
         let alert = UIAlertController(
             title: "刪除「\(name)」？",
-            message: "這個旅程的消費紀錄與照片會一併刪除，無法復原。",
+            message: "這個旅程的消費紀錄與照片會一併刪除，無法復原。\n已使用的信用卡回饋額度不會恢復。",
             preferredStyle: .alert
         )
         alert.addAction(UIAlertAction(title: "取消", style: .cancel) { [weak self] _ in
