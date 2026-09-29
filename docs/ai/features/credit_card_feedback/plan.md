@@ -81,7 +81,7 @@ Each phase ships on its own, keeps the app working, and updates tests plus the b
 - A pure `FeedbackPeriod` type returns the period containing a date for each `capPeriod`. A statement closing day past the end of a month uses that month's last day.
 - Remaining bonus = cap − Σ bonus entries in the current period.
 - Tests cover month ends, closing days 28–31, quarter edges, and time zones.
-- As built: `CapPeriod` is a String enum stored as `baseCapPeriod` and `bonus.capPeriod`; nil means 不重置. The closing day is on the card (`statementClosingDay`), since a card's plans share one statement. The form has a four-segment period picker under each cap, and the closing-day field appears in the card-name block only while some cap uses 每期帳單. `FeedbackPeriod` lives in `FeedbackPeriod.swift`; `FeedbackCalculator` takes the closing day, date and calendar, defaulting to now and `.current`.
+- As built: `CapPeriod` is a String enum stored as `baseCapPeriod` and `bonus.capPeriod`; nil means 不重置. The closing day is on the card (`statementClosingDay`), since a card's plans share one statement. The form has a four-segment period picker under each cap, and the closing-day field appears directly under the first picker set to 每期帳單 (moved there from the card-name block on 2026-09-30, because a field appearing at the top of a scrolled form went unnoticed). `FeedbackPeriod` lives in `FeedbackPeriod.swift`; `FeedbackCalculator` takes the closing day, date and calendar, defaulting to now and `.current`.
 
 ### Phase 5 — Campaign dates and renewal — done 2026-09-29
 

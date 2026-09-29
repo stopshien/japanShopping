@@ -49,6 +49,9 @@ struct CardPlanForm: Equatable {
     var bonusCapPeriod: CapPeriod = .campaign
     var validFrom: Date?
     var validUntil: Date?
+    /// 帳單結帳日欄位要顯示在這個方案的哪個週期選項下方；nil 為不顯示。
+    /// 整張卡只顯示一次，放在第一個選了「每期帳單」的位置，緊鄰使用者剛做的選擇。
+    var closingDayTier: CapTier?
 }
 
 protocol CardSetViewModelInput {
@@ -71,10 +74,8 @@ protocol CardSetViewModelOutput {
     var confirmTitle: String { get }
     /// 編輯時的卡片名稱，新增時為 nil。
     var prefillName: String? { get }
-    /// 編輯時的帳單結帳日。
-    var prefillClosingDay: String? { get }
-    /// 有上限選了「每期帳單」時才需要結帳日。
-    var showsClosingDay: AnyPublisher<Bool, Never> { get }
+    /// 帳單結帳日目前的文字。區塊重建時用它帶回已輸入的值。
+    var closingDayText: String { get }
     var planForms: AnyPublisher<[CardPlanForm], Never> { get }
     var isAddEnabled: AnyPublisher<Bool, Never> { get }
     var errorMessage: AnyPublisher<String, Never> { get }
@@ -133,9 +134,7 @@ final class CardSetViewModel: CardSetViewModelType {
         var originalValidUntil: Date?
         var expiryAcknowledged: Bool?
 
-        var usesStatementCycle: Bool {
-            baseCapPeriod == .statementCycle || (hasBonus && bonusCapPeriod == .statementCycle)
-        }
+
 
         func text(_ field: CardPlanField) -> String { values[field] ?? "" }
     }
@@ -146,17 +145,15 @@ final class CardSetViewModel: CardSetViewModelType {
     private let calendar: Calendar
 
     private var name = ""
-    private var closingDayText = ""
+    private(set) var closingDayText = ""
     private var drafts: [PlanDraft]
 
-    private let showsClosingDaySubject = CurrentValueSubject<Bool, Never>(false)
     private let planFormsSubject = CurrentValueSubject<[CardPlanForm], Never>([])
     private let isAddEnabledSubject = CurrentValueSubject<Bool, Never>(false)
     private let errorMessageSubject = PassthroughSubject<String, Never>()
     private let didSaveSubject = PassthroughSubject<Void, Never>()
 
     let prefillName: String?
-    let prefillClosingDay: String?
 
     /// `template` 用在「設定新一期」：欄位從範本帶入，但存成一張新卡。
     init(
@@ -171,8 +168,7 @@ final class CardSetViewModel: CardSetViewModelType {
         let source = editingCard ?? template
         prefillName = source?.name
         name = source?.name ?? ""
-        prefillClosingDay = source?.statementClosingDay.map(String.init)
-        closingDayText = prefillClosingDay ?? ""
+        closingDayText = source?.statementClosingDay.map(String.init) ?? ""
         drafts = (source?.plans ?? []).map(Self.draft(from:))
         if drafts.isEmpty {
             drafts = [PlanDraft()]
@@ -213,17 +209,27 @@ final class CardSetViewModel: CardSetViewModelType {
 
     private func publishForms() {
         let showsName = drafts.count > 1
-        planFormsSubject.send(drafts.map {
+        let placement = closingDayPlacement
+        planFormsSubject.send(drafts.enumerated().map { index, draft in
             CardPlanForm(
-                showsName: showsName, hasBonus: $0.hasBonus, canRemove: drafts.count > 1, values: $0.values,
-                baseCapPeriod: $0.baseCapPeriod, bonusCapPeriod: $0.bonusCapPeriod,
-                validFrom: $0.validFrom, validUntil: $0.validUntil
+                showsName: showsName, hasBonus: draft.hasBonus, canRemove: drafts.count > 1, values: draft.values,
+                baseCapPeriod: draft.baseCapPeriod, bonusCapPeriod: draft.bonusCapPeriod,
+                validFrom: draft.validFrom, validUntil: draft.validUntil,
+                closingDayTier: placement?.index == index ? placement?.tier : nil
             )
         })
-        showsClosingDaySubject.send(needsClosingDay)
     }
 
-    private var needsClosingDay: Bool { drafts.contains { $0.usesStatementCycle } }
+    /// 第一個選了「每期帳單」的上限：先看方案順序，同一方案內基本回饋在加碼之前。
+    private var closingDayPlacement: (index: Int, tier: CapTier)? {
+        for (index, draft) in drafts.enumerated() {
+            if draft.baseCapPeriod == .statementCycle { return (index, .base) }
+            if draft.hasBonus && draft.bonusCapPeriod == .statementCycle { return (index, .bonus) }
+        }
+        return nil
+    }
+
+    private var needsClosingDay: Bool { closingDayPlacement != nil }
 
     /// 需要時必須是 1–31；不需要但有填且合法時一併保留，免得切換週期時要重打。
     private func closingDay() throws -> Int? {
@@ -343,12 +349,15 @@ extension CardSetViewModel: CardSetViewModelInput {
 
     func capPeriodChanged(_ tier: CapTier, at index: Int, period: CapPeriod) {
         guard drafts.indices.contains(index) else { return }
+        let before = closingDayPlacement
         switch tier {
         case .base: drafts[index].baseCapPeriod = period
         case .bonus: drafts[index].bonusCapPeriod = period
         }
-        // 只影響結帳日欄位是否顯示，區塊不必重建。
-        showsClosingDaySubject.send(needsClosingDay)
+        // 結帳日欄位換位置（出現、消失或移動）時才重建區塊，否則不打斷使用者。
+        if before?.index != closingDayPlacement?.index || before?.tier != closingDayPlacement?.tier {
+            publishForms()
+        }
         refreshAddEnabled()
     }
 
@@ -419,7 +428,6 @@ extension CardSetViewModel: CardSetViewModelOutput {
     var title: String { editingCard == nil ? "新增信用卡" : "編輯信用卡" }
     var confirmTitle: String { editingCard == nil ? "新增信用卡" : "儲存" }
     var planForms: AnyPublisher<[CardPlanForm], Never> { planFormsSubject.eraseToAnyPublisher() }
-    var showsClosingDay: AnyPublisher<Bool, Never> { showsClosingDaySubject.eraseToAnyPublisher() }
     var isAddEnabled: AnyPublisher<Bool, Never> { isAddEnabledSubject.eraseToAnyPublisher() }
     var errorMessage: AnyPublisher<String, Never> { errorMessageSubject.eraseToAnyPublisher() }
     var didSave: AnyPublisher<Void, Never> { didSaveSubject.eraseToAnyPublisher() }

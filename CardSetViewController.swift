@@ -45,11 +45,6 @@ final class CardSetViewController: UIViewController {
     }()
 
     private let nameCard = AppView.card()
-    /// 帳單結帳日，只有上限選了「每期帳單」時顯示。
-    private let closingDayTextField = CardSetViewController.makeTextField(
-        placeholder: "每月幾號，例如 15", accessibilityLabel: "帳單結帳日", keyboardType: .numberPad
-    )
-    private lazy var closingDayRow = Self.titled("帳單結帳日", field: closingDayTextField)
     private let cardNameTextField = CardSetViewController.makeTextField(
         placeholder: "例如：玉山熊本熊", accessibilityLabel: "信用卡名稱"
     )
@@ -103,13 +98,10 @@ final class CardSetViewController: UIViewController {
     private func setupViews() {
         title = viewModel.output.title
         cardNameTextField.text = viewModel.output.prefillName
-        closingDayTextField.text = viewModel.output.prefillClosingDay
         view.backgroundColor = AppColor.brand
         addTapToDismissKeyboard()
 
-        let nameStack = AppView.cardStack(in: nameCard)
-        nameStack.addArrangedSubview(Self.titled("信用卡名稱", field: cardNameTextField))
-        nameStack.addArrangedSubview(closingDayRow)
+        AppView.cardStack(in: nameCard).addArrangedSubview(Self.titled("信用卡名稱", field: cardNameTextField))
 
         [nameCard, plansStackView, addPlanButton, addButton].forEach(contentStackView.addArrangedSubview)
         contentStackView.setCustomSpacing(AppStyle.Spacing.tight, after: plansStackView)
@@ -118,7 +110,6 @@ final class CardSetViewController: UIViewController {
         view.addSubview(scrollView)
 
         cardNameTextField.addTarget(self, action: #selector(nameChanged), for: .editingChanged)
-        closingDayTextField.addTarget(self, action: #selector(closingDayChanged), for: .editingChanged)
         addPlanButton.addTarget(self, action: #selector(addPlanTapped), for: .touchUpInside)
         addButton.addTarget(self, action: #selector(addTapped), for: .touchUpInside)
 
@@ -149,8 +140,7 @@ final class CardSetViewController: UIViewController {
                 equalTo: scrollView.frameLayoutGuide.trailingAnchor, constant: -Constants.horizontalInset
             ),
 
-            cardNameTextField.heightAnchor.constraint(greaterThanOrEqualToConstant: Constants.fieldHeight),
-            closingDayTextField.heightAnchor.constraint(greaterThanOrEqualToConstant: Constants.fieldHeight)
+            cardNameTextField.heightAnchor.constraint(greaterThanOrEqualToConstant: Constants.fieldHeight)
         ])
     }
 
@@ -161,13 +151,6 @@ final class CardSetViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] forms in
                 self?.rebuildPlanCards(with: forms)
-            }
-            .store(in: &cancellables)
-
-        viewModel.output.showsClosingDay
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] shows in
-                self?.closingDayRow.isHidden = !shows
             }
             .store(in: &cancellables)
 
@@ -197,10 +180,6 @@ final class CardSetViewController: UIViewController {
 
     @objc private func nameChanged() {
         viewModel.input.nameChanged(cardNameTextField.text ?? "")
-    }
-
-    @objc private func closingDayChanged() {
-        viewModel.input.closingDayChanged(closingDayTextField.text ?? "")
     }
 
     @objc private func addPlanTapped() {
@@ -253,6 +232,9 @@ final class CardSetViewController: UIViewController {
             makeField(.baseCap, title: "基本回饋上限（元）", placeholder: "留白為無上限", keyboard: .decimalPad, form: form, index: index)
         )
         stack.addArrangedSubview(makePeriodPicker(.base, selected: form.baseCapPeriod, index: index))
+        if form.closingDayTier == .base {
+            stack.addArrangedSubview(makeClosingDayField())
+        }
         stack.addArrangedSubview(makeBonusSwitchRow(isOn: form.hasBonus, index: index))
 
         if form.hasBonus {
@@ -263,6 +245,9 @@ final class CardSetViewController: UIViewController {
                 makeField(.bonusCap, title: "加碼上限（元）", placeholder: "留白為無上限", keyboard: .decimalPad, form: form, index: index)
             )
             stack.addArrangedSubview(makePeriodPicker(.bonus, selected: form.bonusCapPeriod, index: index))
+            if form.closingDayTier == .bonus {
+                stack.addArrangedSubview(makeClosingDayField())
+            }
             stack.addArrangedSubview(
                 makeField(.bonusLabel, title: "加碼條件", placeholder: "例如：指定店家", form: form, index: index)
             )
@@ -333,6 +318,29 @@ final class CardSetViewController: UIViewController {
         textField.inputAccessoryView = toolbar
 
         return Self.titled(title, field: textField)
+    }
+
+    /// 帳單結帳日，緊接在選了「每期帳單」的週期選項下方，使用者一選就看得到要填什麼。
+    /// 整張卡共用一個值，所以只出現一次。
+    private func makeClosingDayField() -> UIView {
+        let textField = Self.makeTextField(
+            placeholder: "每月幾號，例如 15", accessibilityLabel: "帳單結帳日", keyboardType: .numberPad
+        )
+        textField.text = viewModel.output.closingDayText
+        textField.heightAnchor.constraint(greaterThanOrEqualToConstant: Constants.fieldHeight).isActive = true
+        textField.addAction(UIAction { [weak self, weak textField] _ in
+            self?.viewModel.input.closingDayChanged(textField?.text ?? "")
+        }, for: .editingChanged)
+
+        let hint = AppView.label(
+            "同一張卡的方案共用，可在帳單或銀行 App 查到",
+            font: AppStyle.Font.caption,
+            color: AppColor.textSecondary
+        )
+        let stack = UIStackView(arrangedSubviews: [Self.titled("帳單結帳日", field: textField), hint])
+        stack.axis = .vertical
+        stack.spacing = 4
+        return stack
     }
 
     /// 上限多久重新計算。沒有填上限時選了也不影響計算。

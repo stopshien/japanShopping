@@ -237,11 +237,10 @@ final class CardSetViewModelTests: XCTestCase {
 
     // MARK: - 上限週期
 
-    private var showsClosingDay: Bool {
-        var shows = false
-        viewModel.output.showsClosingDay.sink { shows = $0 }.store(in: &cancellables)
-        return shows
-    }
+    /// 結帳日欄位顯示在哪個方案的哪個週期下方；沒有顯示時為 nil。
+    private var closingDayPlacement: [CapTier?] { forms.map(\.closingDayTier) }
+
+    private var showsClosingDay: Bool { closingDayPlacement.contains { $0 != nil } }
 
     func testCapPeriodsAreSavedAndCampaignIsStoredAsNil() {
         fillValidCard()
@@ -301,6 +300,36 @@ final class CardSetViewModelTests: XCTestCase {
         XCTAssertFalse(showsClosingDay)
     }
 
+    /// 結帳日欄位緊接在第一個選了「每期帳單」的週期下方，整張卡只出現一次。
+    func testTheClosingDayAppearsUnderTheFirstStatementCyclePicker() {
+        fillValidCard()
+        viewModel.input.bonusToggled(at: 0, isOn: true)
+        viewModel.input.planFieldChanged(.bonusRate, at: 0, text: "6")
+        viewModel.input.capPeriodChanged(.bonus, at: 0, period: .statementCycle)
+        XCTAssertEqual(closingDayPlacement, [.bonus])
+
+        viewModel.input.capPeriodChanged(.base, at: 0, period: .statementCycle)
+        XCTAssertEqual(closingDayPlacement, [.base], "基本回饋在加碼上方，欄位移到基本回饋下面")
+
+        viewModel.input.addPlanTapped()
+        viewModel.input.capPeriodChanged(.base, at: 1, period: .statementCycle)
+        XCTAssertEqual(closingDayPlacement, [.base, nil], "第二個方案不再重複顯示")
+
+        viewModel.input.capPeriodChanged(.base, at: 0, period: .campaign)
+        viewModel.input.capPeriodChanged(.bonus, at: 0, period: .calendarMonth)
+        XCTAssertEqual(closingDayPlacement, [nil, .base], "第一個方案不用了就移到第二個")
+    }
+
+    /// 欄位換位置時已輸入的結帳日要保留。
+    func testTheTypedClosingDaySurvivesMovingTheField() {
+        fillValidCard()
+        viewModel.input.capPeriodChanged(.base, at: 0, period: .statementCycle)
+        viewModel.input.closingDayChanged("15")
+        viewModel.input.bonusToggled(at: 0, isOn: true)
+
+        XCTAssertEqual(viewModel.output.closingDayText, "15")
+    }
+
     func testEditingPrefillsThePeriodsAndClosingDay() {
         var card = Card.withPlan(
             name: "玉山", rate: 2.5, cap: 1000,
@@ -312,7 +341,7 @@ final class CardSetViewModelTests: XCTestCase {
 
         XCTAssertEqual(forms[0].baseCapPeriod, .calendarMonth)
         XCTAssertEqual(forms[0].bonusCapPeriod, .statementCycle)
-        XCTAssertEqual(viewModel.output.prefillClosingDay, "20")
+        XCTAssertEqual(viewModel.output.closingDayText, "20")
         XCTAssertTrue(showsClosingDay)
     }
 
