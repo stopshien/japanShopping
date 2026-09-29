@@ -27,56 +27,141 @@ final class CardSetViewModelTests: XCTestCase {
         super.tearDown()
     }
 
-    // MARK: - 新增按鈕啟用條件
-
-    func testAddIsDisabledUntilAllThreeFieldsAreFilled() {
-        var states: [Bool] = []
-        viewModel.output.isAddEnabled.sink { states.append($0) }.store(in: &cancellables)
-
+    private func fillValidCard(rate: String = "3.5", cap: String = "5000") {
         viewModel.input.nameChanged("測試卡")
-        viewModel.input.percentChanged("3")
-
-        XCTAssertEqual(states.last, false, "只填兩個欄位時不應啟用")
-
-        viewModel.input.limitChanged("5000")
-
-        XCTAssertEqual(states.last, true, "三個欄位都填了才啟用")
+        viewModel.input.planFieldChanged(.baseRate, at: 0, text: rate)
+        viewModel.input.planFieldChanged(.baseCap, at: 0, text: cap)
     }
 
-    func testAddIsDisabledWhenFieldIsOnlyWhitespace() {
-        viewModel.input.nameChanged("   ")
-        viewModel.input.percentChanged("3")
-        viewModel.input.limitChanged("5000")
+    private var forms: [CardPlanForm] {
+        var forms: [CardPlanForm] = []
+        viewModel.output.planForms.sink { forms = $0 }.store(in: &cancellables)
+        return forms
+    }
 
-        var isEnabled = true
+    private var isEnabled: Bool {
+        var isEnabled = false
         viewModel.output.isAddEnabled.sink { isEnabled = $0 }.store(in: &cancellables)
+        return isEnabled
+    }
+
+    // MARK: - 新增按鈕啟用條件
+
+    /// 上限改為選填（留白為無上限），必填的只剩名稱與趴數。
+    func testAddIsEnabledOnceTheNameAndRateAreFilled() {
+        viewModel.input.nameChanged("測試卡")
+        XCTAssertFalse(isEnabled, "只填名稱時不應啟用")
+
+        viewModel.input.planFieldChanged(.baseRate, at: 0, text: "3")
+        XCTAssertTrue(isEnabled)
+    }
+
+    func testAddIsDisabledWhenTheNameIsOnlyWhitespace() {
+        viewModel.input.nameChanged("   ")
+        viewModel.input.planFieldChanged(.baseRate, at: 0, text: "3")
 
         XCTAssertFalse(isEnabled)
     }
 
-    // MARK: - 新增成功
+    func testTurningOnTheBonusRequiresItsRate() {
+        fillValidCard()
+        viewModel.input.bonusToggled(at: 0, isOn: true)
+        XCTAssertFalse(isEnabled, "開了加碼就要填加碼趴數")
 
-    func testAddTappedAppendsCardWithRemainingEqualToLimit() {
-        var didAdd = false
-        viewModel.output.didSave.sink { didAdd = true }.store(in: &cancellables)
+        viewModel.input.planFieldChanged(.bonusRate, at: 0, text: "6")
+        XCTAssertTrue(isEnabled)
+    }
+
+    func testSeveralPlansEachNeedAName() {
+        fillValidCard()
+        viewModel.input.addPlanTapped()
+        viewModel.input.planFieldChanged(.baseRate, at: 1, text: "2")
+        XCTAssertFalse(isEnabled)
+
+        viewModel.input.planFieldChanged(.name, at: 0, text: "玩旅刷")
+        viewModel.input.planFieldChanged(.name, at: 1, text: "假日刷")
+        XCTAssertTrue(isEnabled)
+    }
+
+    // MARK: - 表單結構
+
+    func testANewCardStartsWithOneUnnamedPlan() {
+        XCTAssertEqual(forms, [CardPlanForm(showsName: false, hasBonus: false, canRemove: false, values: [:])])
+        XCTAssertNil(viewModel.output.prefillName)
+        XCTAssertEqual(viewModel.output.title, "新增信用卡")
+    }
+
+    func testAddingAPlanShowsNamesAndAllowsRemoving() {
+        viewModel.input.addPlanTapped()
+
+        XCTAssertEqual(forms.count, 2)
+        XCTAssertTrue(forms.allSatisfy { $0.showsName && $0.canRemove })
+
+        viewModel.input.removePlan(at: 1)
+        XCTAssertEqual(forms.count, 1)
+        XCTAssertFalse(forms[0].canRemove)
+        viewModel.input.removePlan(at: 0)
+        XCTAssertEqual(forms.count, 1, "至少要留一個方案")
+    }
+
+    /// 重建區塊時要帶回已打的文字。
+    func testRebuiltFormsKeepTheTypedValues() {
+        viewModel.input.planFieldChanged(.baseRate, at: 0, text: "3.3")
+        viewModel.input.bonusToggled(at: 0, isOn: true)
+
+        XCTAssertEqual(forms[0].values[.baseRate], "3.3")
+        XCTAssertTrue(forms[0].hasBonus)
+    }
+
+    // MARK: - 新增
+
+    func testAddingCreatesACardWithOnePlan() {
+        var didSave = false
+        viewModel.output.didSave.sink { didSave = true }.store(in: &cancellables)
 
         fillValidCard()
         viewModel.input.addTapped()
 
-        XCTAssertTrue(didAdd)
-        XCTAssertEqual(repository.storedCards.count, 1)
-
+        XCTAssertTrue(didSave)
         let card = try? XCTUnwrap(repository.storedCards.first)
         XCTAssertEqual(card?.name, "測試卡")
-        XCTAssertEqual(card?.percent, 3.5)
-        XCTAssertEqual(card?.limit, 5000)
-        XCTAssertEqual(card?.feedbackRemaining, 5000, "新卡的剩餘回饋額度應等於上限")
-        XCTAssertEqual(card?.feedbackMoney, 0, "新卡尚未產生回饋金額")
         XCTAssertNotNil(card?.id, "新卡一建立就有識別碼")
+        XCTAssertEqual(card?.plans?.count, 1)
+        XCTAssertEqual(card?.plans?.first?.name, "")
+        XCTAssertEqual(card?.plans?.first?.baseRate, 3.5)
+        XCTAssertEqual(card?.plans?.first?.baseCap, 5000)
+        XCTAssertNil(card?.plans?.first?.bonus)
+        XCTAssertEqual(card?.feedbackRemaining, 5000, "舊欄位仍寫入，額度是滿的")
     }
 
-    func testAddTappedKeepsExistingCards() {
-        repository.storedCards = [Card(name: "舊卡", percent: 2, limit: 1000, feedbackRemaining: 1000)]
+    func testAnEmptyCapMeansNoCap() {
+        fillValidCard(cap: "")
+        viewModel.input.addTapped()
+
+        XCTAssertNil(repository.storedCards.first?.plans?.first?.baseCap)
+    }
+
+    func testAddingABonusAndASecondPlan() {
+        fillValidCard(rate: "2.5", cap: "")
+        viewModel.input.planFieldChanged(.name, at: 0, text: "日本")
+        viewModel.input.bonusToggled(at: 0, isOn: true)
+        viewModel.input.planFieldChanged(.bonusRate, at: 0, text: "6")
+        viewModel.input.planFieldChanged(.bonusCap, at: 0, text: "500")
+        viewModel.input.planFieldChanged(.bonusLabel, at: 0, text: "指定店家")
+        viewModel.input.addPlanTapped()
+        viewModel.input.planFieldChanged(.name, at: 1, text: "國內")
+        viewModel.input.planFieldChanged(.baseRate, at: 1, text: "1")
+        viewModel.input.addTapped()
+
+        let plans = repository.storedCards.first?.plans ?? []
+        XCTAssertEqual(plans.map(\.name), ["日本", "國內"])
+        XCTAssertEqual(plans.first?.bonus, CardPlan.Bonus(rate: 6, cap: 500, label: "指定店家"))
+        XCTAssertNil(plans.last?.bonus)
+        XCTAssertNotEqual(plans.first?.id, plans.last?.id)
+    }
+
+    func testAddingKeepsExistingCards() {
+        repository.storedCards = [Card.withPlan(name: "舊卡", rate: 2, cap: 1000)]
 
         fillValidCard()
         viewModel.input.addTapped()
@@ -86,68 +171,61 @@ final class CardSetViewModelTests: XCTestCase {
 
     // MARK: - 編輯
 
-    private func makeEditingViewModel(for card: Card) -> CardSetViewModel {
-        CardSetViewModel(editingCard: card, repository: repository)
-    }
+    func testEditingPrefillsTheNameAndPlans() {
+        let bonus = CardPlan.Bonus(rate: 6, cap: nil, label: "指定店家")
+        let card = Card.withPlan(name: "熊本熊", rate: 2.5, cap: 500, bonus: bonus)
+        viewModel = CardSetViewModel(editingCard: card, repository: repository)
 
-    func testEditingPrefillsTheFieldsAndIsReadyToSave() {
-        let card = Card(name: "玉山", percent: 3.5, limit: 500, feedbackRemaining: 200, id: UUID())
-        viewModel = makeEditingViewModel(for: card)
-        var isEnabled = false
-        viewModel.output.isAddEnabled.sink { isEnabled = $0 }.store(in: &cancellables)
-
-        XCTAssertEqual(viewModel.output.prefill, CardSetPrefill(name: "玉山", percent: "3.5", limit: "500"))
+        XCTAssertEqual(viewModel.output.prefillName, "熊本熊")
         XCTAssertEqual(viewModel.output.title, "編輯信用卡")
         XCTAssertEqual(viewModel.output.confirmTitle, "儲存")
+        XCTAssertEqual(forms[0].values[.baseRate], "2.5")
+        XCTAssertEqual(forms[0].values[.baseCap], "500")
+        XCTAssertEqual(forms[0].values[.bonusRate], "6")
+        XCTAssertEqual(forms[0].values[.bonusCap], "")
+        XCTAssertTrue(forms[0].hasBonus)
         XCTAssertTrue(isEnabled)
     }
 
-    func testAddingHasNoPrefill() {
-        XCTAssertNil(viewModel.output.prefill)
-        XCTAssertEqual(viewModel.output.title, "新增信用卡")
-    }
-
-    /// 已用掉 300，上限改成 1000 後剩 700；id 不變，其他卡不受影響。
-    func testEditReplacesTheCardAndKeepsTheUsedAmount() {
-        let id = UUID()
-        let card = Card(name: "玉山", percent: 3.5, limit: 500, feedbackRemaining: 200, id: id)
-        let other = Card(name: "台新", percent: 3.3, limit: 0, feedbackRemaining: 0, id: UUID())
+    /// 方案 id 要沿用，回饋明細才對得上；卡片 id 不變，其他卡不受影響。
+    func testEditKeepsTheCardAndPlanIDs() {
+        let cardID = UUID()
+        let planID = UUID()
+        let card = Card.withPlan(name: "玉山", rate: 3.5, cap: 500, id: cardID, planID: planID)
+        let other = Card.withPlan(name: "台新", rate: 3.3, cap: nil)
         repository.storedCards = [card, other]
-        viewModel = makeEditingViewModel(for: card)
-        var didSave = false
-        viewModel.output.didSave.sink { didSave = true }.store(in: &cancellables)
+        viewModel = CardSetViewModel(editingCard: card, repository: repository)
 
         viewModel.input.nameChanged("玉山熊本熊")
-        viewModel.input.percentChanged("8.5")
-        viewModel.input.limitChanged("1000")
+        viewModel.input.planFieldChanged(.baseRate, at: 0, text: "8.5")
+        viewModel.input.planFieldChanged(.baseCap, at: 0, text: "1000")
         viewModel.input.addTapped()
 
-        XCTAssertTrue(didSave)
-        XCTAssertEqual(repository.storedCards.count, 2)
         let edited = repository.storedCards[0]
-        XCTAssertEqual(edited.id, id)
+        XCTAssertEqual(edited.id, cardID)
         XCTAssertEqual(edited.name, "玉山熊本熊")
-        XCTAssertEqual(edited.percent, 8.5)
-        XCTAssertEqual(edited.limit, 1000)
-        XCTAssertEqual(edited.feedbackRemaining, 700)
+        XCTAssertEqual(edited.plans?.first?.id, planID)
+        XCTAssertEqual(edited.plans?.first?.baseRate, 8.5)
+        XCTAssertEqual(edited.plans?.first?.baseCap, 1000)
         XCTAssertEqual(repository.storedCards[1], other)
     }
 
-    func testLoweringTheLimitBelowTheUsedAmountLeavesZero() {
-        let card = Card(name: "玉山", percent: 3.5, limit: 500, feedbackRemaining: 200, id: UUID())
+    /// 舊欄位維持「上限 − 已用」，尚未轉成明細的舊卡才不會多出或少掉已用額度。
+    func testEditKeepsTheLegacyUsedAmount() {
+        var card = Card.withPlan(name: "玉山", rate: 3.5, cap: 500)
+        card.feedbackRemaining = 200
         repository.storedCards = [card]
-        viewModel = makeEditingViewModel(for: card)
+        viewModel = CardSetViewModel(editingCard: card, repository: repository)
 
-        viewModel.input.limitChanged("100")
+        viewModel.input.planFieldChanged(.baseCap, at: 0, text: "1000")
         viewModel.input.addTapped()
 
-        XCTAssertEqual(repository.storedCards.first?.feedbackRemaining, 0)
+        XCTAssertEqual(repository.storedCards[0].limit, 1000)
+        XCTAssertEqual(repository.storedCards[0].feedbackRemaining, 700)
     }
 
     func testEditingACardThatNoLongerExistsReportsAnError() {
-        let card = Card(name: "玉山", percent: 3.5, limit: 500, feedbackRemaining: 200, id: UUID())
-        repository.storedCards = []
-        viewModel = makeEditingViewModel(for: card)
+        viewModel = CardSetViewModel(editingCard: Card.withPlan(name: "玉山", rate: 3.5, cap: 500), repository: repository)
         var message: String?
         viewModel.output.errorMessage.sink { message = $0 }.store(in: &cancellables)
 
@@ -160,31 +238,38 @@ final class CardSetViewModelTests: XCTestCase {
     // MARK: - 驗證與錯誤
 
     /// 遷移前這裡是 Double(text)! ，非數字輸入會直接崩潰。
-    /// 現在改為回報錯誤訊息，這是本次遷移唯一刻意的行為變更。
-    func testNonNumericPercentReportsErrorInsteadOfCrashing() {
+    func testNonNumericRateReportsErrorInsteadOfCrashing() {
         var message: String?
         viewModel.output.errorMessage.sink { message = $0 }.store(in: &cancellables)
 
-        viewModel.input.nameChanged("測試卡")
-        viewModel.input.percentChanged("三趴")
-        viewModel.input.limitChanged("5000")
+        fillValidCard(rate: "三趴")
         viewModel.input.addTapped()
 
         XCTAssertEqual(message, "回饋趴數請輸入數字")
         XCTAssertTrue(repository.storedCards.isEmpty)
     }
 
-    func testNonNumericLimitReportsError() {
+    func testNonNumericCapReportsError() {
         var message: String?
         viewModel.output.errorMessage.sink { message = $0 }.store(in: &cancellables)
 
-        viewModel.input.nameChanged("測試卡")
-        viewModel.input.percentChanged("3")
-        viewModel.input.limitChanged("五千")
+        fillValidCard(cap: "五千")
         viewModel.input.addTapped()
 
-        XCTAssertEqual(message, "回饋上限請輸入數字")
+        XCTAssertEqual(message, "回饋上限請輸入數字，或留白表示無上限")
         XCTAssertTrue(repository.storedCards.isEmpty)
+    }
+
+    func testNonNumericBonusRateReportsError() {
+        var message: String?
+        viewModel.output.errorMessage.sink { message = $0 }.store(in: &cancellables)
+
+        fillValidCard()
+        viewModel.input.bonusToggled(at: 0, isOn: true)
+        viewModel.input.planFieldChanged(.bonusRate, at: 0, text: "六")
+        viewModel.input.addTapped()
+
+        XCTAssertEqual(message, "加碼趴數請輸入數字")
     }
 
     func testAddTappedDoesNothingWhenFieldsAreIncomplete() {
@@ -196,23 +281,15 @@ final class CardSetViewModelTests: XCTestCase {
 
     func testSaveFailureReportsErrorAndDoesNotFinish() {
         repository.saveError = StubError.failure
-        var didAdd = false
+        var didSave = false
         var message: String?
-        viewModel.output.didSave.sink { didAdd = true }.store(in: &cancellables)
+        viewModel.output.didSave.sink { didSave = true }.store(in: &cancellables)
         viewModel.output.errorMessage.sink { message = $0 }.store(in: &cancellables)
 
         fillValidCard()
         viewModel.input.addTapped()
 
-        XCTAssertFalse(didAdd)
+        XCTAssertFalse(didSave)
         XCTAssertEqual(message, "信用卡儲存失敗，請再試一次")
-    }
-
-    // MARK: - Helpers
-
-    private func fillValidCard() {
-        viewModel.input.nameChanged("測試卡")
-        viewModel.input.percentChanged("3.5")
-        viewModel.input.limitChanged("5000")
     }
 }

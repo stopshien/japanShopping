@@ -70,6 +70,8 @@ final class AppScreenFactory: ScreenFactory {
         )
         // 已用掉的額度轉成回饋明細；要在補上卡片 id 之後。
         FeedbackLedgerMigration.run(cardRepository: cardRepository, ledgerRepository: ledgerRepository)
+        // 舊卡轉成只有一個方案的卡，明細歸到那個方案；要在前兩個遷移之後。
+        CardPlanMigration.run(cardRepository: cardRepository, ledgerRepository: ledgerRepository)
     }
 
     /// 目前使用中的專案。沒有選中時退回最新建立的一個。

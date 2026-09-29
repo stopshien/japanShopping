@@ -14,32 +14,33 @@ Card
 ├── plans: [CardPlan]?            // new; nil only for not-yet-migrated files
 └── legacy: percent, limit, feedbackMoney, feedbackRemaining   // kept for decoding, no longer read
 
-CardPlan
+CardPlan                          // built in phase 3
 ├── id: UUID
-├── name                          // 「預設」 for a single-plan card, 「玩旅刷」 for Richart
-├── baseRate                      // uncapped
-├── bonus: CardBonus?
-├── validFrom: Date?              // nil = no start date
-├── validUntil: Date?             // nil = no end date
-├── expiryAcknowledged: Bool?     // set once the user dismisses the expiry alert
+├── name                          // "" for a single-plan card, 「玩旅刷」 for Richart
+├── baseRate
+├── baseCap: Double?              // gross; nil = uncapped; migrated cards keep their old limit here
+├── bonus: CardPlan.Bonus?
+├── baseCapPeriod / bonus.capPeriod   // phase 4: calendarMonth | statementCycle(closingDay) | quarter | campaign
+├── validFrom: Date?              // phase 5; nil = no start date
+├── validUntil: Date?             // phase 5; nil = no end date
+├── expiryAcknowledged: Bool?     // phase 5; set once the user dismisses the expiry alert
 └── note: String                  // free text for conditions the app cannot check
 
-CardBonus
+CardPlan.Bonus
 ├── rate
 ├── cap: Double?                  // gross feedback amount; nil = uncapped
-├── capPeriod: calendarMonth | statementCycle(closingDay) | quarter | campaign
 └── label: String                 // shown on the qualify switch, e.g. 「指定店家」
 
 FeedbackEntry                     // new file 「cardFeedback」, shared by all trips
 ├── id: UUID
 ├── cardID, planID
 ├── date
-├── baseAmount, bonusAmount       // gross, rounded to cents
+├── amount                        // total; entries from before phase 3 only have this (net)
+├── baseAmount, bonusAmount       // gross, rounded to cents; nil on older entries
 └── shoppingItemID: UUID?         // nil for the migrated legacy balance
 
 ShoppingItem (new optional fields)
-├── id: UUID?
-└── cardID / planID: UUID?
+└── id: UUID?                     // the ledger links to purchases by this; no cardID / planID needed
 ```
 
 ## Phases
@@ -62,12 +63,18 @@ Each phase ships on its own, keeps the app working, and updates tests plus the b
 - Deleting a card deletes its entries.
 - As built: entries have a single `amount` (the net amount counted against the cap, as before); phase 3 adds gross base and bonus amounts. The purchase does not store `cardID`; the entry stores `shoppingItemID`, which is enough to refund. A purchase never earns more than the card has left, and a negative result counts as zero. Deleting a trip keeps its entries.
 
-### Phase 3 — Plans, base and bonus
+### Phase 3 — Plans, base and bonus — done 2026-09-29
 
 - Migration converts each card into one plan: `baseRate = percent`, no bonus, and the old limit kept as a campaign-period cap. Behavior matches today.
 - The card editor gains a plan list; the plan editor has rate, optional bonus (rate, cap, period, closing day, label), end date, and note.
 - In 購買明細 the picker lists every current plan (`Richart・玩旅刷 3.3%`). If the plan has a bonus, a 「符合加碼（指定店家）」 switch appears. It is **off every time** the screen opens; the last choice is not remembered, so the estimate never overstates.
 - 「這筆回饋」 shows the **gross** amount (base + bonus). The foreign transaction fee is listed separately beneath it, e.g. 「這筆回饋 NT$ 33・海外手續費 NT$ 15」. The subtitle shows the bonus left this period, worded as an estimate.
+- As built, differing from the above:
+  - The base rate can also have a cap (`baseCap`), because a pre-plan card's single cap covered all of its feedback. The migration puts the old limit there; without it, migrated cards would lose their cap.
+  - Plans are edited inline on the card screen, one block per plan, instead of a separate plan editor, so a single-plan card stays one screen.
+  - The cap period and closing day are **not** in the form yet; they arrive with phase 4, when they are actually calculated. Every cap is currently a whole-time cap.
+  - The fee is on its own line (「這筆回饋 NT$ 132.01」 / 「海外手續費 NT$ 35.15」), because on one line the fee amount wrapped mid-number.
+  - Caps are per plan, not per card.
 
 ### Phase 4 — Cap periods
 

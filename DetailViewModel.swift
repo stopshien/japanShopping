@@ -33,6 +33,13 @@ struct CardMenuItem: Equatable {
     let title: String
 }
 
+/// 「符合加碼」開關。選中的方案沒有加碼時不顯示。
+struct BonusSwitchState: Equatable {
+    /// 例如「符合加碼（指定店家）」。
+    let title: String
+    let isOn: Bool
+}
+
 enum DetailRoute: Equatable {
     case addCard
     case shoppingList
@@ -50,7 +57,10 @@ protocol DetailViewModelInput {
     func reloadCards()
     func productNameChanged(_ text: String)
     func payMethodSelected(row: Int)
+    /// `index` 是選單中的位置；多方案的卡片每個方案各佔一項。
     func cardSelected(at index: Int)
+    /// 使用者勾選或取消「符合加碼」。
+    func bonusQualificationChanged(_ qualifies: Bool)
     func addCardTapped()
     func photoSelected(_ data: Data?)
     func saveTapped()
@@ -70,6 +80,9 @@ protocol DetailViewModelOutput {
     /// 信用卡按鈕的第二行：剩餘回饋額度。尚未選卡時為空字串。
     var cardButtonSubtitle: AnyPublisher<String, Never> { get }
     var cardMenuItems: AnyPublisher<[CardMenuItem], Never> { get }
+    /// nil 代表選中的方案沒有加碼，開關隱藏。
+    var bonusSwitch: AnyPublisher<BonusSwitchState?, Never> { get }
+    /// 兩行：「這筆回饋 NT$ 35」與「海外手續費 NT$ 15」。
     var feedbackText: AnyPublisher<String, Never> { get }
     var route: AnyPublisher<DetailRoute, Never> { get }
     var errorMessage: AnyPublisher<String, Never> { get }
@@ -79,9 +92,13 @@ protocol DetailViewModelOutput {
 
 final class DetailViewModel: DetailViewModelType {
 
+    /// 選單中的一項：哪張卡的哪個方案。
+    private struct PlanOption {
+        let cardIndex: Int
+        let planIndex: Int
+    }
+
     private enum Constants {
-        /// 回饋趴數要先扣掉的基礎趴數。
-        static let baseFeedbackPercent = 1.5
         static let cardButtonPlaceholder = "請選擇信用卡"
         static let feedbackPlaceholder = "選擇信用卡後顯示回饋金額"
     }
@@ -94,10 +111,12 @@ final class DetailViewModel: DetailViewModelType {
 
     private var item: ShoppingItem
     private var cards: [Card] = []
-    /// 回饋明細，用來算每張卡的剩餘額度。
+    /// 回饋明細，用來算每個方案的剩餘額度。
     private var entries: [FeedbackEntry] = []
-    /// 目前選中的卡這筆能拿到的回饋，已受剩餘額度限制。
-    private var selectedFeedback = 0.0
+    /// 選單中的每一項，對應 `cardMenuItems`。
+    private var options: [PlanOption] = []
+    /// 這筆是否符合加碼。每次進入畫面與換方案時都回到關閉，估算不會高估。
+    private var qualifiesForBonus = false
     private var payMethod: PayMethod = .cash
     private var photoData: Data?
 
@@ -107,6 +126,7 @@ final class DetailViewModel: DetailViewModelType {
     private let isCardSectionVisibleSubject = CurrentValueSubject<Bool, Never>(false)
     private let cardButtonTitleSubject = CurrentValueSubject<String, Never>(Constants.cardButtonPlaceholder)
     private let cardMenuItemsSubject = CurrentValueSubject<[CardMenuItem], Never>([])
+    private let bonusSwitchSubject = CurrentValueSubject<BonusSwitchState?, Never>(nil)
     private let cardButtonSubtitleSubject = CurrentValueSubject<String, Never>("")
     private let feedbackTextSubject = CurrentValueSubject<String, Never>(Constants.feedbackPlaceholder)
     private let routeSubject = PassthroughSubject<DetailRoute, Never>()
@@ -143,7 +163,10 @@ final class DetailViewModel: DetailViewModelType {
             errorMessageSubject.send("信用卡資料讀取失敗")
         }
         entries = (try? ledgerRepository.load()) ?? []
-        cardMenuItemsSubject.send(cards.map { CardMenuItem(title: "\($0.name) \($0.percent)%") })
+        options = cards.indices.flatMap { cardIndex in
+            (cards[cardIndex].plans ?? []).indices.map { PlanOption(cardIndex: cardIndex, planIndex: $0) }
+        }
+        cardMenuItemsSubject.send(options.map { CardMenuItem(title: menuTitle(for: $0)) })
     }
 
     /// 卡片清單變動後，先前選到的索引就不再可信，一律回到未選取狀態。
@@ -151,37 +174,85 @@ final class DetailViewModel: DetailViewModelType {
         if payMethod.isCard {
             payMethod = .card(index: nil)
         }
-        selectedFeedback = 0
+        qualifiesForBonus = false
+        bonusSwitchSubject.send(nil)
         cardButtonTitleSubject.send(Constants.cardButtonPlaceholder)
         cardButtonSubtitleSubject.send("")
         feedbackTextSubject.send(Constants.feedbackPlaceholder)
     }
 
-    /// 這筆的回饋，最多只到剩餘額度：額度用完的卡，銀行也不會再給。
-    /// 趴數低於手續費時算出來是負的，視為沒有回饋。
-    private func feedbackMoney(for card: Card) -> Double {
-        let feedback = Self.roundedToCents((card.percent - Constants.baseFeedbackPercent) * item.price * 0.01)
-        return min(max(0, feedback), card.remainingFeedback(in: entries))
+    private func card(of option: PlanOption) -> Card { cards[option.cardIndex] }
+
+    private func plan(of option: PlanOption) -> CardPlan {
+        cards[option.cardIndex].plans?[option.planIndex] ?? CardPlan(
+            id: UUID(), name: "", baseRate: 0, baseCap: nil, bonus: nil, note: ""
+        )
+    }
+
+    /// 只有一個方案的卡片只顯示卡名；多方案的卡片加上方案名，例如「Richart・玩旅刷」。
+    private func displayName(for option: PlanOption) -> String {
+        let card = card(of: option)
+        guard (card.plans?.count ?? 0) > 1 else { return card.name }
+        return "\(card.name)・\(plan(of: option).name)"
+    }
+
+    /// 例如「Richart・玩旅刷 3.3%」、「熊本熊 2.5%＋6%」。
+    private func menuTitle(for option: PlanOption) -> String {
+        let plan = plan(of: option)
+        var rate = "\(PriceText.amount(plan.baseRate))%"
+        if let bonus = plan.bonus {
+            rate += "＋\(PriceText.amount(bonus.rate))%"
+        }
+        return "\(displayName(for: option)) \(rate)"
+    }
+
+    private var selectedOption: PlanOption? {
+        guard let index = payMethod.selectedCardIndex, options.indices.contains(index) else { return nil }
+        return options[index]
+    }
+
+    private func quote(for option: PlanOption) -> FeedbackQuote {
+        FeedbackCalculator.quote(
+            plan: plan(of: option), price: item.price, qualifiesForBonus: qualifiesForBonus, entries: entries
+        )
+    }
+
+    /// 剩餘額度只是估算：銀行以請款入帳日認定期別，App 只知道刷卡日。
+    private func remainingText(for plan: CardPlan) -> String {
+        var parts: [String] = []
+        if let remaining = FeedbackCalculator.remainingBase(of: plan, in: entries) {
+            parts.append("剩餘回饋約 \(PriceText.twd(remaining))")
+        }
+        if let remaining = FeedbackCalculator.remainingBonus(of: plan, in: entries) {
+            parts.append("加碼剩餘約 \(PriceText.twd(remaining))")
+        }
+        return parts.isEmpty ? "回饋無上限" : parts.joined(separator: "・")
+    }
+
+    private func publishFeedback(for option: PlanOption) {
+        let quote = quote(for: option)
+        // 手續費另起一行，數字不會被斷在兩行中間。
+        feedbackTextSubject.send("這筆回饋 \(PriceText.twd(quote.total))\n海外手續費 \(PriceText.twd(quote.fee))")
     }
 
     /// 在回饋明細加一筆，剩餘額度由明細加總算出，所以會跨消費累積扣減。
     /// 重新讀一次明細再加，避免覆蓋掉進入這頁之後別處寫入的明細。
-    private func recordSelectedCardFeedback(for itemID: UUID?) {
-        guard let index = payMethod.selectedCardIndex, cards.indices.contains(index),
-              let cardID = cards[index].id, selectedFeedback > 0 else { return }
+    private func recordSelectedPlanFeedback(for itemID: UUID?) {
+        guard let option = selectedOption, let cardID = card(of: option).id else { return }
         var latest = (try? ledgerRepository.load()) ?? entries
+        let quote = FeedbackCalculator.quote(
+            plan: plan(of: option), price: item.price, qualifiesForBonus: qualifiesForBonus, entries: latest
+        )
+        guard quote.total > 0 else { return }
         latest.append(
-            FeedbackEntry(id: UUID(), cardID: cardID, date: item.purchasedAt ?? now(),
-                          amount: selectedFeedback, shoppingItemID: itemID)
+            FeedbackEntry(
+                id: UUID(), cardID: cardID, date: item.purchasedAt ?? now(), amount: quote.total,
+                shoppingItemID: itemID, planID: plan(of: option).id,
+                baseAmount: quote.base, bonusAmount: quote.bonus
+            )
         )
         guard (try? ledgerRepository.save(latest)) != nil else { return }
         entries = latest
-    }
-
-    /// 回饋金額是浮點相乘相減的結果，不取到分位就會存進
-    /// 999.3629999999999 這種值，並在每次消費後持續累積誤差。
-    private static func roundedToCents(_ value: Double) -> Double {
-        (value * 100).rounded() / 100
     }
 }
 
@@ -215,19 +286,34 @@ extension DetailViewModel: DetailViewModelInput {
             item.payType = "信用卡"
             isCardSectionVisibleSubject.send(true)
         }
+        // 切回信用卡時要重新選卡，加碼開關也跟著收起。
+        qualifiesForBonus = false
+        bonusSwitchSubject.send(nil)
     }
 
     func cardSelected(at index: Int) {
-        guard cards.indices.contains(index) else { return }
+        guard options.indices.contains(index) else { return }
+        let option = options[index]
+        let plan = plan(of: option)
 
         payMethod = .card(index: index)
-        // 存進清單的是卡片名稱，不是「信用卡」三個字。
-        item.payType = cards[index].name
-        selectedFeedback = feedbackMoney(for: cards[index])
+        // 存進清單的是卡片（與方案）名稱，不是「信用卡」三個字。
+        item.payType = displayName(for: option)
+        qualifiesForBonus = false
+        bonusSwitchSubject.send(plan.bonus.map { bonus in
+            let condition = bonus.label.isEmpty ? "" : "（\(bonus.label)）"
+            return BonusSwitchState(title: "符合加碼\(condition)", isOn: false)
+        })
 
-        cardButtonTitleSubject.send("\(cards[index].name) \(cards[index].percent)%")
-        cardButtonSubtitleSubject.send("剩餘回饋 \(PriceText.twd(cards[index].remainingFeedback(in: entries)))")
-        feedbackTextSubject.send("這筆回饋 \(PriceText.twd(selectedFeedback))")
+        cardButtonTitleSubject.send(menuTitle(for: option))
+        cardButtonSubtitleSubject.send(remainingText(for: plan))
+        publishFeedback(for: option)
+    }
+
+    func bonusQualificationChanged(_ qualifies: Bool) {
+        guard let option = selectedOption, plan(of: option).bonus != nil else { return }
+        qualifiesForBonus = qualifies
+        publishFeedback(for: option)
     }
 
     func addCardTapped() {
@@ -262,7 +348,7 @@ extension DetailViewModel: DetailViewModelInput {
         // 紀錄確定存進去才扣回饋額度。剩餘額度是累積扣減的，
         // 沒存成功或沒填名稱就先扣，重按一次就會再扣一次。
         if payMethod.isCard {
-            recordSelectedCardFeedback(for: item.id)
+            recordSelectedPlanFeedback(for: item.id)
         }
 
         routeSubject.send(.savedToShoppingList)
@@ -284,6 +370,7 @@ extension DetailViewModel: DetailViewModelOutput {
     var cardButtonTitle: AnyPublisher<String, Never> { cardButtonTitleSubject.eraseToAnyPublisher() }
     var cardButtonSubtitle: AnyPublisher<String, Never> { cardButtonSubtitleSubject.eraseToAnyPublisher() }
     var cardMenuItems: AnyPublisher<[CardMenuItem], Never> { cardMenuItemsSubject.eraseToAnyPublisher() }
+    var bonusSwitch: AnyPublisher<BonusSwitchState?, Never> { bonusSwitchSubject.eraseToAnyPublisher() }
     var feedbackText: AnyPublisher<String, Never> { feedbackTextSubject.eraseToAnyPublisher() }
     var route: AnyPublisher<DetailRoute, Never> { routeSubject.eraseToAnyPublisher() }
     var errorMessage: AnyPublisher<String, Never> { errorMessageSubject.eraseToAnyPublisher() }

@@ -57,3 +57,21 @@ final class FeedbackLedgerRepositoryStub: FeedbackLedgerRepository {
         storedEntries = entries
     }
 }
+
+extension Card {
+
+    /// 測試用：一張只有一個方案的卡，舊欄位也填上對應的值。
+    static func withPlan(
+        name: String,
+        rate: Double,
+        cap: Double?,
+        bonus: CardPlan.Bonus? = nil,
+        id: UUID = UUID(),
+        planID: UUID = UUID()
+    ) -> Card {
+        Card(
+            name: name, percent: rate, limit: cap ?? 0, feedbackRemaining: cap ?? 0, id: id,
+            plans: [CardPlan(id: planID, name: "", baseRate: rate, baseCap: cap, bonus: bonus, note: "")]
+        )
+    }
+}

@@ -6,12 +6,15 @@
 import Combine
 import UIKit
 
+/// 新增或編輯信用卡：卡片名稱，加上一個或多個回饋方案。
+///
+/// 只有一個方案時，畫面和以前一樣簡單：名稱、趴數、上限。
+/// 可切換權益的卡（例如台新 Richart）再按「新增方案」加入其他方案。
 final class CardSetViewController: UIViewController {
 
     private enum Constants {
         static let spacing: CGFloat = AppStyle.Spacing.normal
         static let horizontalInset: CGFloat = AppStyle.Spacing.normal
-        static let topInset: CGFloat = AppStyle.Spacing.loose
         static let fieldHeight: CGFloat = 48
     }
 
@@ -23,20 +26,52 @@ final class CardSetViewController: UIViewController {
     private let viewModel: CardSetViewModelType
     private var cancellables = Set<AnyCancellable>()
 
-    private let formCard = AppView.card()
-    private let cardNameTextField = CardSetViewController.makeTextField(placeholder: "信用卡名稱")
-    private let moneyBackTextField = CardSetViewController.makeTextField(placeholder: "回饋趴數（例如 3.5）", keyboardType: .decimalPad)
-    private let limitTextField = CardSetViewController.makeTextField(placeholder: "回饋上限金額", keyboardType: .decimalPad)
+    // MARK: - Views
 
-    private let addButton: UIButton
+    private let scrollView: UIScrollView = {
+        let scrollView = UIScrollView()
+        scrollView.keyboardDismissMode = .interactive
+        scrollView.alwaysBounceVertical = true
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        return scrollView
+    }()
 
-    private let stackView: UIStackView = {
+    private let contentStackView: UIStackView = {
         let stackView = UIStackView()
         stackView.axis = .vertical
         stackView.spacing = Constants.spacing
         stackView.translatesAutoresizingMaskIntoConstraints = false
         return stackView
     }()
+
+    private let nameCard = AppView.card()
+    private let cardNameTextField = CardSetViewController.makeTextField(
+        placeholder: "例如：玉山熊本熊", accessibilityLabel: "信用卡名稱"
+    )
+
+    /// 每個方案一張卡片，方案增減或加碼開關切換時整組重建。
+    private let plansStackView: UIStackView = {
+        let stackView = UIStackView()
+        stackView.axis = .vertical
+        stackView.spacing = Constants.spacing
+        return stackView
+    }()
+
+    /// 綠色背景上用白色字，淡綠底的次要按鈕會像停用。
+    private let addPlanButton: UIButton = {
+        var configuration = UIButton.Configuration.plain()
+        configuration.image = UIImage(systemName: "plus.circle")
+        configuration.imagePadding = AppStyle.Spacing.tight
+        configuration.attributedTitle = AttributedString(
+            "新增方案（可切換權益的卡）", attributes: AttributeContainer([.font: AppStyle.Font.label])
+        )
+        configuration.baseForegroundColor = AppColor.accent
+        return UIButton(configuration: configuration)
+    }()
+
+    private let addButton: UIButton
+
+    // MARK: - Init
 
     init(viewModel: CardSetViewModelType) {
         self.viewModel = viewModel
@@ -62,22 +97,20 @@ final class CardSetViewController: UIViewController {
 
     private func setupViews() {
         title = viewModel.output.title
-        if let prefill = viewModel.output.prefill {
-            cardNameTextField.text = prefill.name
-            moneyBackTextField.text = prefill.percent
-            limitTextField.text = prefill.limit
-        }
+        cardNameTextField.text = viewModel.output.prefillName
         view.backgroundColor = AppColor.brand
         addTapToDismissKeyboard()
 
-        let cardStack = AppView.cardStack(in: formCard)
-        [cardNameTextField, moneyBackTextField, limitTextField, addButton].forEach(cardStack.addArrangedSubview)
-        stackView.addArrangedSubview(formCard)
-        view.addSubview(stackView)
+        AppView.cardStack(in: nameCard).addArrangedSubview(Self.titled("信用卡名稱", field: cardNameTextField))
+
+        [nameCard, plansStackView, addPlanButton, addButton].forEach(contentStackView.addArrangedSubview)
+        contentStackView.setCustomSpacing(AppStyle.Spacing.tight, after: plansStackView)
+
+        scrollView.addSubview(contentStackView)
+        view.addSubview(scrollView)
 
         cardNameTextField.addTarget(self, action: #selector(nameChanged), for: .editingChanged)
-        moneyBackTextField.addTarget(self, action: #selector(percentChanged), for: .editingChanged)
-        limitTextField.addTarget(self, action: #selector(limitChanged), for: .editingChanged)
+        addPlanButton.addTarget(self, action: #selector(addPlanTapped), for: .touchUpInside)
         addButton.addTarget(self, action: #selector(addTapped), for: .touchUpInside)
 
         if onSkip != nil {
@@ -88,19 +121,39 @@ final class CardSetViewController: UIViewController {
     }
 
     private func setupConstraints() {
+        let content = scrollView.contentLayoutGuide
         NSLayoutConstraint.activate([
-            stackView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: Constants.topInset),
-            stackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalInset),
-            stackView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalInset),
-            cardNameTextField.heightAnchor.constraint(greaterThanOrEqualToConstant: Constants.fieldHeight),
-            moneyBackTextField.heightAnchor.constraint(greaterThanOrEqualToConstant: Constants.fieldHeight),
-            limitTextField.heightAnchor.constraint(greaterThanOrEqualToConstant: Constants.fieldHeight)
+            scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            // 表單可能比畫面長，鍵盤出現時可視範圍縮到鍵盤上緣，下方欄位可以捲出來。
+            scrollView.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor),
+
+            // 內容區要有寬度，否則 contentSize.width 為 0，捲動計算會失效。
+            content.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor),
+            contentStackView.topAnchor.constraint(equalTo: content.topAnchor, constant: AppStyle.Spacing.loose),
+            contentStackView.bottomAnchor.constraint(equalTo: content.bottomAnchor, constant: -Constants.spacing),
+            contentStackView.leadingAnchor.constraint(
+                equalTo: scrollView.frameLayoutGuide.leadingAnchor, constant: Constants.horizontalInset
+            ),
+            contentStackView.trailingAnchor.constraint(
+                equalTo: scrollView.frameLayoutGuide.trailingAnchor, constant: -Constants.horizontalInset
+            ),
+
+            cardNameTextField.heightAnchor.constraint(greaterThanOrEqualToConstant: Constants.fieldHeight)
         ])
     }
 
     // MARK: - Binding
 
     private func bindViewModel() {
+        viewModel.output.planForms
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] forms in
+                self?.rebuildPlanCards(with: forms)
+            }
+            .store(in: &cancellables)
+
         viewModel.output.isAddEnabled
             .receive(on: DispatchQueue.main)
             .sink { [weak self] isEnabled in
@@ -129,12 +182,9 @@ final class CardSetViewController: UIViewController {
         viewModel.input.nameChanged(cardNameTextField.text ?? "")
     }
 
-    @objc private func percentChanged() {
-        viewModel.input.percentChanged(moneyBackTextField.text ?? "")
-    }
-
-    @objc private func limitChanged() {
-        viewModel.input.limitChanged(limitTextField.text ?? "")
+    @objc private func addPlanTapped() {
+        view.endEditing(true)
+        viewModel.input.addPlanTapped()
     }
 
     @objc private func addTapped() {
@@ -147,6 +197,99 @@ final class CardSetViewController: UIViewController {
         onSkip?()
     }
 
+    // MARK: - Plan Cards
+
+    private func rebuildPlanCards(with forms: [CardPlanForm]) {
+        plansStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        forms.enumerated().forEach { index, form in
+            plansStackView.addArrangedSubview(makePlanCard(form, index: index))
+        }
+    }
+
+    private func makePlanCard(_ form: CardPlanForm, index: Int) -> UIView {
+        let card = AppView.card()
+        let stack = AppView.cardStack(in: card, spacing: AppStyle.Spacing.tight + 4)
+
+        if form.showsName {
+            let title = AppView.label("方案 \(index + 1)", font: AppStyle.Font.labelEmphasis)
+            let remove = AppView.plainButton(title: "移除")
+            remove.isHidden = !form.canRemove
+            remove.setContentHuggingPriority(.required, for: .horizontal)
+            remove.addAction(UIAction { [weak self] _ in
+                self?.view.endEditing(true)
+                self?.viewModel.input.removePlan(at: index)
+            }, for: .touchUpInside)
+            let header = UIStackView(arrangedSubviews: [title, remove])
+            header.alignment = .center
+            stack.addArrangedSubview(header)
+            stack.addArrangedSubview(makeField(.name, title: "方案名稱", placeholder: "例如：玩旅刷", form: form, index: index))
+        }
+
+        stack.addArrangedSubview(
+            makeField(.baseRate, title: "基本回饋（%）", placeholder: "例如 3.3", keyboard: .decimalPad, form: form, index: index)
+        )
+        stack.addArrangedSubview(
+            makeField(.baseCap, title: "基本回饋上限（元）", placeholder: "留白為無上限", keyboard: .decimalPad, form: form, index: index)
+        )
+        stack.addArrangedSubview(makeBonusSwitchRow(isOn: form.hasBonus, index: index))
+
+        if form.hasBonus {
+            stack.addArrangedSubview(
+                makeField(.bonusRate, title: "加碼（%）", placeholder: "例如 6", keyboard: .decimalPad, form: form, index: index)
+            )
+            stack.addArrangedSubview(
+                makeField(.bonusCap, title: "加碼上限（元）", placeholder: "留白為無上限", keyboard: .decimalPad, form: form, index: index)
+            )
+            stack.addArrangedSubview(
+                makeField(.bonusLabel, title: "加碼條件", placeholder: "例如：指定店家", form: form, index: index)
+            )
+        }
+
+        stack.addArrangedSubview(makeField(.note, title: "備註", placeholder: "選填，例如：需切換方案", form: form, index: index))
+        return card
+    }
+
+    /// 欄位上方一定有標題：填了數字之後提示文字就消失，只剩「3.5」「500」會看不出是什麼。
+    private func makeField(
+        _ field: CardPlanField,
+        title: String,
+        placeholder: String,
+        keyboard: UIKeyboardType = .default,
+        form: CardPlanForm,
+        index: Int
+    ) -> UIView {
+        let textField = Self.makeTextField(placeholder: placeholder, accessibilityLabel: title, keyboardType: keyboard)
+        textField.text = form.values[field]
+        textField.heightAnchor.constraint(greaterThanOrEqualToConstant: Constants.fieldHeight).isActive = true
+        textField.addAction(UIAction { [weak self, weak textField] _ in
+            self?.viewModel.input.planFieldChanged(field, at: index, text: textField?.text ?? "")
+        }, for: .editingChanged)
+        return Self.titled(title, field: textField)
+    }
+
+    private static func titled(_ title: String, field: UIView) -> UIView {
+        let label = AppView.label(title, font: AppStyle.Font.label, color: AppColor.textSecondary)
+        let stack = UIStackView(arrangedSubviews: [label, field])
+        stack.axis = .vertical
+        stack.spacing = 4
+        return stack
+    }
+
+    private func makeBonusSwitchRow(isOn: Bool, index: Int) -> UIView {
+        let label = AppView.label("有加碼回饋", font: AppStyle.Font.body)
+        let toggle = UISwitch()
+        toggle.isOn = isOn
+        toggle.onTintColor = AppColor.accent
+        toggle.accessibilityLabel = "有加碼回饋"
+        toggle.addAction(UIAction { [weak self, weak toggle] _ in
+            self?.view.endEditing(true)
+            self?.viewModel.input.bonusToggled(at: index, isOn: toggle?.isOn ?? false)
+        }, for: .valueChanged)
+        let row = UIStackView(arrangedSubviews: [label, toggle])
+        row.alignment = .center
+        return row
+    }
+
     // MARK: - Private
 
     private func presentError(_ message: String) {
@@ -155,9 +298,14 @@ final class CardSetViewController: UIViewController {
         present(alert, animated: true)
     }
 
-    private static func makeTextField(placeholder: String, keyboardType: UIKeyboardType = .default) -> UITextField {
+    private static func makeTextField(
+        placeholder: String,
+        accessibilityLabel: String,
+        keyboardType: UIKeyboardType = .default
+    ) -> UITextField {
         let textField = AppView.textField(keyboardType: keyboardType)
         textField.placeholder = placeholder
+        textField.accessibilityLabel = accessibilityLabel
         return textField
     }
 }

@@ -6,38 +6,6 @@
 import XCTest
 @testable import japanShopping
 
-// MARK: - 剩餘額度
-
-final class RemainingFeedbackTests: XCTestCase {
-
-    func testRemainingIsTheLimitMinusThisCardsEntries() {
-        let id = UUID()
-        let card = Card(name: "A卡", percent: 3.5, limit: 500, feedbackRemaining: 500, id: id)
-        let entries = [
-            FeedbackEntry(id: UUID(), cardID: id, date: Date(), amount: 120.5, shoppingItemID: nil),
-            FeedbackEntry(id: UUID(), cardID: id, date: Date(), amount: 30.25, shoppingItemID: UUID()),
-            FeedbackEntry(id: UUID(), cardID: UUID(), date: Date(), amount: 999, shoppingItemID: nil)
-        ]
-
-        XCTAssertEqual(card.remainingFeedback(in: entries), 349.25)
-    }
-
-    /// 上限被調低到比已用還少時，剩餘停在 0。
-    func testRemainingNeverGoesBelowZero() {
-        let id = UUID()
-        let card = Card(name: "A卡", percent: 3.5, limit: 100, feedbackRemaining: 100, id: id)
-        let entries = [FeedbackEntry(id: UUID(), cardID: id, date: Date(), amount: 300, shoppingItemID: nil)]
-
-        XCTAssertEqual(card.remainingFeedback(in: entries), 0)
-    }
-
-    func testACardWithoutAnIDFallsBackToItsStoredRemaining() {
-        let card = Card(name: "舊卡", percent: 3.5, limit: 500, feedbackRemaining: 420)
-
-        XCTAssertEqual(card.remainingFeedback(in: []), 420)
-    }
-}
-
 // MARK: - 遷移
 
 final class FeedbackLedgerMigrationTests: XCTestCase {
@@ -75,7 +43,6 @@ final class FeedbackLedgerMigrationTests: XCTestCase {
         XCTAssertEqual(ledgerRepository.storedEntries.first?.amount, 0.9)
         XCTAssertEqual(ledgerRepository.storedEntries.first?.date, now)
         XCTAssertNil(ledgerRepository.storedEntries.first?.shoppingItemID)
-        XCTAssertEqual(card.remainingFeedback(in: ledgerRepository.storedEntries), 499.1)
     }
 
     func testUnusedCardsGetNoEntry() {

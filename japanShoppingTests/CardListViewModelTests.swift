@@ -17,8 +17,8 @@ final class CardListViewModelTests: XCTestCase {
     override func setUp() {
         super.setUp()
         repository = CardRepositoryStub(storedCards: [
-            Card(name: "A卡", percent: 3, limit: 1000, feedbackRemaining: 1000),
-            Card(name: "B卡", percent: 5, limit: 2000, feedbackRemaining: 2000)
+            Card.withPlan(name: "A卡", rate: 3, cap: 1000),
+            Card.withPlan(name: "B卡", rate: 5, cap: 2000)
         ])
         ledgerRepository = FeedbackLedgerRepositoryStub()
         viewModel = CardListViewModel(repository: repository, ledgerRepository: ledgerRepository)
@@ -45,10 +45,14 @@ final class CardListViewModelTests: XCTestCase {
         XCTAssertEqual(items.first?.limitDescription, "上限 1000　剩餘 1000")
     }
 
-    /// 這頁最常被回頭查的是剩餘額度，因此必須顯示實際剩餘而非上限。
-    func testLimitDescriptionShowsTheRemainingBalance() {
-        repository.storedCards = [
-            Card(name: "A卡", percent: 3.5, limit: 5000, feedbackMoney: 4.12, feedbackRemaining: 4995.88)
+    /// 這頁最常被回頭查的是剩餘額度，由方案的回饋明細算出。
+    func testRemainingIsComputedFromTheLedger() {
+        let planID = UUID()
+        let card = Card.withPlan(name: "A卡", rate: 3.5, cap: 5000, planID: planID)
+        repository.storedCards = [card]
+        ledgerRepository.storedEntries = [
+            FeedbackEntry(id: UUID(), cardID: card.id!, date: Date(), amount: 4.12, shoppingItemID: UUID(),
+                          planID: planID, baseAmount: 4.12, bonusAmount: 0)
         ]
         var items: [CardListItem] = []
         viewModel.output.items.sink { items = $0 }.store(in: &cancellables)
@@ -59,26 +63,49 @@ final class CardListViewModelTests: XCTestCase {
         XCTAssertEqual(items.first?.limitDescription, "上限 5000　剩餘 4995.88")
     }
 
-    func testRemainingIsComputedFromTheLedger() {
-        let id = UUID()
-        repository.storedCards = [Card(name: "A卡", percent: 3.5, limit: 5000, feedbackRemaining: 5000, id: id)]
-        ledgerRepository.storedEntries = [
-            FeedbackEntry(id: UUID(), cardID: id, date: Date(), amount: 4.12, shoppingItemID: UUID())
-        ]
+    func testAnUncappedCardWithABonusShowsBothRates() {
+        let bonus = CardPlan.Bonus(rate: 6, cap: 500, label: "指定店家")
+        repository.storedCards = [Card.withPlan(name: "熊本熊", rate: 2.5, cap: nil, bonus: bonus)]
         var items: [CardListItem] = []
         viewModel.output.items.sink { items = $0 }.store(in: &cancellables)
 
         viewModel.input.viewDidLoad()
 
-        XCTAssertEqual(items.first?.limitDescription, "上限 5000　剩餘 4995.88")
+        XCTAssertEqual(items.first?.percentBadge, "2.5%＋6%")
+        XCTAssertEqual(items.first?.limitDescription, "加碼上限 500　剩餘 500")
+    }
+
+    func testACardWithoutAnyCapSaysSo() {
+        repository.storedCards = [Card.withPlan(name: "Richart", rate: 3.3, cap: nil)]
+        var items: [CardListItem] = []
+        viewModel.output.items.sink { items = $0 }.store(in: &cancellables)
+
+        viewModel.input.viewDidLoad()
+
+        XCTAssertEqual(items.first?.limitDescription, "回饋無上限")
+    }
+
+    func testASwitchableCardListsItsPlans() {
+        let plans = [
+            CardPlan(id: UUID(), name: "玩旅刷", baseRate: 3.3, baseCap: nil, bonus: nil, note: ""),
+            CardPlan(id: UUID(), name: "假日刷", baseRate: 2, baseCap: nil, bonus: nil, note: "")
+        ]
+        repository.storedCards = [Card(name: "Richart", percent: 3.3, limit: 0, feedbackRemaining: 0, id: UUID(), plans: plans)]
+        var items: [CardListItem] = []
+        viewModel.output.items.sink { items = $0 }.store(in: &cancellables)
+
+        viewModel.input.viewDidLoad()
+
+        XCTAssertEqual(items.first?.percentBadge, "2 個方案")
+        XCTAssertEqual(items.first?.limitDescription, "玩旅刷 3.3%・假日刷 2%")
     }
 
     func testFinishRemovesTheEntriesOfDeletedCards() {
         let keptID = UUID()
         let deletedID = UUID()
         repository.storedCards = [
-            Card(name: "A卡", percent: 3, limit: 1000, feedbackRemaining: 1000, id: deletedID),
-            Card(name: "B卡", percent: 5, limit: 2000, feedbackRemaining: 2000, id: keptID)
+            Card.withPlan(name: "A卡", rate: 3, cap: 1000, id: deletedID),
+            Card.withPlan(name: "B卡", rate: 5, cap: 2000, id: keptID)
         ]
         ledgerRepository.storedEntries = [
             FeedbackEntry(id: UUID(), cardID: deletedID, date: Date(), amount: 10, shoppingItemID: nil),
@@ -144,7 +171,7 @@ final class CardListViewModelTests: XCTestCase {
         viewModel.output.items.sink { items = $0 }.store(in: &cancellables)
 
         viewModel.input.viewDidLoad()
-        repository.storedCards.append(Card(name: "C卡", percent: 1, limit: 100, feedbackRemaining: 100))
+        repository.storedCards.append(Card.withPlan(name: "C卡", rate: 1, cap: 100))
         viewModel.input.reloadAfterCardSaved()
 
         XCTAssertEqual(items.map(\.name), ["A卡", "B卡", "C卡"])
@@ -160,7 +187,7 @@ final class CardListViewModelTests: XCTestCase {
         viewModel.input.deleteCard(at: 0)
         XCTAssertEqual(items.map(\.name), ["B卡"])
 
-        repository.storedCards.append(Card(name: "C卡", percent: 1, limit: 100, feedbackRemaining: 100))
+        repository.storedCards.append(Card.withPlan(name: "C卡", rate: 1, cap: 100))
         viewModel.input.reloadAfterCardSaved()
 
         XCTAssertEqual(items.map(\.name), ["B卡", "C卡"], "A卡的刪除要保留")
@@ -201,7 +228,7 @@ final class CardListViewModelTests: XCTestCase {
         viewModel.output.items.sink { items = $0 }.store(in: &cancellables)
 
         viewModel.input.viewDidLoad()
-        repository.storedCards[0] = Card(name: "A卡改名", percent: 4, limit: 1000, feedbackRemaining: 1000, id: id)
+        repository.storedCards[0] = Card.withPlan(name: "A卡改名", rate: 4, cap: 1000, id: id)
         viewModel.input.reloadAfterCardSaved()
 
         XCTAssertEqual(items.map(\.name), ["A卡改名", "B卡"], "編輯過的卡片留在原位，不會多一張")
@@ -216,7 +243,7 @@ final class CardListViewModelTests: XCTestCase {
 
         viewModel.input.viewDidLoad()
         viewModel.input.deleteCard(at: 0)
-        repository.storedCards[0] = Card(name: "A卡改名", percent: 4, limit: 1000, feedbackRemaining: 1000, id: id)
+        repository.storedCards[0] = Card.withPlan(name: "A卡改名", rate: 4, cap: 1000, id: id)
         viewModel.input.reloadAfterCardSaved()
 
         XCTAssertEqual(items.map(\.name), ["B卡"])

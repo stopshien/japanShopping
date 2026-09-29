@@ -72,6 +72,23 @@ final class DetailViewController: UIViewController {
     }()
 
 
+    /// 「符合加碼」開關。加碼的條件（指定店家、登錄）App 無法判斷，由使用者勾選。
+    private let bonusLabel = AppView.label(font: AppStyle.Font.body)
+    private let bonusSwitch: UISwitch = {
+        let control = UISwitch()
+        control.onTintColor = AppColor.accent
+        control.setContentHuggingPriority(.required, for: .horizontal)
+        return control
+    }()
+    private lazy var bonusRow: UIStackView = {
+        let row = UIStackView(arrangedSubviews: [bonusLabel, bonusSwitch])
+        row.axis = .horizontal
+        row.alignment = .center
+        row.spacing = AppStyle.Spacing.tight
+        row.isHidden = true
+        return row
+    }()
+
     private let feedbackLabel = AppView.label(
         "信用卡回饋金額", font: AppStyle.Font.body, color: AppColor.textSecondary, alignment: .center
     )
@@ -148,6 +165,7 @@ final class DetailViewController: UIViewController {
             makeRow(label: productLabel, field: productTextField),
             makeRow(label: payTypeLabel, field: payTypeSegmentedControl),
             cardsChooseButton,
+            bonusRow,
             feedbackLabel,
             saveToListButton
         ].forEach(cardStack.addArrangedSubview)
@@ -164,6 +182,8 @@ final class DetailViewController: UIViewController {
         payTypeSegmentedControl.addTarget(self, action: #selector(payMethodChanged), for: .valueChanged)
         imageSelectButton.addTarget(self, action: #selector(imagePickerTapped), for: .touchUpInside)
         saveToListButton.addTarget(self, action: #selector(saveTapped), for: .touchUpInside)
+        bonusSwitch.addTarget(self, action: #selector(bonusSwitchChanged), for: .valueChanged)
+        bonusLabel.numberOfLines = 0
         productTextField.addTarget(self, action: #selector(productNameChanged), for: .editingChanged)
     }
 
@@ -233,6 +253,9 @@ final class DetailViewController: UIViewController {
             .sink { [weak self] isVisible in
                 self?.cardsChooseButton.isHidden = !isVisible
                 self?.feedbackLabel.isHidden = !isVisible
+                if !isVisible {
+                    self?.bonusRow.isHidden = true
+                }
             }
             .store(in: &cancellables)
 
@@ -259,6 +282,17 @@ final class DetailViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] items in
                 self?.rebuildCardMenu(with: items)
+            }
+            .store(in: &cancellables)
+
+        viewModel.output.bonusSwitch
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] state in
+                guard let self else { return }
+                self.bonusRow.isHidden = state == nil
+                self.bonusLabel.text = state?.title
+                self.bonusSwitch.accessibilityLabel = state?.title
+                self.bonusSwitch.setOn(state?.isOn ?? false, animated: false)
             }
             .store(in: &cancellables)
 
@@ -306,6 +340,10 @@ final class DetailViewController: UIViewController {
     }
 
     // MARK: - Actions
+
+    @objc private func bonusSwitchChanged() {
+        viewModel.input.bonusQualificationChanged(bonusSwitch.isOn)
+    }
 
     @objc private func payMethodChanged() {
         viewModel.input.payMethodSelected(row: payTypeSegmentedControl.selectedSegmentIndex)

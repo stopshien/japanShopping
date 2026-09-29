@@ -66,6 +66,9 @@
 		EA0000042A00000100EA0001 /* TripRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA0000032A00000100EA0001 /* TripRepository.swift */; };
 		EA0000062A00000100EA0001 /* TripContentStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA0000052A00000100EA0001 /* TripContentStore.swift */; };
 		EA0000082A00000100EA0001 /* TripMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA0000072A00000100EA0001 /* TripMigration.swift */; };
+		EA73B056F3F0918823B944BD /* CardPlanMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8D04253499CAB7BE3D23EDD /* CardPlanMigration.swift */; };
+		D80E32FFCE18456C38ABB89B /* FeedbackCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4816C220B583E7AA4958A5AC /* FeedbackCalculator.swift */; };
+		6DD29E37F9C78FF0D8A03EDA /* CardPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92832648023B446C4889B80A /* CardPlan.swift */; };
 		CEDB91BFD882DE6EB40700D9 /* FeedbackLedgerMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D25694E59B01B6CAE5E7813 /* FeedbackLedgerMigration.swift */; };
 		E657E4EEA21AA204FB5DFD04 /* FeedbackLedgerRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AFE4B1213BF5A4D27863267 /* FeedbackLedgerRepository.swift */; };
 		98187EEC2E6A89D322431857 /* FeedbackEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88DC0E25EC6877CA03CDB5A5 /* FeedbackEntry.swift */; };
@@ -85,6 +88,7 @@
 		EA0000102A00000100EA0001 /* TripListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA00000F2A00000100EA0001 /* TripListViewController.swift */; };
 		EA0000122A00000100EA0001 /* TripListCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA0000112A00000100EA0001 /* TripListCell.swift */; };
 		EB0000022A00000100EB0001 /* TripTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB0000012A00000100EB0001 /* TripTests.swift */; };
+		D4B3CFA416BC0F5A6F949E97 /* CardPlanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4A3F801FF064106277BBB4E /* CardPlanTests.swift */; };
 		1B0F2ABE4F802935E02EC215 /* FeedbackLedgerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32C0463AAC5FA24E17A4A01C /* FeedbackLedgerTests.swift */; };
 		EFF37CDA74A919C01C856BBE /* IdentityMigrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AE24660DB56AF100A9D852A /* IdentityMigrationTests.swift */; };
 		FA0000022A00000100FA0001 /* AppTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0000012A00000100FA0001 /* AppTextField.swift */; };
@@ -163,6 +167,9 @@
 		EA0000032A00000100EA0001 /* TripRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripRepository.swift; sourceTree = "<group>"; };
 		EA0000052A00000100EA0001 /* TripContentStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripContentStore.swift; sourceTree = "<group>"; };
 		EA0000072A00000100EA0001 /* TripMigration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripMigration.swift; sourceTree = "<group>"; };
+		E8D04253499CAB7BE3D23EDD /* CardPlanMigration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardPlanMigration.swift; sourceTree = "<group>"; };
+		4816C220B583E7AA4958A5AC /* FeedbackCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackCalculator.swift; sourceTree = "<group>"; };
+		92832648023B446C4889B80A /* CardPlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardPlan.swift; sourceTree = "<group>"; };
 		9D25694E59B01B6CAE5E7813 /* FeedbackLedgerMigration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackLedgerMigration.swift; sourceTree = "<group>"; };
 		4AFE4B1213BF5A4D27863267 /* FeedbackLedgerRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackLedgerRepository.swift; sourceTree = "<group>"; };
 		88DC0E25EC6877CA03CDB5A5 /* FeedbackEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackEntry.swift; sourceTree = "<group>"; };
@@ -182,6 +189,7 @@
 		EA00000F2A00000100EA0001 /* TripListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripListViewController.swift; sourceTree = "<group>"; };
 		EA0000112A00000100EA0001 /* TripListCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripListCell.swift; sourceTree = "<group>"; };
 		EB0000012A00000100EB0001 /* TripTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripTests.swift; sourceTree = "<group>"; };
+		A4A3F801FF064106277BBB4E /* CardPlanTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardPlanTests.swift; sourceTree = "<group>"; };
 		32C0463AAC5FA24E17A4A01C /* FeedbackLedgerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackLedgerTests.swift; sourceTree = "<group>"; };
 		2AE24660DB56AF100A9D852A /* IdentityMigrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdentityMigrationTests.swift; sourceTree = "<group>"; };
 		FA0000012A00000100FA0001 /* AppTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTextField.swift; sourceTree = "<group>"; };
@@ -211,6 +219,7 @@
 				AB0000022A00000100AB0001 /* PersistenceFormatTests.swift */,
 				AB0000032A00000100AB0001 /* ExchangeRateDecodingTests.swift */,
 				EB0000012A00000100EB0001 /* TripTests.swift */,
+				A4A3F801FF064106277BBB4E /* CardPlanTests.swift */,
 				32C0463AAC5FA24E17A4A01C /* FeedbackLedgerTests.swift */,
 				2AE24660DB56AF100A9D852A /* IdentityMigrationTests.swift */,
 				EC0000052A00000100EC0001 /* ItemEditorViewModelTests.swift */,
@@ -274,6 +283,9 @@
 				EA0000032A00000100EA0001 /* TripRepository.swift */,
 				EA0000052A00000100EA0001 /* TripContentStore.swift */,
 				EA0000072A00000100EA0001 /* TripMigration.swift */,
+				E8D04253499CAB7BE3D23EDD /* CardPlanMigration.swift */,
+				4816C220B583E7AA4958A5AC /* FeedbackCalculator.swift */,
+				92832648023B446C4889B80A /* CardPlan.swift */,
 				9D25694E59B01B6CAE5E7813 /* FeedbackLedgerMigration.swift */,
 				4AFE4B1213BF5A4D27863267 /* FeedbackLedgerRepository.swift */,
 				88DC0E25EC6877CA03CDB5A5 /* FeedbackEntry.swift */,
@@ -422,6 +434,7 @@
 				AB0000042A00000100AB0001 /* PersistenceFormatTests.swift in Sources */,
 				AB0000052A00000100AB0001 /* ExchangeRateDecodingTests.swift in Sources */,
 				EB0000022A00000100EB0001 /* TripTests.swift in Sources */,
+				D4B3CFA416BC0F5A6F949E97 /* CardPlanTests.swift in Sources */,
 				1B0F2ABE4F802935E02EC215 /* FeedbackLedgerTests.swift in Sources */,
 				EFF37CDA74A919C01C856BBE /* IdentityMigrationTests.swift in Sources */,
 				EC0000062A00000100EC0001 /* ItemEditorViewModelTests.swift in Sources */,
@@ -462,6 +475,9 @@
 				EC0000042A00000100EC0001 /* ItemEditorViewController.swift in Sources */,
 				EC0000022A00000100EC0001 /* ItemEditorViewModel.swift in Sources */,
 				EA0000082A00000100EA0001 /* TripMigration.swift in Sources */,
+				EA73B056F3F0918823B944BD /* CardPlanMigration.swift in Sources */,
+				D80E32FFCE18456C38ABB89B /* FeedbackCalculator.swift in Sources */,
+				6DD29E37F9C78FF0D8A03EDA /* CardPlan.swift in Sources */,
 				CEDB91BFD882DE6EB40700D9 /* FeedbackLedgerMigration.swift in Sources */,
 				E657E4EEA21AA204FB5DFD04 /* FeedbackLedgerRepository.swift in Sources */,
 				98187EEC2E6A89D322431857 /* FeedbackEntry.swift in Sources */,

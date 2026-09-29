@@ -10,9 +10,9 @@ import Foundation
 
 struct CardListItem: Equatable {
     let name: String
-    /// 回饋趴數，顯示為徽章（例如 "3.5%"）。
+    /// 回饋趴數，顯示為徽章（例如 "3.5%"、"2.5%＋6%"）；多方案的卡片顯示方案數。
     let percentBadge: String
-    /// 上限與剩餘額度，這頁最常被回頭查的資訊。
+    /// 上限與剩餘額度，這頁最常被回頭查的資訊；多方案的卡片列出各方案。
     let limitDescription: String
 }
 
@@ -74,12 +74,39 @@ final class CardListViewModel: CardListViewModelType {
     }
 
     private func makeItem(from card: Card) -> CardListItem {
-        let remaining = card.remainingFeedback(in: entries)
+        let plans = card.plans ?? []
+        guard plans.count == 1, let plan = plans.first else {
+            return CardListItem(
+                name: card.name,
+                percentBadge: "\(plans.count) 個方案",
+                limitDescription: plans.map { "\($0.name) \(Self.rateText(for: $0))" }.joined(separator: "・")
+            )
+        }
         return CardListItem(
             name: card.name,
-            percentBadge: "\(PriceText.amount(card.percent))%",
-            limitDescription: "上限 \(PriceText.amount(card.limit))　剩餘 \(PriceText.amount(remaining))"
+            percentBadge: Self.rateText(for: plan),
+            limitDescription: limitDescription(for: plan)
         )
+    }
+
+    private static func rateText(for plan: CardPlan) -> String {
+        var text = "\(PriceText.amount(plan.baseRate))%"
+        if let bonus = plan.bonus {
+            text += "＋\(PriceText.amount(bonus.rate))%"
+        }
+        return text
+    }
+
+    /// 例如「上限 500　剩餘 499.1」、「加碼上限 500　剩餘 320」；都沒有上限時為「回饋無上限」。
+    private func limitDescription(for plan: CardPlan) -> String {
+        var parts: [String] = []
+        if let cap = plan.baseCap, let remaining = FeedbackCalculator.remainingBase(of: plan, in: entries) {
+            parts.append("上限 \(PriceText.amount(cap))　剩餘 \(PriceText.amount(remaining))")
+        }
+        if let cap = plan.bonus?.cap, let remaining = FeedbackCalculator.remainingBonus(of: plan, in: entries) {
+            parts.append("加碼上限 \(PriceText.amount(cap))　剩餘 \(PriceText.amount(remaining))")
+        }
+        return parts.isEmpty ? "回饋無上限" : parts.joined(separator: "\n")
     }
 
     /// 已刪除的卡片，它的明細也一併移除，不留下對不到卡片的資料。
