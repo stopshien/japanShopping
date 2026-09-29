@@ -316,6 +316,83 @@ final class CardSetViewModelTests: XCTestCase {
         XCTAssertTrue(showsClosingDay)
     }
 
+    // MARK: - 回饋起迄日
+
+    private var taipei: Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Asia/Taipei")!
+        return calendar
+    }
+
+    private func day(_ y: Int, _ m: Int, _ d: Int, _ h: Int = 0) -> Date {
+        taipei.date(from: DateComponents(year: y, month: m, day: d, hour: h))!
+    }
+
+    /// 選到的日期存成當天 0 點；清除後為不限。
+    func testDatesAreSavedAsDays() {
+        viewModel = CardSetViewModel(repository: repository, calendar: taipei)
+        fillValidCard()
+        viewModel.input.planDateChanged(.validFrom, at: 0, date: day(2026, 7, 1, 15))
+        viewModel.input.planDateChanged(.validUntil, at: 0, date: day(2026, 12, 31, 9))
+        viewModel.input.addTapped()
+
+        let plan = repository.storedCards.first?.plans?.first
+        XCTAssertEqual(plan?.validFrom, day(2026, 7, 1))
+        XCTAssertEqual(plan?.validUntil, day(2026, 12, 31))
+        XCTAssertEqual(viewModel.output.dateText(plan?.validUntil), "2026/12/31")
+        XCTAssertEqual(viewModel.output.dateText(nil), "")
+    }
+
+    func testAnEndBeforeTheStartReportsAnError() {
+        var message: String?
+        viewModel = CardSetViewModel(repository: repository, calendar: taipei)
+        viewModel.output.errorMessage.sink { message = $0 }.store(in: &cancellables)
+
+        fillValidCard()
+        viewModel.input.planDateChanged(.validFrom, at: 0, date: day(2026, 7, 1))
+        viewModel.input.planDateChanged(.validUntil, at: 0, date: day(2026, 6, 30))
+        viewModel.input.addTapped()
+
+        XCTAssertEqual(message, "回饋結束日不能早於開始日")
+        XCTAssertTrue(repository.storedCards.isEmpty)
+    }
+
+    /// 改了結束日就是新的期限，到期時要重新提示；沒改則維持已提示。
+    func testChangingTheEndDateClearsTheAcknowledgement() {
+        var card = Card.withPlan(name: "玉山", rate: 2.5, cap: nil)
+        card.plans?[0].validUntil = day(2026, 12, 31)
+        card.plans?[0].expiryAcknowledged = true
+        repository.storedCards = [card]
+
+        viewModel = CardSetViewModel(editingCard: card, repository: repository, calendar: taipei)
+        viewModel.input.addTapped()
+        XCTAssertEqual(repository.storedCards[0].plans?[0].expiryAcknowledged, true)
+
+        viewModel = CardSetViewModel(editingCard: repository.storedCards[0], repository: repository, calendar: taipei)
+        viewModel.input.planDateChanged(.validUntil, at: 0, date: day(2027, 6, 30))
+        viewModel.input.addTapped()
+        XCTAssertNil(repository.storedCards[0].plans?[0].expiryAcknowledged)
+    }
+
+    /// 「設定新一期」：欄位帶入範本，標題是新增，存成另一張新卡。
+    func testATemplateIsSavedAsANewCard() {
+        let old = Card.withPlan(name: "熊本熊", rate: 2.5, cap: 500)
+        repository.storedCards = [old]
+        let template = PlanExpiryViewModel.renewalTemplate(from: old)
+
+        viewModel = CardSetViewModel(template: template, repository: repository)
+        XCTAssertEqual(viewModel.output.prefillName, "熊本熊")
+        XCTAssertEqual(viewModel.output.title, "新增信用卡")
+        XCTAssertEqual(forms[0].values[.baseRate], "2.5")
+        XCTAssertNil(forms[0].validUntil)
+
+        viewModel.input.addTapped()
+
+        XCTAssertEqual(repository.storedCards.count, 2)
+        XCTAssertNotEqual(repository.storedCards[1].id, old.id)
+        XCTAssertNotEqual(repository.storedCards[1].plans?[0].id, old.plans?[0].id)
+    }
+
     // MARK: - 驗證與錯誤
 
     /// 遷移前這裡是 Double(text)! ，非數字輸入會直接崩潰。

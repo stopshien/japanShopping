@@ -83,7 +83,7 @@ Each phase ships on its own, keeps the app working, and updates tests plus the b
 - Tests cover month ends, closing days 28–31, quarter edges, and time zones.
 - As built: `CapPeriod` is a String enum stored as `baseCapPeriod` and `bonus.capPeriod`; nil means 不重置. The closing day is on the card (`statementClosingDay`), since a card's plans share one statement. The form has a four-segment period picker under each cap, and the closing-day field appears in the card-name block only while some cap uses 每期帳單. `FeedbackPeriod` lives in `FeedbackPeriod.swift`; `FeedbackCalculator` takes the closing day, date and calendar, defaulting to now and `.current`.
 
-### Phase 5 — Campaign dates and renewal
+### Phase 5 — Campaign dates and renewal — done 2026-09-29
 
 - Plans have an optional start and end date (回饋起迄日). A plan outside its dates is **hidden** from the 購買明細 picker; a card with no current plan is hidden entirely.
 - 管理信用卡 still lists expired cards, marked 「已過期」, or 「剩 N 天」 within 14 days of the end date.
@@ -93,6 +93,7 @@ Each phase ships on its own, keeps the app working, and updates tests plus the b
   - Several expired plans are listed in one alert; 「設定新一期」 then applies to the first, and the rest stay unacknowledged for the next time.
 - There is no second alert in 購買明細. A plan acknowledged at launch is simply absent from the picker.
 - Why at launch rather than at the card picker: at the picker the user is usually at the till and will dismiss it, while at launch there is time to enter the next period before shopping. Campaigns usually end on 6/30 or 12/31, so the next launch is often the start of the next trip.
+- As built: dates are entered in text fields with a wheel date picker and 清除／完成 on the keyboard toolbar; blank means unlimited, so a renewal really starts with empty dates. 知道了 acknowledges every plan in the alert. The alert logic is `PlanExpiryViewModel`; `ScreenFactory.makePlanExpiryAlert` builds the `UIAlertController`; `SceneDelegate` decides when it may be shown. Changing a plan's end date clears its acknowledgement.
 - The renewed period is saved as a **new card**. The expired card keeps its history and its ledger entries, and the user can delete it from 管理信用卡. Rows show the period (e.g. `2026/7/1–12/31`) so two cards with the same name can be told apart.
 
 ### Phase 6 — Per-card foreign fee (deferred)

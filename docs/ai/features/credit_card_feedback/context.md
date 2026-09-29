@@ -9,8 +9,9 @@ When the user pays by credit card, the app shows how much feedback (回饋) that
 ## Main Files
 
 - `Card.swift` — the stored card: `name`, `id`, `plans`, and an optional `statementClosingDay`. `percent`, `limit`, `feedbackMoney`, `feedbackRemaining` are legacy fields kept for decoding.
-- `CardPlan.swift` — a plan: name, base rate, optional base cap, optional bonus (rate, cap, label), note.
+- `CardPlan.swift` — a plan: name, base rate, optional base cap, optional bonus (rate, cap, label), cap periods, optional validity dates, expiry acknowledgement, note; `isActive`, `isExpired`, `daysUntilExpiry`.
 - `FeedbackCalculator.swift` — pure quote and remaining-amount functions; counts only entries in the current cap period; the 1.5% fee constant.
+- `PlanExpiryViewModel.swift` — finds expired, unacknowledged plans, builds the alert text, marks plans acknowledged, and makes the renewal template.
 - `FeedbackPeriod.swift` — `CapPeriod` (campaign, calendarMonth, statementCycle, quarter) and the pure function that returns the period containing a date.
 - `CardPlanMigration.swift` — at launch, turns a card without plans into one plan and attaches its entries to it.
 - `CardRepository.swift` — `FileCardRepository`, a property list file named `cards` in Documents. One file shared by every trip.
@@ -37,6 +38,12 @@ When the user pays by credit card, the app shows how much feedback (回饋) that
 - Purchases saved before the ledger have no entry, so deleting them gives nothing back.
 - Entries recorded before plans hold the **net** amount (after subtracting 1.5), so old usage counts slightly lower than a bank would count it.
 - `Card.feedbackMoney` and `feedbackRemaining` are legacy fields. Only `FeedbackLedgerMigration` and card saving still touch `feedbackRemaining`.
+
+## Expiry Flow
+
+1. `SceneDelegate.remindExpiredPlans()` runs on `sceneDidBecomeActive` and after the launch animation hands over to the compute screen.
+2. `ScreenFactory.makePlanExpiryAlert(onRenew:)` asks `PlanExpiryViewModel.check()`; nil means nothing to announce.
+3. 知道了 → `acknowledge()`. 設定新一期 → `renew()` returns a template card; a `CardSetViewController` built with `CardSetViewModel(template:)` is pushed on the main navigation controller and pops itself after saving.
 
 ## Dependencies
 

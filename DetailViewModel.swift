@@ -167,8 +167,12 @@ final class DetailViewModel: DetailViewModelType {
             errorMessageSubject.send("信用卡資料讀取失敗")
         }
         entries = (try? ledgerRepository.load()) ?? []
+        // 不在回饋期間內的方案（已到期或尚未開始）不列出；一個方案都不剩的卡片就整張不出現。
+        let today = now()
         options = cards.indices.flatMap { cardIndex in
-            (cards[cardIndex].plans ?? []).indices.map { PlanOption(cardIndex: cardIndex, planIndex: $0) }
+            (cards[cardIndex].plans ?? []).indices
+                .filter { cards[cardIndex].plans?[$0].isActive(on: today, calendar: calendar) == true }
+                .map { PlanOption(cardIndex: cardIndex, planIndex: $0) }
         }
         cardMenuItemsSubject.send(options.map { CardMenuItem(title: menuTitle(for: $0)) })
     }

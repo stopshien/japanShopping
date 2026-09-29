@@ -409,6 +409,37 @@ final class DetailViewModelTests: XCTestCase {
         XCTAssertEqual(text, "這筆回饋 NT$ 75\n海外手續費 NT$ 15")
     }
 
+    /// 不在回饋期間內的方案不列出；一個方案都不剩的卡片整張不出現。
+    func testPlansOutsideTheirDatesAreNotListed() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Asia/Taipei")!
+        let now = calendar.date(from: DateComponents(year: 2027, month: 1, day: 2))!
+        let lastDay = calendar.date(from: DateComponents(year: 2026, month: 12, day: 31))!
+        let nextMonth = calendar.date(from: DateComponents(year: 2027, month: 2, day: 1))!
+        let expired = CardPlan(id: UUID(), name: "玩旅刷", baseRate: 3.3, baseCap: nil, bonus: nil, note: "",
+                               validUntil: lastDay)
+        let current = CardPlan(id: UUID(), name: "假日刷", baseRate: 2, baseCap: nil, bonus: nil, note: "")
+        var future = Card.withPlan(name: "新卡", rate: 5, cap: nil)
+        future.plans?[0].validFrom = nextMonth
+        var gone = Card.withPlan(name: "舊卡", rate: 4, cap: nil)
+        gone.plans?[0].validUntil = lastDay
+        cardRepository.storedCards = [
+            Card(name: "Richart", percent: 3.3, limit: 0, feedbackRemaining: 0, id: UUID(), plans: [expired, current]),
+            future, gone
+        ]
+        viewModel = DetailViewModel(
+            item: ShoppingItem(productName: "", price: 1000, payType: "", taxState: "未稅"),
+            cardRepository: cardRepository, shoppingListRepository: listRepository, imageStore: imageStore,
+            ledgerRepository: ledgerRepository, now: { now }, calendar: calendar
+        )
+        var items: [CardMenuItem] = []
+        viewModel.output.cardMenuItems.sink { items = $0 }.store(in: &cancellables)
+
+        viewModel.input.viewDidLoad()
+
+        XCTAssertEqual(items.map(\.title), ["Richart・假日刷 2%"])
+    }
+
     /// 多方案的卡片每個方案各佔一項，存進清單的付款方式包含方案名稱。
     func testEachPlanOfASwitchableCardIsItsOwnMenuItem() {
         let travel = CardPlan(id: UUID(), name: "玩旅刷", baseRate: 3.3, baseCap: nil, bonus: nil, note: "")

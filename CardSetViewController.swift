@@ -268,6 +268,8 @@ final class CardSetViewController: UIViewController {
             )
         }
 
+        stack.addArrangedSubview(makeDateField(.validFrom, title: "回饋開始日", date: form.validFrom, index: index))
+        stack.addArrangedSubview(makeDateField(.validUntil, title: "回饋結束日", date: form.validUntil, index: index))
         stack.addArrangedSubview(makeField(.note, title: "備註", placeholder: "選填，例如：需切換方案", form: form, index: index))
         return card
     }
@@ -296,6 +298,41 @@ final class CardSetViewController: UIViewController {
         stack.axis = .vertical
         stack.spacing = 4
         return stack
+    }
+
+    /// 日期用滾輪選，鍵盤上方有「清除」與「完成」；留白代表不限。
+    private func makeDateField(_ field: PlanDateField, title: String, date: Date?, index: Int) -> UIView {
+        let textField = Self.makeTextField(placeholder: "留白為不限", accessibilityLabel: title)
+        textField.text = viewModel.output.dateText(date)
+        textField.tintColor = .clear
+        textField.heightAnchor.constraint(greaterThanOrEqualToConstant: Constants.fieldHeight).isActive = true
+
+        let picker = UIDatePicker()
+        picker.datePickerMode = .date
+        picker.preferredDatePickerStyle = .wheels
+        picker.locale = Locale(identifier: "zh_TW")
+        if let date {
+            picker.date = date
+        }
+        textField.inputView = picker
+
+        let toolbar = UIToolbar()
+        toolbar.sizeToFit()
+        let clear = UIBarButtonItem(title: "清除", primaryAction: UIAction { [weak self, weak textField] _ in
+            textField?.text = ""
+            self?.viewModel.input.planDateChanged(field, at: index, date: nil)
+            textField?.resignFirstResponder()
+        })
+        let done = UIBarButtonItem(title: "完成", primaryAction: UIAction { [weak self, weak textField, weak picker] _ in
+            guard let self, let picker else { return }
+            textField?.text = self.viewModel.output.dateText(picker.date)
+            self.viewModel.input.planDateChanged(field, at: index, date: picker.date)
+            textField?.resignFirstResponder()
+        })
+        toolbar.items = [clear, UIBarButtonItem(systemItem: .flexibleSpace), done]
+        textField.inputAccessoryView = toolbar
+
+        return Self.titled(title, field: textField)
     }
 
     /// 上限多久重新計算。沒有填上限時選了也不影響計算。

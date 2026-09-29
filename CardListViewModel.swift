@@ -88,14 +88,31 @@ final class CardListViewModel: CardListViewModelType {
             return CardListItem(
                 name: card.name,
                 percentBadge: "\(plans.count) 個方案",
-                limitDescription: plans.map { "\($0.name) \(Self.rateText(for: $0))" }.joined(separator: "・")
+                limitDescription: plans.map { plan in
+                    let status = statusText(for: plan).map { "（\($0)）" } ?? ""
+                    return "\(plan.name) \(Self.rateText(for: plan))\(status)"
+                }.joined(separator: "・")
             )
         }
+        let lines = [limitDescription(for: plan, closingDay: card.statementClosingDay), statusText(for: plan)]
         return CardListItem(
             name: card.name,
             percentBadge: Self.rateText(for: plan),
-            limitDescription: limitDescription(for: plan, closingDay: card.statementClosingDay)
+            limitDescription: lines.compactMap { $0 }.joined(separator: "\n")
         )
+    }
+
+    /// 快到期或不在期間內時提醒；14 天以上的期限不特別顯示。
+    private func statusText(for plan: CardPlan) -> String? {
+        let today = now()
+        if plan.isExpired(on: today, calendar: calendar) {
+            return "已過期"
+        }
+        if !plan.isActive(on: today, calendar: calendar), let validFrom = plan.validFrom {
+            return "\(PlanExpiryViewModel.dateText(validFrom, calendar: calendar, now: today)) 起"
+        }
+        guard let days = plan.daysUntilExpiry(from: today, calendar: calendar), days <= 14 else { return nil }
+        return days == 0 ? "今天到期" : "剩 \(days) 天到期"
     }
 
     private static func rateText(for plan: CardPlan) -> String {

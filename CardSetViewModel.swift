@@ -24,6 +24,12 @@ enum CardPlanField: CaseIterable {
     case note
 }
 
+/// 方案的回饋起迄日。
+enum PlanDateField {
+    case validFrom
+    case validUntil
+}
+
 /// 上限屬於基本回饋還是加碼。
 enum CapTier {
     case base
@@ -41,6 +47,8 @@ struct CardPlanForm: Equatable {
     let values: [CardPlanField: String]
     var baseCapPeriod: CapPeriod = .campaign
     var bonusCapPeriod: CapPeriod = .campaign
+    var validFrom: Date?
+    var validUntil: Date?
 }
 
 protocol CardSetViewModelInput {
@@ -49,6 +57,8 @@ protocol CardSetViewModelInput {
     func bonusToggled(at index: Int, isOn: Bool)
     func capPeriodChanged(_ tier: CapTier, at index: Int, period: CapPeriod)
     func closingDayChanged(_ text: String)
+    /// nil 代表清除這個日期（不限）。
+    func planDateChanged(_ field: PlanDateField, at index: Int, date: Date?)
     func addPlanTapped()
     func removePlan(at index: Int)
     func addTapped()
@@ -70,6 +80,8 @@ protocol CardSetViewModelOutput {
     var errorMessage: AnyPublisher<String, Never> { get }
     /// 新增或編輯存檔成功。
     var didSave: AnyPublisher<Void, Never> { get }
+    /// 日期欄位上顯示的文字，例如「2026/12/31」；沒有日期時為空字串。
+    func dateText(_ date: Date?) -> String
 }
 
 // MARK: - Errors
@@ -79,6 +91,7 @@ enum CardSetError: LocalizedError, Equatable {
     case invalidLimit
     case invalidBonusPercent
     case invalidClosingDay
+    case invalidDateRange
     case saveFailed
     case cardNotFound
 
@@ -92,6 +105,8 @@ enum CardSetError: LocalizedError, Equatable {
             return "加碼趴數請輸入數字"
         case .invalidClosingDay:
             return "帳單結帳日請輸入 1 到 31 的數字"
+        case .invalidDateRange:
+            return "回饋結束日不能早於開始日"
         case .saveFailed:
             return "信用卡儲存失敗，請再試一次"
         case .cardNotFound:
@@ -112,6 +127,11 @@ final class CardSetViewModel: CardSetViewModelType {
         var values: [CardPlanField: String] = [:]
         var baseCapPeriod: CapPeriod = .campaign
         var bonusCapPeriod: CapPeriod = .campaign
+        var validFrom: Date?
+        var validUntil: Date?
+        /// 載入時的結束日與已提示狀態；結束日沒改才保留已提示。
+        var originalValidUntil: Date?
+        var expiryAcknowledged: Bool?
 
         var usesStatementCycle: Bool {
             baseCapPeriod == .statementCycle || (hasBonus && bonusCapPeriod == .statementCycle)
@@ -123,6 +143,7 @@ final class CardSetViewModel: CardSetViewModelType {
     private let repository: CardRepository
     /// 編輯中的卡片；nil 代表新增。
     private let editingCard: Card?
+    private let calendar: Calendar
 
     private var name = ""
     private var closingDayText = ""
@@ -137,14 +158,22 @@ final class CardSetViewModel: CardSetViewModelType {
     let prefillName: String?
     let prefillClosingDay: String?
 
-    init(editingCard: Card? = nil, repository: CardRepository) {
+    /// `template` 用在「設定新一期」：欄位從範本帶入，但存成一張新卡。
+    init(
+        editingCard: Card? = nil,
+        template: Card? = nil,
+        repository: CardRepository,
+        calendar: Calendar = .current
+    ) {
         self.repository = repository
         self.editingCard = editingCard
-        prefillName = editingCard?.name
-        name = editingCard?.name ?? ""
-        prefillClosingDay = editingCard?.statementClosingDay.map(String.init)
+        self.calendar = calendar
+        let source = editingCard ?? template
+        prefillName = source?.name
+        name = source?.name ?? ""
+        prefillClosingDay = source?.statementClosingDay.map(String.init)
         closingDayText = prefillClosingDay ?? ""
-        drafts = (editingCard?.plans ?? []).map(Self.draft(from:))
+        drafts = (source?.plans ?? []).map(Self.draft(from:))
         if drafts.isEmpty {
             drafts = [PlanDraft()]
         }
@@ -174,7 +203,11 @@ final class CardSetViewModel: CardSetViewModelType {
             hasBonus: plan.bonus != nil,
             values: values,
             baseCapPeriod: plan.baseCapPeriod ?? .campaign,
-            bonusCapPeriod: plan.bonus?.capPeriod ?? .campaign
+            bonusCapPeriod: plan.bonus?.capPeriod ?? .campaign,
+            validFrom: plan.validFrom,
+            validUntil: plan.validUntil,
+            originalValidUntil: plan.validUntil,
+            expiryAcknowledged: plan.expiryAcknowledged
         )
     }
 
@@ -183,7 +216,8 @@ final class CardSetViewModel: CardSetViewModelType {
         planFormsSubject.send(drafts.map {
             CardPlanForm(
                 showsName: showsName, hasBonus: $0.hasBonus, canRemove: drafts.count > 1, values: $0.values,
-                baseCapPeriod: $0.baseCapPeriod, bonusCapPeriod: $0.bonusCapPeriod
+                baseCapPeriod: $0.baseCapPeriod, bonusCapPeriod: $0.bonusCapPeriod,
+                validFrom: $0.validFrom, validUntil: $0.validUntil
             )
         })
         showsClosingDaySubject.send(needsClosingDay)
@@ -227,6 +261,10 @@ final class CardSetViewModel: CardSetViewModelType {
     private func buildPlans() throws -> [CardPlan] {
         let single = drafts.count == 1
         return try drafts.map { draft in
+            if let from = draft.validFrom, let until = draft.validUntil,
+               calendar.startOfDay(for: from) > calendar.startOfDay(for: until) {
+                throw CardSetError.invalidDateRange
+            }
             var bonus: CardPlan.Bonus?
             if draft.hasBonus {
                 bonus = CardPlan.Bonus(
@@ -244,7 +282,11 @@ final class CardSetViewModel: CardSetViewModelType {
                 baseCap: try Self.optionalAmount(draft.text(.baseCap)),
                 bonus: bonus,
                 note: draft.text(.note),
-                baseCapPeriod: Self.stored(draft.baseCapPeriod)
+                baseCapPeriod: Self.stored(draft.baseCapPeriod),
+                validFrom: draft.validFrom,
+                validUntil: draft.validUntil,
+                // 結束日改了就是新的期限，到期時要重新提示。
+                expiryAcknowledged: draft.validUntil == draft.originalValidUntil ? draft.expiryAcknowledged : nil
             )
         }
     }
@@ -315,6 +357,15 @@ extension CardSetViewModel: CardSetViewModelInput {
         refreshAddEnabled()
     }
 
+    func planDateChanged(_ field: PlanDateField, at index: Int, date: Date?) {
+        guard drafts.indices.contains(index) else { return }
+        let day = date.map { calendar.startOfDay(for: $0) }
+        switch field {
+        case .validFrom: drafts[index].validFrom = day
+        case .validUntil: drafts[index].validUntil = day
+        }
+    }
+
     func addPlanTapped() {
         drafts.append(PlanDraft())
         publishForms()
@@ -372,4 +423,14 @@ extension CardSetViewModel: CardSetViewModelOutput {
     var isAddEnabled: AnyPublisher<Bool, Never> { isAddEnabledSubject.eraseToAnyPublisher() }
     var errorMessage: AnyPublisher<String, Never> { errorMessageSubject.eraseToAnyPublisher() }
     var didSave: AnyPublisher<Void, Never> { didSaveSubject.eraseToAnyPublisher() }
+
+    func dateText(_ date: Date?) -> String {
+        guard let date else { return "" }
+        let formatter = DateFormatter()
+        formatter.calendar = calendar
+        formatter.timeZone = calendar.timeZone
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy/M/d"
+        return formatter.string(from: date)
+    }
 }

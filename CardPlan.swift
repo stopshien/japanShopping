@@ -35,4 +35,35 @@ struct CardPlan: Codable, Equatable {
     var note: String
     /// 基本回饋上限多久重新計算；nil 為不重置（舊資料都是這種）。
     var baseCapPeriod: CapPeriod? = nil
+    /// 回饋開始日（含），當天 0 點；nil 為沒有限制。
+    var validFrom: Date? = nil
+    /// 回饋結束日（含），當天 0 點；nil 為沒有期限。
+    var validUntil: Date? = nil
+    /// 使用者已看過這個方案的到期提示，之後不再提示。改了結束日就會清掉。
+    var expiryAcknowledged: Bool? = nil
+}
+
+extension CardPlan {
+
+    /// `date` 那天是否在回饋期間內。起迄日都以天計算，兩端都包含。
+    func isActive(on date: Date, calendar: Calendar) -> Bool {
+        let day = calendar.startOfDay(for: date)
+        if let validFrom, day < calendar.startOfDay(for: validFrom) { return false }
+        if let validUntil, day > calendar.startOfDay(for: validUntil) { return false }
+        return true
+    }
+
+    /// 結束日已經過了。
+    func isExpired(on date: Date, calendar: Calendar) -> Bool {
+        guard let validUntil else { return false }
+        return calendar.startOfDay(for: date) > calendar.startOfDay(for: validUntil)
+    }
+
+    /// 距離結束日還有幾天；當天到期為 0，沒有期限或已過期時為 nil。
+    func daysUntilExpiry(from date: Date, calendar: Calendar) -> Int? {
+        guard let validUntil, !isExpired(on: date, calendar: calendar) else { return nil }
+        return calendar.dateComponents(
+            [.day], from: calendar.startOfDay(for: date), to: calendar.startOfDay(for: validUntil)
+        ).day
+    }
 }

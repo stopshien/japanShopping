@@ -181,6 +181,17 @@ final class CardPlanPersistenceTests: XCTestCase {
         XCTAssertEqual(try PropertyListDecoder().decode([Card].self, from: data), [card])
     }
 
+    func testValidityDatesAndAcknowledgementSurviveARoundTrip() throws {
+        var card = Card.withPlan(name: "玉山", rate: 2.5, cap: nil)
+        card.plans?[0].validFrom = Date(timeIntervalSince1970: 1_782_000_000)
+        card.plans?[0].validUntil = Date(timeIntervalSince1970: 1_798_000_000)
+        card.plans?[0].expiryAcknowledged = true
+
+        let data = try PropertyListEncoder().encode([card])
+
+        XCTAssertEqual(try PropertyListDecoder().decode([Card].self, from: data), [card])
+    }
+
     func testACardWithPlansSurvivesAPropertyListRoundTrip() throws {
         let bonus = CardPlan.Bonus(rate: 6, cap: nil, label: "指定店家")
         let card = Card(

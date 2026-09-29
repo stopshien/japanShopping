@@ -28,6 +28,9 @@ protocol ScreenFactory {
     /// `card` 為 nil 時是新增，否則是編輯那張卡。
     func makeCardSet(editing card: Card?, onFinish: @escaping () -> Void) -> UIViewController
     func makeCardList() -> UIViewController
+    /// 有到期且尚未提示過的回饋方案時回傳提示，否則為 nil。
+    /// 按「設定新一期」時以 `onRenew` 交出預先填好的新增信用卡畫面，由呼叫端決定怎麼顯示。
+    func makePlanExpiryAlert(onRenew: @escaping (UIViewController) -> Void) -> UIViewController?
 }
 
 final class AppScreenFactory: ScreenFactory {
@@ -200,6 +203,29 @@ final class AppScreenFactory: ScreenFactory {
             controller?.navigationController?.popViewController(animated: true)
         }
         return controller
+    }
+
+    func makePlanExpiryAlert(onRenew: @escaping (UIViewController) -> Void) -> UIViewController? {
+        let viewModel = PlanExpiryViewModel(repository: cardRepository)
+        guard let notice = viewModel.check() else { return nil }
+
+        let alert = UIAlertController(title: notice.title, message: notice.message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "知道了", style: .cancel) { _ in
+            viewModel.acknowledge()
+        })
+        let renew = UIAlertAction(title: notice.renewTitle, style: .default) { [weak self] _ in
+            guard let self, let template = viewModel.renew() else { return }
+            let controller = CardSetViewController(
+                viewModel: CardSetViewModel(template: template, repository: self.cardRepository)
+            )
+            controller.onFinish = { [weak controller] in
+                controller?.navigationController?.popViewController(animated: true)
+            }
+            onRenew(controller)
+        }
+        alert.addAction(renew)
+        alert.preferredAction = renew
+        return alert
     }
 
     func makeCardList() -> UIViewController {

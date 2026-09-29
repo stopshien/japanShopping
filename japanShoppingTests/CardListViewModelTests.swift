@@ -100,6 +100,38 @@ final class CardListViewModelTests: XCTestCase {
         XCTAssertEqual(items.first?.limitDescription, "每月上限 1000　本月剩餘 880")
     }
 
+    func testThePlanStatusIsShownNearAndAfterItsEnd() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Asia/Taipei")!
+        let now = calendar.date(from: DateComponents(year: 2026, month: 12, day: 25, hour: 10))!
+        func day(_ m: Int, _ d: Int, year: Int = 2026) -> Date {
+            calendar.date(from: DateComponents(year: year, month: m, day: d))!
+        }
+        var soon = Card.withPlan(name: "熊本熊", rate: 2.5, cap: nil)
+        soon.plans?[0].validUntil = day(12, 31)
+        var gone = Card.withPlan(name: "舊卡", rate: 3, cap: 500)
+        gone.plans?[0].validUntil = day(12, 1)
+        var later = Card.withPlan(name: "明年", rate: 3, cap: nil)
+        later.plans?[0].validFrom = day(1, 1, year: 2027)
+        var far = Card.withPlan(name: "遠期", rate: 3, cap: nil)
+        far.plans?[0].validUntil = day(6, 30, year: 2027)
+        repository.storedCards = [soon, gone, later, far]
+        viewModel = CardListViewModel(
+            repository: repository, ledgerRepository: ledgerRepository, now: { now }, calendar: calendar
+        )
+        var items: [CardListItem] = []
+        viewModel.output.items.sink { items = $0 }.store(in: &cancellables)
+
+        viewModel.input.viewDidLoad()
+
+        XCTAssertEqual(items.map(\.limitDescription), [
+            "回饋無上限\n剩 6 天到期",
+            "上限 500　剩餘 500\n已過期",
+            "回饋無上限\n2027/1/1 起",
+            "回饋無上限"
+        ])
+    }
+
     func testACardWithoutAnyCapSaysSo() {
         repository.storedCards = [Card.withPlan(name: "Richart", rate: 3.3, cap: nil)]
         var items: [CardListItem] = []
